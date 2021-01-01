@@ -129,9 +129,9 @@ bool InstructionComparator::operator()(const InstructionType& lhs,
     return true;
   } else {
     if ((std::get<1>(lhs)).hash() == (std::get<1>(rhs)).hash()) {
-      return (std::get<2>(lhs)).hash() < (std::get<2>(rhs)).hash();
+      return std::get<2>(lhs).hash() < std::get<2>(rhs).hash();
     } else {
-      return (std::get<1>(lhs)).hash() < (std::get<1>(rhs)).hash();
+      return std::get<1>(lhs).hash() < std::get<1>(rhs).hash();
     }
   }
 }
@@ -609,6 +609,11 @@ void Program::ParseThread(Function& Func) {
       }
     }
   }
+
+#ifdef LOCAL_DEBUG
+  std::cout << "Total Instructions: " << inst_list_.size() << " ";
+  std::cout << inst_map_.size() << std::endl;
+#endif
 
   AdjacencyList<int> aut_graph = CreateAutGraph(bb_automata);
   return;

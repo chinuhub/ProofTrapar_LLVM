@@ -83,16 +83,8 @@ class Program {
   // Mapping from variable names to their corresponding z3 expr
   std::map<std::string, z3::expr> variable_expr_map_;
 
-  std::map<InstructionType, int> inst_map_;
+  std::map<InstructionType, int, InstructionComparator> inst_map_;
   std::vector<InstructionType> inst_list_;
-  // A vector of lval operands of all instructions. If it is an assume
-  // instruction this value is set to "assume".
-  std::vector<std::string> inst_lval_operands_;
-  // A vector of z3 expressions of all instructions. In case of assume
-  // instruction this is a boolean z3 expression.
-
-  std::vector<z3::expr> inst_exprs_;
-  std::vector<InstClass> inst_types_;
 
   std::vector<std::string> thread_names_;
   std::vector<AdjacencyList<int> > thread_graphs_;
