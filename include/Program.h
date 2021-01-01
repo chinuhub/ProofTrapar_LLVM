@@ -30,6 +30,10 @@ struct InstructionComparator {
   bool operator()(const InstructionType& lhs, const InstructionType& rhs) const;
 };
 
+struct z3comparator {
+  bool operator()(const z3::expr& lhs, const z3::expr& rhs) const;
+}
+
 /**
  * A program class as a representation of the llvm module
  *
@@ -47,6 +51,21 @@ struct InstructionComparator {
  */
 class Program {
  public:
+
+  //============================================================================
+  // Old interface imported here. Maybe change this to a proper api interface in
+  // future if possible.
+  //============================================================================
+  z3::context& mCtx;
+ 	std::map<std::string, z3::expr> mVarExprMap;
+ 	std::map<std::string, std::tuple<z3::expr, z3::expr>> mRWLHRHMap;
+ 	std::map<std::string, z3::expr> mAssumeLHRHMap;//used
+ 	std::map<z3::expr,std::string,z3comparator> mRevAssumeLHRHMap;//used
+ 	std::map<std::string, std::tuple<z3::expr, z3::expr,z3::expr>> mCASLHRHMap;//used
+ 	std::map<std::string, z3::expr> mAssnMap;//map for label-> assert statements for all processes
+ 	std::vector<std::string> mProcessesregex;// yet to be constructed
+ 	std::vector<std::string> mAllSyms;//used
+
   /**
    * Default constructor for Program Class
    *
@@ -91,17 +110,15 @@ class Program {
 
   void ParseGlobalVariables(llvm::Module&);
   void ParseThread(llvm::Function&);
-
   // Finds and returns an instruction if present in our vector
   unsigned FindInstruction(const InstructionType&);
-
   // Returns a distinct string name for an llvm Value in function named scope
   std::string ValueToVariable(const llvm::Value*, std::string scope);
-
   // Returns the z3 expression corresponding to an llvm Value
   z3::expr ValueToExpr(const llvm::Value*, std::string scope);
-
   bool AddVariable(std::string name);
+
+  void MakeOldInterface();
 };
 
 #endif

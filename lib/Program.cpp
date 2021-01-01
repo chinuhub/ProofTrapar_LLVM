@@ -141,6 +141,7 @@ Program::Program(Module& M) {
   for (Function& Func : M) {
     ParseThread(Func);
   }
+  MakeOldInterface();
 }
 
 z3::expr& Program::GetVariableExpr(std::string name) {
@@ -659,5 +660,65 @@ bool Program::AddVariable(std::string name) {
     z3::expr exp = context_.int_const(name.c_str());
     variable_expr_map_.insert(std::make_pair(name, exp));
     return true;
+  }
+}
+
+//==============================================================================
+// Methods to transform to old interface
+//==============================================================================
+bool z3comparator::operator()(const z3::expr& lhs, const z3::expr& rhs) const {
+  return (lhs.hash() < rhs.hash());
+}
+
+void Program::MakeOldInterface() {
+  mCtx = context_;
+  mVarExprMap = variable_expr_map_;
+  // assert that we don't have more instructions than symbols available
+  assert(inst_list_.size() + thread_names_.size() <= 52);
+  unsigned i = 0;
+  for (i = 0; i < inst_list_.size(); i++) {
+    string sym;
+    if (i < 26) sym += ('A' + i);
+    else sym += ('a' + i - 26);
+    mAllSyms.push_back(sym);
+    if (std::get<0>(inst_list_[i]) == kAssign) {
+      std::tuple<z3::expr, z3::expr> inst =
+      std::make_tuple(
+        std::get<1>(inst_list_[i]),
+        std::get<2>(inst_list_[i])
+      );
+      mRWLHRHMap.insert(
+        std::make_pair(
+          sym,
+          inst
+        )
+      );
+    } else if (std::get<0>(inst_list_[i]) == kAssume) {
+      z3::expr cond_expr = std::get<2>(inst_list_[i]);
+      mAssumeLHRHMap.insert(
+        std::make_pair(
+          sym,
+          cond_expr
+        )
+      );
+      mRevAssumeLHRHMap.insert(
+        std::make_pair(
+          cond_expr,
+          sym
+        )
+      );
+    }
+  }
+  for (unsigned j = 0; j < thread_names_.size(); i++, j++) {
+    string sym;
+    if (i < 26) sym += ('A' + i);
+    else sym += ('a' + i - 26);
+    z3::expr assert_expr = context_.bool_val(false);
+    mAssnMap.insert(
+      std::make_pair(
+        sym,
+        assert_expr
+      )
+    );
   }
 }
