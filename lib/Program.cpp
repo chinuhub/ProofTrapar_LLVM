@@ -14,6 +14,7 @@
 #include "llvm/IR/Module.h"
 #include "llvm/Transforms/Utils/ModuleUtils.h"
 #include "z3++.h"
+#include "z3_ast_containers.h"
 
 #define LOCAL_DEBUG
 
@@ -40,7 +41,7 @@ struct BasicBlockGraph {
   std::map<int, int> phi_aut_map;
 };
 
-adjacency_list<int> CreateAutGraph(std::vector<BasicBlockGraph> BB) {
+AdjacencyList<int> CreateAutGraph(std::vector<BasicBlockGraph> BB) {
   // Edges have integer labels for there corresponding instructions (symbols of
   // our automata). In case of epsilon transitions this label is -1.
   std::vector<std::vector<std::pair<int, int> > > aut_graph;
@@ -120,6 +121,21 @@ adjacency_list<int> CreateAutGraph(std::vector<BasicBlockGraph> BB) {
 
 }
 
+bool InstructionComparator::operator()(const InstructionType& lhs,
+                                       const InstructionType& rhs) const {
+  if (std::get<0>(lhs) == kAssign && std::get<0>(rhs) == kAssume) {
+    return false;
+  } else if (std::get<0>(lhs) == kAssume && std::get<0>(rhs) == kAssign) {
+    return true;
+  } else {
+    if ((std::get<1>(lhs)).hash() == (std::get<1>(rhs)).hash()) {
+      return (std::get<2>(lhs)).hash() < (std::get<2>(rhs)).hash();
+    } else {
+      return (std::get<1>(lhs)).hash() < (std::get<1>(rhs)).hash();
+    }
+  }
+}
+
 Program::Program(Module& M) {
   ParseGlobalVariables(M);
   for (Function& Func : M) {
@@ -194,25 +210,44 @@ void Program::ParseThread(Function& Func) {
         }
         case Instruction::Ret: {
           bb_struct.has_branch = true;
-          inst_types_.push_back(kAssume);
-          inst_lval_operands_.push_back("assume");
           z3::expr cond_expr = context_.bool_val(true);
+          InstructionType inst =
+          std::make_tuple(
+            kAssume,
+            context_.int_val(0),
+            cond_expr
+          );
+          unsigned inst_num = FindInstruction(inst);
           bb_struct.branch_map.insert(
             std::make_pair(
-              static_cast<int>(inst_exprs_.size()),
+              inst_num,
               0
             )
           );
-          inst_exprs_.push_back(cond_expr);
+          // if it is a new instruction insert in the instruction list
+          if (inst_num == inst_list_.size()) {
+            inst_list_.push_back(inst);
+            inst_map_.insert(
+              std::make_pair(
+                inst,
+                inst_num
+              )
+            );
+          }
           break;
         }
         case Instruction::Br: {
           bb_struct.has_branch = true;
           BranchInst* br_inst = dyn_cast<BranchInst>(&Inst);
           if (br_inst->isUnconditional()) {
-            inst_types_.push_back(kAssume);
-            inst_lval_operands_.push_back("assume");
             z3::expr cond_expr = context_.bool_val(true);
+            InstructionType inst =
+            std::make_tuple(
+              kAssume,
+              context_.int_val(0),
+              cond_expr
+            );
+            unsigned inst_num = FindInstruction(inst);
             BasicBlock* bb_next = br_inst->getSuccessor(0);
             std::string bb_name =
                          ValueToVariable(dyn_cast<Value>(bb_next), thread_name);
@@ -220,23 +255,35 @@ void Program::ParseThread(Function& Func) {
             assert(iter != block_map.end());
             bb_struct.branch_map.insert(
               std::make_pair(
-                static_cast<int>(inst_exprs_.size()),
+                inst_num,
                 iter->second
               )
             );
-            inst_exprs_.push_back(cond_expr);
+            // if it is a new instruction insert in the instruction list
+            if (inst_num == inst_list_.size()) {
+              inst_list_.push_back(inst);
+              inst_map_.insert(
+                std::make_pair(
+                  inst,
+                  inst_num
+                )
+              );
+            }
 #ifdef LOCAL_DEBUG
             std::cout << "Unconditional Branch Instruction to ";
             std::cout << iter->second << " block" << std::endl;
 #endif
           } else {
-            inst_types_.push_back(kAssume);
-            inst_types_.push_back(kAssume);
-            inst_lval_operands_.push_back("assume");
-            inst_lval_operands_.push_back("assume");
             Value* v_cond = br_inst->getCondition();
             z3::expr cond_expr =
                         ValueToExpr(v_cond, thread_name) != context_.int_val(0);
+            InstructionType inst =
+            std::make_tuple(
+              kAssume,
+              context_.int_val(0),
+              cond_expr
+            );
+            unsigned inst_num = FindInstruction(inst);
             BasicBlock* bb_next = br_inst->getSuccessor(0);
             std::string bb_name =
                          ValueToVariable(dyn_cast<Value>(bb_next), thread_name);
@@ -244,11 +291,19 @@ void Program::ParseThread(Function& Func) {
             assert(iter != block_map.end());
             bb_struct.branch_map.insert(
               std::make_pair(
-                static_cast<int>(inst_exprs_.size()),
+                inst_num,
                 iter->second
               )
             );
-            inst_exprs_.push_back(cond_expr);
+            if (inst_num == inst_list_.size()) {
+              inst_list_.push_back(inst);
+              inst_map_.insert(
+                std::make_pair(
+                  inst,
+                  inst_num
+                )
+              );
+            }
 #ifdef LOCAL_DEBUG
             std::cout << "Conditional Branch Instruction" << std::endl;
             std::cout << "If " << ValueToVariable(v_cond, thread_name);
@@ -256,17 +311,32 @@ void Program::ParseThread(Function& Func) {
             std::cout << std::endl;
 #endif
             cond_expr = (cond_expr == context_.bool_val(false));
+            inst =
+            std::make_tuple(
+              kAssume,
+              context_.int_val(0),
+              cond_expr
+            );
+            inst_num = FindInstruction(inst);
             bb_next = br_inst->getSuccessor(1);
             bb_name = ValueToVariable(dyn_cast<Value>(bb_next), thread_name);
             iter = block_map.find(bb_name);
             assert(iter != block_map.end());
             bb_struct.branch_map.insert(
               std::make_pair(
-                static_cast<int>(inst_exprs_.size()),
+                inst_num,
                 iter->second
               )
             );
-            inst_exprs_.push_back(cond_expr);
+            if (inst_num == inst_list_.size()) {
+              inst_list_.push_back(inst);
+              inst_map_.insert(
+                std::make_pair(
+                  inst,
+                  inst_num
+                )
+              );
+            }
 #ifdef LOCAL_DEBUG
             std::cout << "If not " << ValueToVariable(v_cond, thread_name);
             std::cout << " then go to " << iter->second << " block";
@@ -279,22 +349,34 @@ void Program::ParseThread(Function& Func) {
           bb_struct.has_phi = true;
           std::string lval_operand = ValueToVariable(&Inst, thread_name);
           AddVariable(lval_operand);
+          z3::expr lval_expr = GetVariableExpr(lval_operand);
 #ifdef LOCAL_DEBUG
           std::cout << "Caught a PHI one here: " << std::endl;
           std::cout << lval_operand << std::endl;
 #endif
           PHINode* phi_node = dyn_cast<PHINode>(&Inst);
-
           std::vector<int> phi_inst_nums;
           std::vector<int> phi_inc_blocks;
-
           for (Use& U : phi_node->incoming_values()) {
             Value* v = U.get();
-            z3::expr v_expr = ValueToExpr(v, thread_name);
-            phi_inst_nums.push_back(static_cast<int>(inst_exprs_.size()));
-            inst_types_.push_back(kAssign);
-            inst_lval_operands_.push_back(lval_operand);
-            inst_exprs_.push_back(v_expr);
+            z3::expr rhs_expr = ValueToExpr(v, thread_name);
+            InstructionType inst =
+            std::make_tuple(
+              kAssign,
+              lval_expr,
+              rhs_expr
+            );
+            unsigned inst_num = FindInstruction(inst);
+            phi_inst_nums.push_back(inst_num);
+            if (inst_num == inst_list_.size()) {
+              inst_list_.push_back(inst);
+              inst_map_.insert(
+                std::make_pair(
+                  inst,
+                  inst_num
+                )
+              );
+            }
 #ifdef LOCAL_DEBUG
             std::cout << ValueToVariable(v, thread_name) << " ";
 #endif
@@ -328,14 +410,28 @@ void Program::ParseThread(Function& Func) {
           break;
         }
         case Instruction::Load: {
-          bb_struct.inst.push_back(static_cast<int>(inst_exprs_.size()));
           std::string lval_operand = ValueToVariable(&Inst, thread_name);
           AddVariable(lval_operand);
-          inst_types_.push_back(kAssign);
-          inst_lval_operands_.push_back(lval_operand);
+          z3::expr lval_expr = GetVariableExpr(lval_operand);
           Value* rf_val = Inst.getOperand(0);
           z3::expr rhs_expr = ValueToExpr(rf_val, thread_name);
-          inst_exprs_.push_back(rhs_expr);
+          InstructionType inst =
+          std::make_tuple(
+            kAssign,
+            lval_expr,
+            rhs_expr
+          );
+          unsigned inst_num = FindInstruction(inst);
+          bb_struct.inst.push_back(inst_num);
+          if (inst_num == inst_list_.size()) {
+            inst_list_.push_back(inst);
+            inst_map_.insert(
+              std::make_pair(
+                inst,
+                inst_num
+              )
+            );
+          }
 #ifdef LOCAL_DEBUG
           std::cout << lval_operand << " = ";
           std::cout << ValueToVariable(rf_val, thread_name) << std::endl;
@@ -343,15 +439,29 @@ void Program::ParseThread(Function& Func) {
           break;
         }
         case Instruction::Store: {
-          bb_struct.inst.push_back(static_cast<int>(inst_exprs_.size()));
           Value* lhs = Inst.getOperand(1);
           std::string lval_operand = ValueToVariable(lhs, thread_name);
           AddVariable(lval_operand);
-          inst_types_.push_back(kAssign);
-          inst_lval_operands_.push_back(lval_operand);
+          z3::expr lval_expr = GetVariableExpr(lval_operand);
           Value* rhs = Inst.getOperand(0);
           z3::expr rhs_expr = ValueToExpr(rhs, thread_name);
-          inst_exprs_.push_back(rhs_expr);
+          InstructionType inst =
+          std::make_tuple(
+            kAssign,
+            lval_expr,
+            rhs_expr
+          );
+          unsigned inst_num = FindInstruction(inst);
+          bb_struct.inst.push_back(inst_num);
+          if (inst_num == inst_list_.size()) {
+            inst_list_.push_back(inst);
+            inst_map_.insert(
+              std::make_pair(
+                inst,
+                inst_num
+              )
+            );
+          }
 #ifdef LOCAL_DEBUG
           std::cout << lval_operand << " = ";
           std::cout << ValueToVariable(rhs, thread_name) << std::endl;
@@ -362,11 +472,9 @@ void Program::ParseThread(Function& Func) {
         case Instruction::Sub:
         case Instruction::Mul:
         case Instruction::ICmp: {
-          bb_struct.inst.push_back(static_cast<int>(inst_exprs_.size()));
           std::string lval_operand = ValueToVariable(&Inst, thread_name);
           AddVariable(lval_operand);
-          inst_types_.push_back(kAssign);
-          inst_lval_operands_.push_back(lval_operand);
+          z3::expr lval_expr = GetVariableExpr(lval_operand);
           Value* op1 = Inst.getOperand(0);
           Value* op2 = Inst.getOperand(1);
           z3::expr op1_expr = ValueToExpr(op1, thread_name);
@@ -467,7 +575,23 @@ void Program::ParseThread(Function& Func) {
               }
             }
           }
-          inst_exprs_.push_back(rhs_expr);
+          InstructionType inst =
+          std::make_tuple(
+            kAssign,
+            lval_expr,
+            rhs_expr
+          );
+          unsigned inst_num = FindInstruction(inst);
+          bb_struct.inst.push_back(inst_num);
+          if (inst_num == inst_list_.size()) {
+            inst_list_.push_back(inst);
+            inst_map_.insert(
+              std::make_pair(
+                inst,
+                inst_num
+              )
+            );
+          }
 #ifdef LOCAL_DEBUG
           std::cout << ValueToVariable(op2, thread_name) << std::endl;
 #endif
@@ -486,13 +610,18 @@ void Program::ParseThread(Function& Func) {
     }
   }
 
-  // A bit of sanity checking
-  assert(inst_types_.size() == inst_exprs_.size());
-  assert(inst_types_.size() == inst_lval_operands_.size());
-
-  adjacency_list<int> aut_graph = CreateAutGraph(bb_automata);
+  AdjacencyList<int> aut_graph = CreateAutGraph(bb_automata);
   return;
 
+}
+
+unsigned Program::FindInstruction(const InstructionType& inst) {
+  auto iter = inst_map_.find(inst);
+  if (iter == inst_map_.end()) {
+    return static_cast<int>(inst_list_.size());
+  } else {
+    return iter->second;
+  }
 }
 
 std::string Program::ValueToVariable(const Value* v, std::string scope) {

@@ -14,14 +14,20 @@
 #include "llvm/IR/Module.h"
 #include "z3++.h"
 
-template <typename T>
-using adjacency_list = std::vector<std::vector<std::pair<int, T> > >;
-
 /// An enum type for Instruction types. Instruction fall into either assign or
 /// assume types.
-enum InstType {
+enum InstClass {
   kAssign,
   kAssume
+};
+
+template <typename T>
+using AdjacencyList = std::vector<std::vector<std::pair<int, T> > >;
+
+using InstructionType = std::tuple<InstClass, z3::expr, z3::expr>;
+
+struct InstructionComparator {
+  bool operator()(const InstructionType& lhs, const InstructionType& rhs) const;
 };
 
 /**
@@ -77,19 +83,25 @@ class Program {
   // Mapping from variable names to their corresponding z3 expr
   std::map<std::string, z3::expr> variable_expr_map_;
 
+  std::map<InstructionType, int> inst_map_;
+  std::vector<InstructionType> inst_list_;
   // A vector of lval operands of all instructions. If it is an assume
   // instruction this value is set to "assume".
   std::vector<std::string> inst_lval_operands_;
   // A vector of z3 expressions of all instructions. In case of assume
   // instruction this is a boolean z3 expression.
+
   std::vector<z3::expr> inst_exprs_;
-  std::vector<InstType> inst_types_;
+  std::vector<InstClass> inst_types_;
 
   std::vector<std::string> thread_names_;
-  std::vector<adjacency_list<int> > thread_graphs_;
+  std::vector<AdjacencyList<int> > thread_graphs_;
 
   void ParseGlobalVariables(llvm::Module&);
   void ParseThread(llvm::Function&);
+
+  // Finds and returns an instruction if present in our vector
+  unsigned FindInstruction(const InstructionType&);
 
   // Returns a distinct string name for an llvm Value in function named scope
   std::string ValueToVariable(const llvm::Value*, std::string scope);
