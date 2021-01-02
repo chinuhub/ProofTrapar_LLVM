@@ -32,7 +32,7 @@ struct InstructionComparator {
 
 struct z3comparator {
   bool operator()(const z3::expr& lhs, const z3::expr& rhs) const;
-}
+};
 
 /**
  * A program class as a representation of the llvm module
@@ -56,7 +56,8 @@ class Program {
   // Old interface imported here. Maybe change this to a proper api interface in
   // future if possible.
   //============================================================================
-  z3::context& mCtx;
+  std::string mInitString;
+  z3::context context_;
  	std::map<std::string, z3::expr> mVarExprMap;
  	std::map<std::string, std::tuple<z3::expr, z3::expr>> mRWLHRHMap;
  	std::map<std::string, z3::expr> mAssumeLHRHMap;//used
@@ -65,6 +66,9 @@ class Program {
  	std::map<std::string, z3::expr> mAssnMap;//map for label-> assert statements for all processes
  	std::vector<std::string> mProcessesregex;// yet to be constructed
  	std::vector<std::string> mAllSyms;//used
+
+  std::vector<std::string> GetRegexOfAllProcesses();
+	std::map<std::string, z3::expr >& GetAssnMapForAllProcesses();
 
   /**
    * Default constructor for Program Class
@@ -95,7 +99,7 @@ class Program {
   z3::expr GetGlobalInit(std::string name);
 
  private:
-  z3::context context_;
+  // z3::context context_;
 
   // Mapping from global variable names to their intial values' z3 expr
   std::map<std::string, z3::expr> global_var_init_map_;

@@ -14,14 +14,12 @@
 #include "llvm/IR/Module.h"
 #include "llvm/Transforms/Utils/ModuleUtils.h"
 #include "z3++.h"
-#include "z3_ast_containers.h"
 
 #define LOCAL_DEBUG
 
 using namespace llvm;
 
 namespace {
-
 // An intermediate representation of basic blocks before creating their automata
 struct BasicBlockGraph {
   bool has_phi = false;
@@ -141,7 +139,7 @@ Program::Program(Module& M) {
   for (Function& Func : M) {
     ParseThread(Func);
   }
-  MakeOldInterface();
+  // MakeOldInterface();
 }
 
 z3::expr& Program::GetVariableExpr(std::string name) {
@@ -160,6 +158,7 @@ void Program::ParseGlobalVariables(Module& M) {
 #ifdef LOCAL_DEBUG
     std::cout << "parsing global variables now" << std::endl;
 #endif
+  int count = 0;
   for (GlobalVariable& Gvar : M.globals()) {
     if (const ConstantInt* CI = dyn_cast<ConstantInt>(Gvar.getInitializer())) {
       std::string name = Gvar.getName().str();
@@ -170,8 +169,21 @@ void Program::ParseGlobalVariables(Module& M) {
       z3::expr rexp = context_.int_val(value);
       AddVariable(name);
       global_var_init_map_.insert(std::make_pair(name, rexp));
+
+      // Support for old interface
+      std::string symname = std::to_string(count);
+      mAllSyms.push_back(symname);
+      ++count;
+      mInitString += symname;
+      std::pair<z3::expr, z3::expr> pr =
+      std::make_pair(
+        GetVariableExpr(name),
+        rexp
+      );
+      mRWLHRHMap.insert(std::make_pair(symname, pr));
     }
   }
+
 }
 
 void Program::ParseThread(Function& Func) {
@@ -225,7 +237,6 @@ void Program::ParseThread(Function& Func) {
               0
             )
           );
-          // if it is a new instruction insert in the instruction list
           if (inst_num == inst_list_.size()) {
             inst_list_.push_back(inst);
             inst_map_.insert(
@@ -235,6 +246,10 @@ void Program::ParseThread(Function& Func) {
               )
             );
           }
+#ifdef LOCAL_DEBUG
+          std::cout << inst_num << ": Unconditional Branch Instruction";
+          std::cout << "(Return Tranformed to Branch) to block 0" << std::endl;
+#endif
           break;
         }
         case Instruction::Br: {
@@ -271,8 +286,8 @@ void Program::ParseThread(Function& Func) {
               );
             }
 #ifdef LOCAL_DEBUG
-            std::cout << "Unconditional Branch Instruction to ";
-            std::cout << iter->second << " block" << std::endl;
+            std::cout << inst_num << ": Unconditional Branch Instruction to ";
+            std::cout << "block " << iter->second << std::endl;
 #endif
           } else {
             Value* v_cond = br_inst->getCondition();
@@ -306,9 +321,9 @@ void Program::ParseThread(Function& Func) {
               );
             }
 #ifdef LOCAL_DEBUG
-            std::cout << "Conditional Branch Instruction" << std::endl;
-            std::cout << "If " << ValueToVariable(v_cond, thread_name);
-            std::cout << " then go to " << iter->second << " block";
+            std::cout << inst_num << ": Conditional Branch Instruction";
+            std::cout << "\nIf " << ValueToVariable(v_cond, thread_name);
+            std::cout << " then go to " << "block " << iter->second;
             std::cout << std::endl;
 #endif
             cond_expr = (cond_expr == context_.bool_val(false));
@@ -339,8 +354,9 @@ void Program::ParseThread(Function& Func) {
               );
             }
 #ifdef LOCAL_DEBUG
-            std::cout << "If not " << ValueToVariable(v_cond, thread_name);
-            std::cout << " then go to " << iter->second << " block";
+            std::cout << inst_num << ": If not ";
+            std::cout << ValueToVariable(v_cond, thread_name);
+            std::cout << " then go to " << "block " << iter->second ;
             std::cout << std::endl;
 #endif
           }
@@ -353,7 +369,6 @@ void Program::ParseThread(Function& Func) {
           z3::expr lval_expr = GetVariableExpr(lval_operand);
 #ifdef LOCAL_DEBUG
           std::cout << "Caught a PHI one here: " << std::endl;
-          std::cout << lval_operand << std::endl;
 #endif
           PHINode* phi_node = dyn_cast<PHINode>(&Inst);
           std::vector<int> phi_inst_nums;
@@ -379,24 +394,19 @@ void Program::ParseThread(Function& Func) {
               );
             }
 #ifdef LOCAL_DEBUG
-            std::cout << ValueToVariable(v, thread_name) << " ";
+            std::cout << inst_num << ": " << lval_operand << " = ";
+            std::cout << ValueToVariable(v, thread_name) << std::endl;
 #endif
           }
-#ifdef LOCAL_DEBUG
-          std::cout << std::endl;
-#endif
           for (BasicBlock* inc_bb : phi_node->blocks()) {
             std::string bb_name = ValueToVariable(inc_bb, thread_name);
             auto iter = block_map.find(bb_name);
             assert(iter != block_map.end());
             phi_inc_blocks.push_back(iter->second);
 #ifdef LOCAL_DEBUG
-            std::cout << bb_name << " ";
+            std::cout << "From block " << bb_name << std::endl;
 #endif
           }
-#ifdef LOCAL_DEBUG
-          std::cout << std::endl;
-#endif
           for (unsigned i = 0; i < phi_inst_nums.size(); i++) {
             auto iter = bb_struct.phi_map.find(phi_inc_blocks[i]);
             if (iter == bb_struct.phi_map.end()) {
@@ -434,7 +444,7 @@ void Program::ParseThread(Function& Func) {
             );
           }
 #ifdef LOCAL_DEBUG
-          std::cout << lval_operand << " = ";
+          std::cout << inst_num << ": " << lval_operand << " = ";
           std::cout << ValueToVariable(rf_val, thread_name) << std::endl;
 #endif
           break;
@@ -464,7 +474,7 @@ void Program::ParseThread(Function& Func) {
             );
           }
 #ifdef LOCAL_DEBUG
-          std::cout << lval_operand << " = ";
+          std::cout << inst_num << ": " << lval_operand << " = ";
           std::cout << ValueToVariable(rhs, thread_name) << std::endl;
 #endif
           break;
@@ -594,7 +604,8 @@ void Program::ParseThread(Function& Func) {
             );
           }
 #ifdef LOCAL_DEBUG
-          std::cout << ValueToVariable(op2, thread_name) << std::endl;
+          std::cout << ValueToVariable(op2, thread_name) << " :" << inst_num;
+          std::cout << std::endl;
 #endif
           break;
         }
@@ -618,7 +629,6 @@ void Program::ParseThread(Function& Func) {
 
   AdjacencyList<int> aut_graph = CreateAutGraph(bb_automata);
   return;
-
 }
 
 unsigned Program::FindInstruction(const InstructionType& inst) {
@@ -670,14 +680,21 @@ bool z3comparator::operator()(const z3::expr& lhs, const z3::expr& rhs) const {
   return (lhs.hash() < rhs.hash());
 }
 
+std::vector<std::string> Program::GetRegexOfAllProcesses() {
+  return mProcessesregex;
+}
+
+std::map<std::string, z3::expr>& Program::GetAssnMapForAllProcesses() {
+  return mAssnMap;
+}
+
 void Program::MakeOldInterface() {
-  mCtx = context_;
   mVarExprMap = variable_expr_map_;
   // assert that we don't have more instructions than symbols available
   assert(inst_list_.size() + thread_names_.size() <= 52);
   unsigned i = 0;
   for (i = 0; i < inst_list_.size(); i++) {
-    string sym;
+    std::string sym;
     if (i < 26) sym += ('A' + i);
     else sym += ('a' + i - 26);
     mAllSyms.push_back(sym);
@@ -710,7 +727,7 @@ void Program::MakeOldInterface() {
     }
   }
   for (unsigned j = 0; j < thread_names_.size(); i++, j++) {
-    string sym;
+    std::string sym;
     if (i < 26) sym += ('A' + i);
     else sym += ('a' + i - 26);
     z3::expr assert_expr = context_.bool_val(false);
@@ -721,4 +738,8 @@ void Program::MakeOldInterface() {
       )
     );
   }
+#ifdef LOCAL_DEBUG
+  mProcessesregex.push_back("ABC(DE(GJ|FHICK)LC)*(DE(GJ|FHICK))MNOP(RSCABC(DE(GJ|FHICK)LC)*(DE(GJ|FHICK))MNOP)*Q");
+  mProcessesregex.push_back("TUC(VW(Yb|XZaCc)dC)*(VW(Yb|XZaCc))efgh(jkCTUC(VW(Yb|XZaCc)dC)*(VW(Yb|XZaCc))efgh)*i");
+#endif
 }

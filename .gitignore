@@ -30,4 +30,12 @@
 # Directories
 build/
 input/
-libfaudes-2_26g/
+# libfaudes-2_26g/
+# augeas-1.4.0/
+boost_1_58_0/
+# include/AFA/
+# lib/AFA/
+
+# Files
+# SCTransSystem.h
+# SCTransSystem.cpp

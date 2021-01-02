@@ -55,9 +55,9 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall\
     -fdiagnostics-color=always")
 
 # LLVM is normally built without RTTI. Be consistent with that.
-if(NOT LLVM_ENABLE_RTTI)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-rtti")
-endif()
+# if(NOT LLVM_ENABLE_RTTI)
+#   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-rtti")
+# endif()
 
 # -fvisibility-inlines-hidden is set when building LLVM and on Darwin warnings
 # are triggered if llvm-verify-pass is built without this flag
@@ -73,6 +73,26 @@ endif()
 # Set the build directories
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/bin")
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/lib")
+
+#===============================================================================
+# 3. OTHER LIBRARIES REQUIRED
+#===============================================================================
+# Augeas Library and Libfaudes Library
+
+include_directories(SYSTEM
+                   "augeas-1.4.0/src/"
+                   "libfaudes-2_26g/include/"
+                   )
+
+link_directories(
+                "augeas-1.4.0/src/.libs/"
+                "libfaudes-2_26g/"
+                )
+
+link_libraries(
+              fa
+              faudes
+              )
 
 #===============================================================================
 # 4. ADD SUB-TARGETS
