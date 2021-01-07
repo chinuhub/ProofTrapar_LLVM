@@ -33,6 +33,8 @@ target_include_directories(SafetyVerificationPass PUBLIC
                           "../include/"
                           )
 
- target_link_libraries(SafetyVerificationPass
-                      Program
-                      )
+target_link_libraries(SafetyVerificationPass
+                     Program
+                     SCTransSystem
+                     AFAut
+                     )
