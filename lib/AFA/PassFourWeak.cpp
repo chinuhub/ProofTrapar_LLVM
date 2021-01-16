@@ -5,11 +5,11 @@
  *  Created on: 09-Sep-2015
  *      Author: jaganmohini
  */
-#include "AFAState.h"
+#include "AFA/AFAState.h"
 #include <boost/foreach.hpp>
 #define INB 0
 #include <libfaudes.h>
-#include "AFAut.h"
+#include "AFA/AFAut.h"
 std::set<std::set<AFAStatePtr>> AFAState::PassFourPhaseZero(std::map<AFAStatePtr,std::set<std::set<AFAStatePtr>>>& donemap){
 	std::set<std::set<AFAStatePtr>> transset;
  	if(mIsAccepted){

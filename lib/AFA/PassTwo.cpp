@@ -7,7 +7,7 @@
  */
 
 
-#include "AFAState.h"
+#include "AFA/AFAState.h"
 #include<boost/foreach.hpp>
 #include<unordered_map>
 

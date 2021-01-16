@@ -7,7 +7,7 @@
 
 #ifndef AFA_AFAUT_H_
 #define AFA_AFAUT_H_
-#include "AFAState.h"
+#include "AFA/AFAState.h"
 #include "Program.h"
 #include <string>
 #include <set>

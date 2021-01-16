@@ -6,22 +6,13 @@ FA_1.0.0 {
       fa_is_basic;
       fa_minimize;
       fa_concat;
-      fa_make_empty;
       fa_union;
       fa_intersect;
-      fa_example_withendstate;
       fa_complement;
-      determinizee;
-      reduce;
       fa_minus;
       fa_iter;
-      set_initial;
       fa_contains;
-      fa_clone;
       fa_equals;
-      reverseInPlace;
-      add_epsilon_trans;
-      get_accepted_state_for_a_run;
       fa_free;
       fa_dot;
       fa_overlap;
@@ -30,9 +21,6 @@ FA_1.0.0 {
       fa_as_regexp;
       fa_restrict_alphabet;
       fa_expand_char_ranges;
-      checktest;
-      add_autstate;
-      add_new_auttrans;
     local: *;
 };
 
@@ -44,4 +32,14 @@ FA_1.2.0 {
 
 FA_1.4.0 {
       fa_enumerate;
+      fa_make_empty;
+      add_autstate;
+      add_new_auttrans;
+      fa_clone;
+      reverseInPlace;
+      determinizee;
+      reduce;
+      set_initial;
+      get_accepted_state_for_a_run;
+      add_epsilon_trans;
 } FA_1.2.0;

@@ -14,6 +14,7 @@
 #include "llvm/IR/Module.h"
 #include "llvm/Transforms/Utils/ModuleUtils.h"
 #include "z3++.h"
+#include "llvm/Support/raw_ostream.h"
 
 #define LOCAL_DEBUG
 

@@ -6,7 +6,7 @@
  *      Author: jaganmohini
  */
 
-#include "AFAut.h"
+#include "AFA/AFAut.h"
 
 
 AFAut* AFAut::PassFourNew(AFAStatePtr init, std::set<AFAStatePtr>& tobedeleted, int cases,faudes::Generator& lGenerator)
