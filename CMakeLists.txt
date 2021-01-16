@@ -39,6 +39,24 @@ link_directories(${LLVM_LIBRARY_DIRS})
 add_definitions(${LLVM_DEFINITIONS})
 
 #===============================================================================
+# 2. LOAD BOOST CONFIGURATION
+#===============================================================================
+find_package(Boost 1.71 COMPONENTS program_options REQUIRED)
+message(STATUS "Found BOOST ${BOOST_PACKAGE_VERSION}")
+#message(STATUS "Using LLVMConfig.cmake in: ${LT_LLVM_INSTALL_DIR}")
+
+message("BOOST STATUS:
+  Includes    ${Boost_INCLUDE_DIR}
+  Libraries   ${Boost_LIBRARIES}"
+)
+
+# Set the header and library paths
+include_directories(${Boost_INCLUDE_DIR})
+link_directories(${Boost_LIBRARIES})
+#add_definitions(${LLVM_DEFINITIONS})
+
+
+#===============================================================================
 # 3. LLVM-VERIFY-PASS BUILD CONFIGURATION
 #===============================================================================
 # Use the same C++ standard as LLVM does
@@ -51,7 +69,7 @@ if (NOT CMAKE_BUILD_TYPE)
 endif()
 
 # Compiler flags
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall\
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} \
     -fdiagnostics-color=always")
 
 # LLVM is normally built without RTTI. Be consistent with that.
@@ -69,6 +87,7 @@ check_cxx_compiler_flag(
 if (${SUPPORTS_FVISIBILITY_INLINES_HIDDEN_FLAG} EQUAL "1")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fvisibility-inlines-hidden")
 endif()
+# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_GLIBCXX_USE_CXX11_ABI=0")
 
 # Set the build directories
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/bin")
@@ -80,13 +99,17 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/lib")
 # Augeas Library and Libfaudes Library
 
 include_directories(SYSTEM
-                   "augeas-1.4.0/src/"
-                   "libfaudes-2_26g/include/"
+                 #  "auges-latest/src/"
+		   "augeas-1.4.0/src/"
+                   "libfaudes-2_29d/include/"
+                 #  "libfaudes-latest/libfaudes-2_29d/include/"
                    )
 
 link_directories(
-                "augeas-1.4.0/src/.libs/"
-                "libfaudes-2_26g/"
+	      #	 "auges-latest/src/"
+               "augeas-1.4.0/src/.libs/"
+                "libfaudes-2_29d/"
+              #  "libfaudes-latest/libfaudes-2_29d/"
                 )
 
 link_libraries(
