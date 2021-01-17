@@ -4027,28 +4027,28 @@ static int re_collapse_trans(struct autstate *s1, struct autstate *s2,
     struct re *re = NULL;
 
     if (loop->type != EPSILON) {
-        loop = make_re_rep(ref(loop), 0, -1);
+        loop = make_re_rep(ref_(loop), 0, -1);
         if (loop == NULL)
             goto error;
     }
 
     if (r1->type == EPSILON) {
         if (loop->type == EPSILON) {
-            re = ref(r2);
+            re = ref_(r2);
         } else {
-            re = make_re_binop(CONCAT, loop, ref(r2));
+            re = make_re_binop(CONCAT, loop, ref_(r2));
         }
     } else {
         if (loop->type == EPSILON) {
             if (r2->type == EPSILON) {
-                re = ref(r1);
+                re = ref_(r1);
             } else {
-                re = make_re_binop(CONCAT, ref(r1), ref(r2));
+                re = make_re_binop(CONCAT, ref_(r1), ref_(r2));
             }
         } else {
-            re = make_re_binop(CONCAT, ref(r1), loop);
+            re = make_re_binop(CONCAT, ref_(r1), loop);
             if (re != NULL && r2->type != EPSILON) {
-                re = make_re_binop(CONCAT, re, ref(r2));
+                re = make_re_binop(CONCAT, re, ref_(r2));
             }
         }
     }
@@ -4201,7 +4201,7 @@ int fa_as_regexp(struct fa *fa, char **regexp, size_t *regexp_len) {
         if (r < 0)
             goto error;
         if (s->accept && s != fin) {
-            r = add_new_re_trans(s, fin, ref(eps));
+            r = add_new_re_trans(s, fin, ref_(eps));
             if (r < 0)
                 goto error;
             s->accept = 0;
@@ -4212,7 +4212,7 @@ int fa_as_regexp(struct fa *fa, char **regexp, size_t *regexp_len) {
     if (ini == NULL)
         goto error;
 
-    r = add_new_re_trans(ini, fa->initial, ref(eps));
+    r = add_new_re_trans(ini, fa->initial, ref_(eps));
     if (r < 0)
         goto error;
     set_initial(fa, ini);

@@ -46,44 +46,44 @@ static struct value *lns_del(struct info *info,
                              struct value *rxp, struct value *dflt) {
     assert(rxp->tag == V_REGEXP);
     assert(dflt->tag == V_STRING);
-    return lns_make_prim(L_DEL, ref(info),
-                         ref(rxp->regexp), ref(dflt->string));
+    return lns_make_prim(L_DEL, ref_(info),
+                         ref_(rxp->regexp), ref_(dflt->string));
 }
 
 /* V_REGEXP -> V_LENS */
 static struct value *lns_store(struct info *info, struct value *rxp) {
     assert(rxp->tag == V_REGEXP);
-    return lns_make_prim(L_STORE, ref(info), ref(rxp->regexp), NULL);
+    return lns_make_prim(L_STORE, ref_(info), ref_(rxp->regexp), NULL);
 }
 
 /* V_STRING -> V_LENS */
 static struct value *lns_value(struct info *info, struct value *str) {
     assert(str->tag == V_STRING);
-    return lns_make_prim(L_VALUE, ref(info), NULL, ref(str->string));
+    return lns_make_prim(L_VALUE, ref_(info), NULL, ref_(str->string));
 }
 
 /* V_REGEXP -> V_LENS */
 static struct value *lns_key(struct info *info, struct value *rxp) {
     assert(rxp->tag == V_REGEXP);
-    return lns_make_prim(L_KEY, ref(info), ref(rxp->regexp), NULL);
+    return lns_make_prim(L_KEY, ref_(info), ref_(rxp->regexp), NULL);
 }
 
 /* V_STRING -> V_LENS */
 static struct value *lns_label(struct info *info, struct value *str) {
     assert(str->tag == V_STRING);
-    return lns_make_prim(L_LABEL, ref(info), NULL, ref(str->string));
+    return lns_make_prim(L_LABEL, ref_(info), NULL, ref_(str->string));
 }
 
 /* V_STRING -> V_LENS */
 static struct value *lns_seq(struct info *info, struct value *str) {
     assert(str->tag == V_STRING);
-    return lns_make_prim(L_SEQ, ref(info), NULL, ref(str->string));
+    return lns_make_prim(L_SEQ, ref_(info), NULL, ref_(str->string));
 }
 
 /* V_STRING -> V_LENS */
 static struct value *lns_counter(struct info *info, struct value *str) {
     assert(str->tag == V_STRING);
-    return lns_make_prim(L_COUNTER, ref(info), NULL, ref(str->string));
+    return lns_make_prim(L_COUNTER, ref_(info), NULL, ref_(str->string));
 }
 
 /* V_LENS -> V_LENS -> V_LENS -> V_LENS */
@@ -94,7 +94,7 @@ static struct value *lns_square(struct info *info, struct value *l1,
     assert(l3->tag == V_LENS);
     int check = info->error->aug->flags & AUG_TYPE_CHECK;
 
-    return lns_make_square(ref(info), ref(l1->lens), ref(l2->lens), ref(l3->lens), check);
+    return lns_make_square(ref_(info), ref_(l1->lens), ref_(l2->lens), ref_(l3->lens), check);
 }
 
 static void exn_lns_error_detail(struct value *exn, const char *label,
@@ -115,7 +115,7 @@ static struct value *make_exn_lns_error(struct info *info,
     if (HAS_ERR(info))
         return info->error->exn;
 
-    v = make_exn_value(ref(info), "%s", err->message);
+    v = make_exn_value(ref_(info), "%s", err->message);
     exn_lns_error_detail(v, "Lens", err->lens);
     exn_lns_error_detail(v, "  Last match", err->last);
     exn_lns_error_detail(v, "  Not matching", err->next);
@@ -156,7 +156,7 @@ static struct value *make_pathx_exn(struct info *info, struct pathx *p) {
     if (msg == NULL)
         return NULL;
 
-    v = make_exn_value(ref(info), "syntax error in path expression: %s", msg);
+    v = make_exn_value(ref_(info), "syntax error in path expression: %s", msg);
     if (ALLOC_N(msg, strlen(txt) + 4) >= 0) {
         strncpy(msg, txt, pos);
         strcat(msg, "|=|");
@@ -173,7 +173,7 @@ static struct value *pathx_parse_glue(struct info *info, struct value *tree,
 
     if (pathx_parse(tree->origin, info->error, path->string->str, true,
                     NULL, NULL, p) != PATHX_NOERROR) {
-        return make_pathx_exn(ref(info), *p);
+        return make_pathx_exn(ref_(info), *p);
     } else {
         return NULL;
     }
@@ -190,7 +190,7 @@ static struct value *lens_get(struct info *info, struct value *l,
 
     struct tree *tree = lns_get(info, l->lens, text, &err);
     if (err == NULL && ! HAS_ERR(info)) {
-        v = make_value(V_TREE, ref(info));
+        v = make_value(V_TREE, ref_(info));
         v->origin = make_tree_origin(tree);
     } else {
         struct tree *t = make_tree_origin(tree);
@@ -227,7 +227,7 @@ static struct value *lens_put(struct info *info, struct value *l,
     close_memstream(&ms);
 
     if (err == NULL && ! HAS_ERR(info)) {
-        v = make_value(V_STRING, ref(info));
+        v = make_value(V_STRING, ref_(info));
         v->string = make_string(ms.buf);
     } else {
         v = make_exn_lns_error(info, err, str->string->str);
@@ -261,7 +261,7 @@ static struct value *tree_set_glue(struct info *info, struct value *path,
         goto done;
 
     if (tree_set(p, val->string->str) == NULL) {
-        result = make_exn_value(ref(info),
+        result = make_exn_value(ref_(info),
                                 "Tree set of %s to '%s' failed",
                                 path->string->str, val->string->str);
         goto done;
@@ -270,7 +270,7 @@ static struct value *tree_set_glue(struct info *info, struct value *path,
         list_remove(fake, tree->origin->children);
         free_tree(fake);
     }
-    result = ref(tree);
+    result = ref_(tree);
 
  done:
     free_pathx(p);
@@ -300,7 +300,7 @@ static struct value *tree_clear_glue(struct info *info, struct value *path,
         goto done;
 
     if (tree_set(p, NULL) == NULL) {
-        result = make_exn_value(ref(info),
+        result = make_exn_value(ref_(info),
                                 "Tree set of %s to NULL failed",
                                 path->string->str);
         goto done;
@@ -309,7 +309,7 @@ static struct value *tree_clear_glue(struct info *info, struct value *path,
         list_remove(fake, tree->origin->children);
         free_tree(fake);
     }
-    result = ref(tree);
+    result = ref_(tree);
 
  done:
     free_pathx(p);
@@ -336,13 +336,13 @@ static struct value *tree_insert_glue(struct info *info, struct value *label,
 
     r = tree_insert(p, label->string->str, before);
     if (r != 0) {
-        result = make_exn_value(ref(info),
+        result = make_exn_value(ref_(info),
                                 "Tree insert of %s at %s failed",
                                 label->string->str, path->string->str);
         goto done;
     }
 
-    result = ref(tree);
+    result = ref_(tree);
  done:
     free_pathx(p);
     return result;
@@ -380,11 +380,11 @@ static struct value *tree_rm_glue(struct info *info,
         goto done;
 
     if (tree_rm(p) == -1) {
-        result = make_exn_value(ref(info), "Tree rm of %s failed",
+        result = make_exn_value(ref_(info), "Tree rm of %s failed",
                                 path->string->str);
         goto done;
     }
-    result = ref(tree);
+    result = ref_(tree);
  done:
     free_pathx(p);
     return result;
@@ -401,7 +401,7 @@ static struct value *gensym(struct info *info, struct value *prefix) {
     r = asprintf(&s, "%s%u", prefix->string->str, count);
     if (r == -1)
         return NULL;
-    v = make_value(V_STRING, ref(info));
+    v = make_value(V_STRING, ref_(info));
     v->string = make_string(s);
     return v;
 }
@@ -409,16 +409,16 @@ static struct value *gensym(struct info *info, struct value *prefix) {
 /* V_STRING -> V_FILTER */
 static struct value *xform_incl(struct info *info, struct value *s) {
     assert(s->tag == V_STRING);
-    struct value *v = make_value(V_FILTER, ref(info));
-    v->filter = make_filter(ref(s->string), 1);
+    struct value *v = make_value(V_FILTER, ref_(info));
+    v->filter = make_filter(ref_(s->string), 1);
     return v;
 }
 
 /* V_STRING -> V_FILTER */
 static struct value *xform_excl(struct info *info, struct value *s) {
     assert(s->tag == V_STRING);
-    struct value *v = make_value(V_FILTER, ref(info));
-    v->filter = make_filter(ref(s->string), 0);
+    struct value *v = make_value(V_FILTER, ref_(info));
+    v->filter = make_filter(ref_(s->string), 0);
     return v;
 }
 
@@ -428,18 +428,18 @@ static struct value *xform_transform(struct info *info, struct value *l,
     assert(l->tag == V_LENS);
     assert(f->tag == V_FILTER);
     if (l->lens->value || l->lens->key) {
-        return make_exn_value(ref(info), "Can not build a transform "
+        return make_exn_value(ref_(info), "Can not build a transform "
                               "from a lens that leaves a %s behind",
                               l->lens->key ? "key" : "value");
     }
-    struct value *v = make_value(V_TRANSFORM, ref(info));
-    v->transform = make_transform(ref(l->lens), ref(f->filter));
+    struct value *v = make_value(V_TRANSFORM, ref_(info));
+    v->transform = make_transform(ref_(l->lens), ref_(f->filter));
     return v;
 }
 
 static struct value *sys_getenv(struct info *info, struct value *n) {
     assert(n->tag == V_STRING);
-    struct value *v = make_value(V_STRING, ref(info));
+    struct value *v = make_value(V_STRING, ref_(info));
     v->string = dup_string(getenv(n->string->str));
     return v;
 }
@@ -453,12 +453,12 @@ static struct value *sys_read_file(struct info *info, struct value *n) {
         char error_buf[1024];
         const char *errmsg;
         errmsg = xstrerror(errno, error_buf, sizeof(error_buf));
-        struct value *exn = make_exn_value(ref(info),
+        struct value *exn = make_exn_value(ref_(info),
              "reading file %s failed:", n->string->str);
         exn_printf_line(exn, "%s", errmsg);
         return exn;
     }
-    struct value *v = make_value(V_STRING, ref(info));
+    struct value *v = make_value(V_STRING, ref_(info));
     v->string = make_string(str);
     return v;
 }
@@ -480,26 +480,26 @@ static struct value *lns_check_rec_glue(struct info *info,
 /* V_STRING -> V_UNIT */
 static struct value *pr_string(struct info *info, struct value *s) {
     printf("%s", s->string->str);
-    return make_unit(ref(info));
+    return make_unit(ref_(info));
 }
 
 /* V_REGEXP -> V_UNIT */
 static struct value *pr_regexp(struct info *info, struct value *r) {
     print_regexp(stdout, r->regexp);
-    return make_unit(ref(info));
+    return make_unit(ref_(info));
 }
 
 /* V_STRING -> V_UNIT */
 static struct value *pr_endline(struct info *info, struct value *s) {
     printf("%s\n", s->string->str);
-    return make_unit(ref(info));
+    return make_unit(ref_(info));
 }
 
 /* V_TREE -> V_TREE */
 static struct value *pr_tree(ATTRIBUTE_UNUSED struct info *info,
                              struct value *t) {
     print_tree_braces(stdout, 0, t->origin);
-    return ref(t);
+    return ref_(t);
 }
 
 /*
@@ -507,11 +507,11 @@ static struct value *pr_tree(ATTRIBUTE_UNUSED struct info *info,
  */
 
 static struct value *lns_value_of_type(struct info *info, struct regexp *rx) {
-    struct value *result = make_value(V_REGEXP, ref(info));
+    struct value *result = make_value(V_REGEXP, ref_(info));
     if (rx)
-        result->regexp = ref(rx);
+        result->regexp = ref_(rx);
     else
-        result->regexp = regexp_make_empty(ref(info));
+        result->regexp = regexp_make_empty(ref_(info));
     return result;
 }
 
@@ -544,7 +544,7 @@ static struct value *lns_fmt_atype(struct info *info, struct value *l) {
     r = lns_format_atype(l->lens, &s);
     if (r < 0)
         return info->error->exn;
-    result = make_value(V_STRING, ref(info));
+    result = make_value(V_STRING, ref_(info));
     result->string = make_string(s);
     return result;
 }
@@ -561,7 +561,7 @@ static struct value *rx_match(struct info *info,
     r = regexp_match(rx->regexp, str, strlen(str), 0, &regs);
     if (r < -1) {
         result =
-            make_exn_value(ref(info), "regexp match failed (internal error)");
+            make_exn_value(ref_(info), "regexp match failed (internal error)");
     } else {
         char *match = NULL;
         if (r == -1) {
@@ -573,7 +573,7 @@ static struct value *rx_match(struct info *info,
         if (match == NULL) {
             result = info->error->exn;
         } else {
-            result = make_value(V_STRING, ref(info));
+            result = make_value(V_STRING, ref_(info));
             result->string = make_string(match);
         }
     }

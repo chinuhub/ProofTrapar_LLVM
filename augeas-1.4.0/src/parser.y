@@ -396,7 +396,7 @@ int augl_parse_file(struct augeas *aug, const char *name,
 static struct info *clone_info(struct info *locp) {
   struct info *info;
   make_ref(info);
-  info->filename     = ref(locp->filename);
+  info->filename     = ref_(locp->filename);
   info->first_line   = locp->first_line;
   info->first_column = locp->first_column;
   info->last_line    = locp->last_line;
@@ -457,28 +457,28 @@ static struct term *make_bind_rec(char *ident, struct term *exp,
   id = strdup(ident);
   if (id == NULL) goto error;
 
-  lambda = make_param(id, make_base_type(T_LENS), ref(info));
+  lambda = make_param(id, make_base_type(T_LENS), ref_(info));
   if (lambda == NULL) goto error;
   id = NULL;
 
   build_func(lambda, exp);
 
-  rlens = make_term(A_VALUE, ref(exp->info));
+  rlens = make_term(A_VALUE, ref_(exp->info));
   if (rlens == NULL) goto error;
-  rlens->value = lns_make_rec(ref(exp->info));
+  rlens->value = lns_make_rec(ref_(exp->info));
   if (rlens->value == NULL) goto error;
   rlens->type = make_base_type(T_LENS);
 
-  app1 = make_app_term(lambda, rlens, ref(info));
+  app1 = make_app_term(lambda, rlens, ref_(info));
   if (app1 == NULL) goto error;
 
   id = strdup(LNS_CHECK_REC_NAME);
   if (id == NULL) goto error;
-  app2 = make_app_ident(id, app1, ref(info));
+  app2 = make_app_ident(id, app1, ref_(info));
   if (app2 == NULL) goto error;
   id = NULL;
 
-  app3 = make_app_term(app2, ref(rlens), ref(info));
+  app3 = make_app_term(app2, ref_(rlens), ref_(info));
   if (app3 == NULL) goto error;
 
   return make_bind(ident, NULL, app3, decls, locp);
@@ -502,7 +502,7 @@ static struct term *make_let(char *ident, struct term *params,
   /* (lambda IDENT: BODY) (lambda PARAMS: EXP) */
   /* Desugar as (lambda IDENT: BODY) (lambda PARAMS: EXP) */
   struct term *term = make_term_locp(A_LET, locp);
-  struct term *p = make_param(ident, NULL, ref(term->info));
+  struct term *p = make_param(ident, NULL, ref_(term->info));
   term->left = build_func(p, body);
   if (params != NULL)
     term->right = build_func(params, exp);
@@ -538,14 +538,14 @@ static struct term *make_ident(char *qname, struct info *locp) {
 
 static struct term *make_unit_term(struct info *locp) {
   struct term *term = make_term_locp(A_VALUE, locp);
-  term->value = make_unit(ref(term->info));
+  term->value = make_unit(ref_(term->info));
   term->type = make_base_type(T_UNIT);
   return term;
 }
 
 static struct term *make_string_term(char *value, struct info *locp) {
   struct term *term = make_term_locp(A_VALUE, locp);
-  term->value = make_value(V_STRING, ref(term->info));
+  term->value = make_value(V_STRING, ref_(term->info));
   term->value->string = make_string(value);
   term->type = make_base_type(T_STRING);
   return term;
@@ -554,7 +554,7 @@ static struct term *make_string_term(char *value, struct info *locp) {
 static struct term *make_regexp_term(char *pattern, int nocase,
                                      struct info *locp) {
   struct term *term = make_term_locp(A_VALUE, locp);
-  term->value = make_value(V_REGEXP, ref(term->info));
+  term->value = make_value(V_REGEXP, ref_(term->info));
   term->type = make_base_type(T_REGEXP);
   term->value->regexp = make_regexp(term->info, pattern, nocase);
   return term;
@@ -573,7 +573,7 @@ static struct term *make_get_test(struct term *lens, struct term *arg,
   /* Return a term for "get" LENS ARG */
   struct info *info = clone_info(locp);
   struct term *term = make_app_ident(strdup("get"), lens, info);
-  term = make_app_term(term, arg, ref(info));
+  term = make_app_term(term, arg, ref_(info));
   return term;
 }
 
@@ -581,10 +581,10 @@ static struct term *make_put_test(struct term *lens, struct term *arg,
                                   struct term *cmds, struct info *locp) {
   /* Return a term for "put" LENS (CMDS ("get" LENS ARG)) ARG */
   struct term *term = make_get_test(lens, arg, locp);
-  term = make_app_term(cmds, term, ref(term->info));
-  struct term *put = make_app_ident(strdup("put"), ref(lens), ref(term->info));
-  put = make_app_term(put, term, ref(term->info));
-  put = make_app_term(put, ref(arg), ref(term->info));
+  term = make_app_term(cmds, term, ref_(term->info));
+  struct term *put = make_app_ident(strdup("put"), ref_(lens), ref_(term->info));
+  put = make_app_term(put, term, ref_(term->info));
+  put = make_app_term(put, ref_(arg), ref_(term->info));
   return put;
 }
 
@@ -601,7 +601,7 @@ static struct term *make_test(struct term *test, struct term *result,
 
 static struct term *make_tree_value(struct tree *tree, struct info *locp) {
   struct term *term = make_term_locp(A_VALUE, locp);
-  struct value *value = make_value(V_TREE, ref(term->info));
+  struct value *value = make_value(V_TREE, ref_(term->info));
   value->origin = make_tree_origin(tree);
   term->type = make_base_type(T_TREE);
   term->value = value;

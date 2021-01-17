@@ -578,7 +578,7 @@ static value_ind_t clone_value(struct value *v, struct state *state) {
         clone->boolval = v->boolval;
         break;
     case T_REGEXP:
-        clone->regexp = ref(v->regexp);
+        clone->regexp = ref_(v->regexp);
         break;
     default:
         assert(0);

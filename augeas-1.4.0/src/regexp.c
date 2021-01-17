@@ -126,7 +126,7 @@ struct regexp *make_regexp(struct info *info, char *pat, int nocase) {
     struct regexp *regexp;
 
     make_ref(regexp);
-    regexp->info = ref(info);
+    regexp->info = ref_(info);
 
     make_ref(regexp->pattern);
     regexp->pattern->str = pat;
@@ -497,7 +497,7 @@ struct regexp *regexp_make_empty(struct info *info) {
 
     make_ref(regexp);
     if (regexp != NULL) {
-        regexp->info = ref(info);
+        regexp->info = ref_(info);
         /* Casting away the CONST for EMPTY_PATTERN is ok since it
            is protected against changes because REF == REF_MAX */
         regexp->pattern = (struct string *) empty_pattern;

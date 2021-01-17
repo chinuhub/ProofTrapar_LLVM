@@ -84,7 +84,7 @@ struct ctx {
 static int init_fatal_exn(struct error *error) {
     if (error->exn != NULL)
         return 0;
-    error->exn = make_exn_value(ref(error->info), "Error during evaluation");
+    error->exn = make_exn_value(ref_(error->info), "Error during evaluation");
     if (error->exn == NULL)
         return -1;
     error->exn->exn->seen = 1;
@@ -328,7 +328,7 @@ struct term *make_param(char *name, struct type *type, struct info *info) {
   if (term == NULL)
       goto error;
   make_ref_err(term->param);
-  term->param->info = ref(term->info);
+  term->param->info = ref_(term->info);
   make_ref_err(term->param->name);
   term->param->name->str = name;
   term->param->type = type;
@@ -367,7 +367,7 @@ struct term *make_app_term(struct term *lambda, struct term *arg,
 }
 
 struct term *make_app_ident(char *id, struct term *arg, struct info *info) {
-    struct term *ident = make_term(A_IDENT, ref(info));
+    struct term *ident = make_term(A_IDENT, ref_(info));
     ident->ident = make_string(id);
     if (ident->ident == NULL) {
         unref(arg, term);
@@ -393,9 +393,9 @@ static struct value *make_closure(struct term *func, struct binding *bnds) {
     struct value *v = NULL;
     if (make_ref(v) == 0) {
         v->tag  = V_CLOS;
-        v->info = ref(func->info);
-        v->func = ref(func);
-        v->bindings = ref(bnds);
+        v->info = ref_(func->info);
+        v->func = ref_(func);
+        v->bindings = ref_(bnds);
     }
     return v;
 }
@@ -413,7 +413,7 @@ struct value *make_exn_value(struct info *info,
     if (r == -1)
         return NULL;
 
-    v = make_value(V_EXN, ref(info));
+    v = make_value(V_EXN, ref_(info));
     CALLOC(v->exn, 1);
     v->exn->info = info;
     v->exn->message = message;
@@ -578,7 +578,7 @@ static struct binding *bind_type(struct binding **bnds,
     make_ref(binding);
     make_ref(binding->ident);
     binding->ident->str = strdup(name);
-    binding->type = ref(type);
+    binding->type = ref_(type);
     list_cons(*bnds, binding);
 
     return binding;
@@ -589,10 +589,10 @@ static void bind_param(struct binding **bnds, struct param *param,
                        struct value *v) {
     struct binding *b;
     make_ref(b);
-    b->ident = ref(param->name);
-    b->type  = ref(param->type);
-    b->value = ref(v);
-    ref(*bnds);
+    b->ident = ref_(param->name);
+    b->type  = ref_(param->type);
+    b->value = ref_(v);
+    ref_(*bnds);
     list_cons(*bnds, b);
 }
 
@@ -611,7 +611,7 @@ static void bind(struct binding **bnds,
 
     if (STRNEQ(name, anon_ident)) {
         b = bind_type(bnds, name, type);
-        b->value = ref(value);
+        b->value = ref_(value);
     }
 }
 
@@ -785,8 +785,8 @@ struct type *make_arrow_type(struct type *dom, struct type *img) {
   struct type *type;
   make_ref(type);
   type->tag = T_ARROW;
-  type->dom = ref(dom);
-  type->img = ref(img);
+  type->dom = ref_(dom);
+  type->img = ref_(img);
   return type;
 }
 
@@ -866,12 +866,12 @@ static struct type *type_meet(struct type *t1, struct type *t2);
 static struct type *type_join(struct type *t1, struct type *t2) {
     if (t1->tag == T_STRING) {
         if (t2->tag == T_STRING)
-            return ref(t1);
+            return ref_(t1);
         else if (t2->tag == T_REGEXP)
-            return ref(t2);
+            return ref_(t2);
     } else if (t1->tag == T_REGEXP) {
         if (t2->tag == T_STRING || t2->tag == T_REGEXP)
-            return ref(t1);
+            return ref_(t1);
     } else if (t1->tag == T_ARROW) {
         if (t2->tag != T_ARROW)
             return NULL;
@@ -884,7 +884,7 @@ static struct type *type_join(struct type *t1, struct type *t2) {
         }
         return make_arrow_type(dom, img);
     } else if (type_equal(t1, t2)) {
-        return ref(t1);
+        return ref_(t1);
     }
     return NULL;
 }
@@ -893,10 +893,10 @@ static struct type *type_join(struct type *t1, struct type *t2) {
 static struct type *type_meet(struct type *t1, struct type *t2) {
     if (t1->tag == T_STRING) {
         if (t2->tag == T_STRING || t2->tag == T_REGEXP)
-            return ref(t1);
+            return ref_(t1);
     } else if (t1->tag == T_REGEXP) {
         if (t2->tag == T_STRING || t2->tag == T_REGEXP)
-            return ref(t2);
+            return ref_(t2);
     } else if (t1->tag == T_ARROW) {
         if (t2->tag != T_ARROW)
             return NULL;
@@ -909,7 +909,7 @@ static struct type *type_meet(struct type *t1, struct type *t2) {
         }
         return make_arrow_type(dom, img);
     } else if (type_equal(t1, t2)) {
-        return ref(t1);
+        return ref_(t1);
     }
     return NULL;
 }
@@ -931,9 +931,9 @@ static struct type *value_type(struct value *v) {
     case V_UNIT:
         return make_base_type(T_UNIT);
     case V_NATIVE:
-        return ref(v->native->type);
+        return ref_(v->native->type);
     case V_CLOS:
-        return ref(v->func->type);
+        return ref_(v->func->type);
     case V_EXN:   /* Fail on exceptions */
     default:
         assert(0);
@@ -952,7 +952,7 @@ static struct value *coerce(struct value *v, struct type *t) {
         return v;
     }
     if (vt->tag == T_STRING && t->tag == T_REGEXP) {
-        struct value *rxp = make_value(V_REGEXP, ref(v->info));
+        struct value *rxp = make_value(V_REGEXP, ref_(v->info));
         rxp->regexp = make_regexp_literal(v->info, v->string->str);
         unref(v, value);
         unref(vt, type);
@@ -1125,7 +1125,7 @@ static int check_compose(struct term *term, struct ctx *ctx) {
     } else if (tl->tag == T_UNIT) {
         if (! check_exp(term->right, ctx))
             return 0;
-        term->type = ref(term->right->type);
+        term->type = ref_(term->right->type);
     } else {
         goto print_error;
     }
@@ -1204,12 +1204,12 @@ static int check_exp(struct term *term, struct ctx *ctx) {
                 struct term *func = term->left;
                 assert(func->tag == A_FUNC);
                 assert(func->param->type == NULL);
-                func->param->type = ref(term->right->type);
+                func->param->type = ref_(term->right->type);
 
                 result = check_exp(func, ctx);
                 if (result) {
                     term->tag = A_APP;
-                    term->type = ref(func->type->img);
+                    term->type = ref_(func->type->img);
                 }
             }
         }
@@ -1235,7 +1235,7 @@ static int check_exp(struct term *term, struct ctx *ctx) {
             }
         }
         if (result)
-            term->type = ref(term->left->type->img);
+            term->type = ref_(term->left->type->img);
         break;
     case A_VALUE:
         result = check_value(term->value);
@@ -1248,14 +1248,14 @@ static int check_exp(struct term *term, struct ctx *ctx) {
                              term->ident->str);
                 result = 0;
             } else {
-                term->type = ref(t);
+                term->type = ref_(t);
             }
         }
         break;
     case A_BRACKET:
         result = check_exp(term->brexp, ctx);
         if (result) {
-            term->type = ref(expect_types(term->info, term->brexp->type,
+            term->type = ref_(expect_types(term->info, term->brexp->type,
                                           1, t_lens));
             if (term->type == NULL) {
                 type_error1(term->info,
@@ -1279,7 +1279,7 @@ static int check_exp(struct term *term, struct ctx *ctx) {
     case A_REP:
         result = check_exp(term->exp, ctx);
         if (result) {
-            term->type = ref(expect_types(term->info, term->exp->type, 2,
+            term->type = ref_(expect_types(term->info, term->exp->type, 2,
                                           t_regexp, t_lens));
             if (term->type == NULL) {
                 type_error1(term->info,
@@ -1304,7 +1304,7 @@ static int check_decl(struct term *term, struct ctx *ctx) {
     if (term->tag == A_BIND) {
         if (!check_exp(term->exp, ctx))
             return 0;
-        term->type = ref(term->exp->type);
+        term->type = ref_(term->exp->type);
 
         if (bnd_lookup(ctx->local, term->bname) != NULL) {
             syntax_error(term->info,
@@ -1329,7 +1329,7 @@ static int check_decl(struct term *term, struct ctx *ctx) {
                              t_string, t_tree) == NULL)
                 return 0;
         }
-        term->type = ref(term->test->type);
+        term->type = ref_(term->test->type);
     } else {
         assert(0);
     }
@@ -1397,12 +1397,12 @@ static struct value *compile_union(struct term *exp, struct ctx *ctx) {
     }
 
     if (t->tag == T_REGEXP) {
-        v = make_value(V_REGEXP, ref(info));
+        v = make_value(V_REGEXP, ref_(info));
         v->regexp = regexp_union(info, v1->regexp, v2->regexp);
     } else if (t->tag == T_LENS) {
         struct lens *l1 = v1->lens;
         struct lens *l2 = v2->lens;
-        v = lns_make_union(ref(info), ref(l1), ref(l2), LNS_TYPE_CHECK(ctx));
+        v = lns_make_union(ref_(info), ref_(l1), ref_(l2), LNS_TYPE_CHECK(ctx));
     } else {
         fatal_error(info, "Tried to union a %s and a %s to yield a %s",
                     type_name(exp->left->type), type_name(exp->right->type),
@@ -1434,12 +1434,12 @@ static struct value *compile_minus(struct term *exp, struct ctx *ctx) {
         struct regexp *re2 = v2->regexp;
         struct regexp *re = regexp_minus(info, re1, re2);
         if (re == NULL) {
-            v = make_exn_value(ref(info),
+            v = make_exn_value(ref_(info),
                    "Regular expression subtraction 'r1 - r2' failed");
             exn_printf_line(v, "r1: /%s/", re1->pattern->str);
             exn_printf_line(v, "r2: /%s/", re2->pattern->str);
         } else {
-            v = make_value(V_REGEXP, ref(info));
+            v = make_value(V_REGEXP, ref_(info));
             v->regexp = re;
         }
     } else {
@@ -1465,17 +1465,17 @@ static struct value *compile_compose(struct term *exp, struct ctx *ctx) {
 
         /* Build lambda x: exp->right (exp->left x) as a closure */
         char *var = strdup("@0");
-        struct term *func = make_param(var, ref(exp->left->type->dom),
-                                       ref(info));
+        struct term *func = make_param(var, ref_(exp->left->type->dom),
+                                       ref_(info));
         func->type = make_arrow_type(exp->left->type->dom,
                                      exp->right->type->img);
-        struct term *ident = make_term(A_IDENT, ref(info));
-        ident->ident = ref(func->param->name);
-        ident->type = ref(func->param->type);
-        struct term *app = make_app_term(ref(exp->left), ident, ref(info));
-        app->type = ref(app->left->type->img);
-        app = make_app_term(ref(exp->right), app, ref(info));
-        app->type = ref(app->right->type->img);
+        struct term *ident = make_term(A_IDENT, ref_(info));
+        ident->ident = ref_(func->param->name);
+        ident->type = ref_(func->param->type);
+        struct term *app = make_app_term(ref_(exp->left), ident, ref_(info));
+        app->type = ref_(app->left->type->img);
+        app = make_app_term(ref_(exp->right), app, ref_(info));
+        app->type = ref_(app->right->type->img);
 
         build_func(func, app);
 
@@ -1518,38 +1518,38 @@ static struct value *compile_concat(struct term *exp, struct ctx *ctx) {
     if (t->tag == T_STRING) {
         const char *s1 = v1->string->str;
         const char *s2 = v2->string->str;
-        v = make_value(V_STRING, ref(info));
+        v = make_value(V_STRING, ref_(info));
         make_ref(v->string);
         CALLOC(v->string->str, strlen(s1) + strlen(s2) + 1);
         char *s = v->string->str;
         strcpy(s, s1);
         strcat(s, s2);
     } else if (t->tag == T_REGEXP) {
-        v = make_value(V_REGEXP, ref(info));
+        v = make_value(V_REGEXP, ref_(info));
         v->regexp = regexp_concat(info, v1->regexp, v2->regexp);
     } else if (t->tag == T_FILTER) {
         struct filter *f1 = v1->filter;
         struct filter *f2 = v2->filter;
-        v = make_value(V_FILTER, ref(info));
+        v = make_value(V_FILTER, ref_(info));
         if (v2->ref == 1 && f2->ref == 1) {
-            list_append(f2, ref(f1));
-            v->filter = ref(f2);
+            list_append(f2, ref_(f1));
+            v->filter = ref_(f2);
         } else if (v1->ref == 1 && f1->ref == 1) {
-            list_append(f1, ref(f2));
-            v->filter = ref(f1);
+            list_append(f1, ref_(f2));
+            v->filter = ref_(f1);
         } else {
             struct filter *cf1, *cf2;
-            cf1 = make_filter(ref(f1->glob), f1->include);
-            cf2 = make_filter(ref(f2->glob), f2->include);
-            cf1->next = ref(f1->next);
-            cf2->next = ref(f2->next);
+            cf1 = make_filter(ref_(f1->glob), f1->include);
+            cf2 = make_filter(ref_(f2->glob), f2->include);
+            cf1->next = ref_(f1->next);
+            cf2->next = ref_(f2->next);
             list_append(cf1, cf2);
             v->filter = cf1;
         }
     } else if (t->tag == T_LENS) {
         struct lens *l1 = v1->lens;
         struct lens *l2 = v2->lens;
-        v = lns_make_concat(ref(info), ref(l1), ref(l2), LNS_TYPE_CHECK(ctx));
+        v = lns_make_concat(ref_(info), ref_(l1), ref_(l2), LNS_TYPE_CHECK(ctx));
     } else {
         v = NULL;
         fatal_error(info, "Tried to concat a %s and a %s to yield a %s",
@@ -1578,7 +1578,7 @@ static struct value *apply(struct term *app, struct ctx *ctx) {
     assert(f->tag == V_CLOS);
 
     lctx.aug = ctx->aug;
-    lctx.local = ref(f->bindings);
+    lctx.local = ref_(f->bindings);
     lctx.name = ctx->name;
 
     arg = coerce(arg, f->func->param->type);
@@ -1588,7 +1588,7 @@ static struct value *apply(struct term *app, struct ctx *ctx) {
     bind_param(&lctx.local, f->func->param, arg);
     result = compile_exp(app->info, f->func->body, &lctx);
     unref(result->info, info);
-    result->info = ref(app->info);
+    result->info = ref_(app->info);
     unbind_param(&lctx.local, f->func->param);
 
  done:
@@ -1604,7 +1604,7 @@ static struct value *compile_bracket(struct term *exp, struct ctx *ctx) {
         return arg;
     assert(arg->tag == V_LENS);
 
-    struct value *v = lns_make_subtree(ref(exp->info), ref(arg->lens));
+    struct value *v = lns_make_subtree(ref_(exp->info), ref_(arg->lens));
     unref(arg, value);
 
     return v;
@@ -1630,16 +1630,16 @@ static struct value *compile_rep(struct term *rep, struct ctx *ctx) {
             assert(0);
             abort();
         }
-        v = make_value(V_REGEXP, ref(rep->info));
+        v = make_value(V_REGEXP, ref_(rep->info));
         v->regexp = regexp_iter(rep->info, arg->regexp, min, max);
     } else if (rep->type->tag == T_LENS) {
         int c = LNS_TYPE_CHECK(ctx);
         if (rep->quant == Q_STAR) {
-            v = lns_make_star(ref(rep->info), ref(arg->lens), c);
+            v = lns_make_star(ref_(rep->info), ref_(arg->lens), c);
         } else if (rep->quant == Q_PLUS) {
-            v = lns_make_plus(ref(rep->info), ref(arg->lens), c);
+            v = lns_make_plus(ref_(rep->info), ref_(arg->lens), c);
         } else if (rep->quant == Q_MAYBE) {
-            v = lns_make_maybe(ref(rep->info), ref(arg->lens), c);
+            v = lns_make_maybe(ref_(rep->info), ref_(arg->lens), c);
         } else {
             assert(0);
         }
@@ -1675,11 +1675,11 @@ static struct value *compile_exp(struct info *info,
         if (exp->value->tag == V_NATIVE) {
             v = native_call(info, exp->value->native, ctx);
         } else {
-            v = ref(exp->value);
+            v = ref_(exp->value);
         }
         break;
     case A_IDENT:
-        v = ref(ctx_lookup(exp->info, ctx, exp->ident));
+        v = ref_(ctx_lookup(exp->info, ctx, exp->ident));
         break;
     case A_BRACKET:
         v = compile_bracket(exp, ctx);
@@ -1812,7 +1812,7 @@ static struct module *compile(struct term *term, struct augeas *aug) {
     }
     struct module *module = module_create(term->mname);
     module->bindings = ctx.local;
-    module->autoload = ref(autoload);
+    module->autoload = ref_(autoload);
     return module;
  error:
     unref(ctx.local, binding);
@@ -1864,7 +1864,7 @@ int define_native_intl(const char *file, int line,
         tag = va_arg(ap, enum type_tag);
         type = make_base_type(tag);
         snprintf(ident, 10, "@%d", i);
-        pterm = make_param(strdup(ident), type, ref(info));
+        pterm = make_param(strdup(ident), type, ref_(info));
         list_append(params, pterm);
     }
     tag = va_arg(ap, enum type_tag);
@@ -1888,8 +1888,8 @@ int define_native_intl(const char *file, int line,
     make_ref(body);
     if (body == NULL)
         goto error;
-    body->info = ref(info);
-    body->type = ref(type);
+    body->info = ref_(info);
+    body->type = ref_(type);
     body->tag = A_VALUE;
     body->value = v;
     v = NULL;
@@ -1900,7 +1900,7 @@ int define_native_intl(const char *file, int line,
     body = NULL;
 
     ctx.aug = NULL;
-    ctx.local = ref(module->bindings);
+    ctx.local = ref_(module->bindings);
     ctx.name = module->name;
     if (! check_exp(func, &ctx)) {
         fatal_error(info, "Typechecking native %s failed",

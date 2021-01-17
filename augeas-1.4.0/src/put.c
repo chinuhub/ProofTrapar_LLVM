@@ -80,7 +80,7 @@ static void put_error(struct state *state, struct lens *lens,
         return;
 
     CALLOC(state->error, 1);
-    state->error->lens = ref(lens);
+    state->error->lens = ref_(lens);
     state->error->pos  = -1;
     if (strlen(state->path) == 0) {
         state->error->path = strdup("");

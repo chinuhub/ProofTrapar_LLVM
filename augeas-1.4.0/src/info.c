@@ -121,7 +121,7 @@ struct span *make_span(struct info *info) {
     }
     /* UINT_MAX means span is not initialized yet */
     span->span_start = UINT_MAX;
-    span->filename = ref(info->filename);
+    span->filename = ref_(info->filename);
     return span;
 }
 
