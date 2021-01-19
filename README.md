@@ -2,7 +2,7 @@
 # Development Environment
 ## Platform Support and Requirements
 This project is currently incomplete. Currently, this project has been tested
-on **Ubuntu 20.04**. In order to build this project you will need:
+on **Ubuntu 20.04** and **Arch Linux 2021.01.01**. In order to build this project you will need:
   * LLVM 11 or higher
   * Z3prover
   * C++ compiler with C++ 14 support
@@ -12,18 +12,37 @@ In order to run the pass you will need:
   * **clang** (to generate input LLVM files)
   * **opt** (to load and execute the pass)
 
-## Building LLVM from source
-Building from sources can be slow and tricky but following steps will work on
-Linux:
+## Install LLVM on Ubuntu
+On Ubuntu, you can install LLVM from official [repository](https://apt.llvm.org/)
 
 ```bash
+# Install the latest stable version
+bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)"
+
+# Install LLVM 11
+wget https://apt.llvm.org/llvm.sh
+chmod +x llvm.sh
+sudo ./llvm.sh 11
+```
+
+## Building LLVM from source
+Building from sources can be slow and tricky but might be your preferred method to obtain LLVM.
+It is strongly recommended that you use ninja build or other faster generators instead of using
+"Unix Makefile", otherwise it may take hours to build a project as big as llvm. Following steps
+will work on any Linux distro:
+
+```bash
+# Install ninja if not installed
+sudo apt install ninja-build
+
+# Install latest LLVM
 git clone https://github.com/llvm/llvm-project.git
 cd llvm-project
 mkdir build
 cd build
-cmake <llvm-project/root/dir>/llvm/
-make
-make install
+cmake -G Ninja <llvm-project/root/dir>/llvm/
+ninja
+ninja install
 ```
 For further details read the [official documentation](https://llvm.org/docs/CMake.html).
 ## Building Z3 from source
@@ -34,9 +53,9 @@ git clone https://github.com/Z3Prover/z3
 cd z3
 mkdir build
 cd build
-cmake -G "Unix Makefiles" ../
-make
-make install
+cmake -G Ninja ../
+ninja
+ninja install
 ```
 For further details read the [official documentation](https://github.com/Z3Prover/z3/blob/master/README-CMake.md).
 
@@ -133,6 +152,9 @@ void thr2() {
 ## Run the SafetyVerificationPass pass
 There are two ways to run the pass. First, you need to decide which pass manager
 you want to use (see [here](#llvm-pass-managers) for more details).
+
+**Note**: You may have to use ```opt-11``` instead of ```opt``` and similarly,
+```clang-11``` instead of ```clang```.
 
 ### Generating .bc and .ll from .c files]
 
