@@ -12,6 +12,8 @@ extern "C" {
 #include <stdio.h>
 }
 
+#define DBGPRNT
+
 typedef std::tuple<struct autstate* ,std::tuple<std::set<struct autstate*,newsetofstatescomparator>,bool>> newstateinfo;
 
 struct newstateinfocompare{
@@ -76,14 +78,14 @@ struct fa* SCTransSystem::BuildSCTS(faudes::Generator& lGenerator){
 			int res = fa_compile(regex.c_str(),(size_t)regex.length(),&aut);
 			BOOST_ASSERT_MSG(aut!=NULL,"could not construct the automaton from a given expression");
 			automata.push_back(aut);
+#ifdef DBGPRNT
+			char* example = static_cast<char*>("");
+			size_t example_len = 0;
+			std::cout << "An example accepted word is " << fa_example(aut, &example, &example_len) << " " << example << std::endl;
+#endif
 
 		}
-
 		mMerged = FA_Merge(automata,assnMap,lGenerator);
-
-#ifdef DBGPRNT
-		std::cout<<"Is deterministic "<<mMerged->deterministic<<std::endl;
-#endif
 		/*FILE* OUT;
 					OUT=fopen("try.dot","w");
 					BOOST_ASSERT_MSG(OUT!=NULL,"Error");
@@ -146,7 +148,6 @@ struct fa* SCTransSystem::FA_Merge(std::vector<struct fa*>& autset,std::map<std:
 			laststr=std::string(st.str());
 			st.str("");
 		}
-
 		//map last to initset
 		newstateinfo* initinfo = new newstateinfo;
 		std::get<0>(*initinfo) = last;
@@ -204,7 +205,7 @@ struct fa* SCTransSystem::FA_Merge(std::vector<struct fa*>& autset,std::map<std:
 								newstepstateinfo = tempnewstepstateinfo;
 								newshuffledstate = std::get<0>(*newstepstateinfo);
 								if(assnMap.find(searched)!=assnMap.end()){
-									BOOST_ASSERT_MSG(newshuffledstate->accept==1,"THis must have been set earlier otherwise serious error");
+									BOOST_ASSERT_MSG(newshuffledstate->accept==1,"This must have been set earlier otherwise serious error");
 								}
 							}else
 							{

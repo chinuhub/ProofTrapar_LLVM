@@ -140,7 +140,7 @@ Program::Program(Module& M) {
   for (Function& Func : M) {
     ParseThread(Func);
   }
-  // MakeOldInterface();
+  MakeOldInterface();
 }
 
 z3::expr& Program::GetVariableExpr(std::string name) {

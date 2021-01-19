@@ -26,7 +26,6 @@ using namespace llvm;
 // Test Bench implementation
 //------------------------------------------------------------------------------
 bool test_bench(Module& M) {
-	Program program(M);
 //------------------------------------------------------------------------------
 // Old Interface here
 //------------------------------------------------------------------------------
@@ -40,10 +39,8 @@ bool test_bench(Module& M) {
 	//it fills the generator as well..
   //lGenerator.StateNamesEnabled(false);
   faudes::Deterministic(lGenerator,generator);
-#ifdef DBGPRNT
   generator.DotWrite("DetermOriginal.dot");
   std::cout<<"Determinization done "<<std::endl;
-#endif
   generator.StateNamesEnabled(false);
   faudes::aStateMin(generator);
 #ifdef DBGPRNT
@@ -109,9 +106,8 @@ bool test_bench(Module& M) {
  		cases++;
 	}
 	std::cout<<"Total cases = "<<cases<<std::endl;
- 	delete P;
+ 	//delete P;
  	delete T;
- 	//delete expParser;
  	auto end = boost::chrono::system_clock::now();
  	auto   elapsed = boost::chrono::duration_cast<boost::chrono::duration<double> >(end- start).count();
  	std::cout << "Time spent = "<<elapsed << "seconds "<<'\n';

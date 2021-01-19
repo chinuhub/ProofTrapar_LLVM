@@ -23,6 +23,11 @@ link_libraries(${Z3_LIBRARIES})
 #    For more: http://llvm.org/docs/CMake.html#embedding-llvm-in-your-project
 #===============================================================================
 find_package(LLVM REQUIRED CONFIG)
+# make sure the version of llvm is 11
+if(NOT "11" VERSION_EQUAL "${LLVM_VERSION_MAJOR}")
+  message(FATAL_ERROR "Found LLVM ${LLVM_VERSION_MAJOR}, but need LLVM 11")
+endif()
+
 message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
 message(STATUS "Using LLVMConfig.cmake in: ${LT_LLVM_INSTALL_DIR}")
 
