@@ -1,12 +1,12 @@
 # Program Library
-add_library(Program STATIC Program.cpp)
+#add_library(Program STATIC Program.cpp)
 
-target_include_directories(Program PUBLIC
-                          "../include/"
-                          )
+#target_include_directories(Program PUBLIC
+#                          "../include/"
+#                          )
 
 
-link_libraries(Program)
+#link_libraries(Program)
 
 # AFA Library
 #add_library(AFAut STATIC AFA/AFAut.cpp)
