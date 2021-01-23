@@ -691,10 +691,6 @@ bool z3comparator::operator()(const z3::expr& lhs, const z3::expr& rhs) const {
   return (lhs.hash() < rhs.hash());
 }
 
-std::vector<std::string> Program::GetRegexOfAllProcesses() {
-  return mProcessesregex;
-}
-
 std::map<std::string, z3::expr>& Program::GetAssnMapForAllProcesses() {
   return mAssnMap;
 }
@@ -749,9 +745,4 @@ void Program::MakeOldInterface() {
       )
     );
   }
-#ifdef LOCAL_DEBUG
-  // Peterson's Example Regex
-  mProcessesregex.push_back("ABC(DE(GK|FHIJL)MO)*(DE(GK|FHIJL))NPQR(SVWABC(DE(GK|FHIJL)MO)*(DE(GK|FHIJL))NPQR)*T");
-  mProcessesregex.push_back("XYZ(ab(dh|cefgi)jl)*(ab(dh|cefgi))kmno(pstXYZ(ab(dh|cefgi)jl)*(ab(dh|cefgi))kmno)*q");
-#endif
 }

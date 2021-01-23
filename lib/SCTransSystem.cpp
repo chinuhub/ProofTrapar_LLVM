@@ -103,13 +103,10 @@ struct fa* CreateFAutomata(const AdjacencyList<int>& adj) {
 }
 
 struct fa* SCTransSystem::BuildSCTS(faudes::Generator& lGenerator){
-  std::vector<std::string> regexes = mProgram.GetRegexOfAllProcesses();
   struct fa* aut = NULL;
   std::map<std::string,z3::expr> assnMap = mProgram.GetAssnMapForAllProcesses();
-  std::vector<struct fa*> automata;
-
   std::vector<AdjacencyList<int> > adjlists = mProgram.GetAutomata();
-  std::cout << "Here goes: " << adjlists.size() << std::endl;
+  std::vector<struct fa*> automata;
   for (unsigned i = 0; i < adjlists.size(); i++) {
     aut = CreateFAutomata(adjlists[i]);
     BOOST_ASSERT_MSG(aut != NULL, "could not construct automaton");
