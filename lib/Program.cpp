@@ -44,7 +44,7 @@ AdjacencyList<int> CreateAutGraph(std::vector<BasicBlockGraph> BB) {
   // Edges have integer labels for there corresponding instructions (symbols of
   // our automata). In case of epsilon transitions this label is -1.
   std::vector<std::vector<std::pair<int, int> > > aut_graph;
-  // 0 is the start state, 1 is the accepting state and 2 is a dead state
+  // 0 is the start state, 1 is an intermediate state and 2 is the accepting state
   for (int i = 0; i < 3; i++) {
     aut_graph.emplace_back();
   }
@@ -609,7 +609,6 @@ void Program::ParseThread(Function& Func) {
           }
 #ifdef LOCAL_DEBUG
           std::cout << ValueToVariable(op2, thread_name) << " :" << inst_num;
-          std::cout << std::endl;
 #endif
           break;
         }
@@ -632,6 +631,27 @@ void Program::ParseThread(Function& Func) {
 #endif
 
   AdjacencyList<int> aut_graph = CreateAutGraph(bb_automata);
+  // Create a transition from state 1 to 2 for assertion support : assume(false)
+  {
+    z3::expr false_expr = context_.bool_val(false);
+    InstructionType inst =
+    std::make_tuple(
+      kAssign,
+      context_.int_val(0),
+      false_expr
+    );
+    unsigned inst_num = FindInstruction(inst);
+    if (inst_num == inst_list_.size()) {
+      inst_list_.push_back(inst);
+      inst_map_.insert(
+        std::make_pair(
+          inst,
+          inst_num
+        )
+      );
+    }
+    aut_graph[1].push_back(std::make_pair(2, inst_num));
+  }
   thread_graphs_.push_back(aut_graph);
 }
 
@@ -698,7 +718,7 @@ std::map<std::string, z3::expr>& Program::GetAssnMapForAllProcesses() {
 void Program::MakeOldInterface() {
   mVarExprMap = variable_expr_map_;
   // assert that we don't have more instructions than symbols available
-  assert(inst_list_.size() + thread_names_.size() <= 52);
+  assert(inst_list_.size() <= 52);
   unsigned i = 0;
   for (i = 0; i < inst_list_.size(); i++) {
     std::string sym;
@@ -733,15 +753,15 @@ void Program::MakeOldInterface() {
       );
     }
   }
-  for (unsigned j = 0; j < thread_names_.size(); i++, j++) {
+  for (unsigned j = 0; j < thread_graphs_.size(); j++) {
     std::string sym;
-    if (i < 26) sym += ('A' + i);
-    else sym += ('a' + i - 26);
-    z3::expr assert_expr = context_.bool_val(false);
+    int sym_num = thread_graphs_[j][1][0].first;
+    if (sym_num < 26) sym += ('A' + sym_num);
+    else sym += ('a' + sym_num - 26);
     mAssnMap.insert(
       std::make_pair(
         sym,
-        assert_expr
+        context_.bool_val(false)
       )
     );
   }

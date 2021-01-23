@@ -74,7 +74,7 @@ struct fa* CreateFAutomata(const AdjacencyList<int>& adj) {
   struct fa* ans = fa_make_empty();
   std::map<unsigned, struct autstate*> state_map;
   for (unsigned i = 0; i < adj.size(); i++) {
-    struct autstate* temp = add_autstate(ans, (i == 1 ? 1 : 0));
+    struct autstate* temp = add_autstate(ans, (i == 2 ? 1 : 0));
     state_map.insert(
       std::make_pair(
         i,
@@ -85,7 +85,7 @@ struct fa* CreateFAutomata(const AdjacencyList<int>& adj) {
       ans->initial = temp;
     }
   }
-  for (unsigned i = 3; i < adj.size(); i++) {
+  for (unsigned i = 1; i < adj.size(); i++) {
     auto from_it = state_map.find(i);
     assert(from_it != state_map.end());
     struct autstate* from = from_it->second;
