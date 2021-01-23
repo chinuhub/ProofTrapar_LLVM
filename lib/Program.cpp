@@ -109,7 +109,10 @@ AdjacencyList<int> CreateAutGraph(std::vector<BasicBlockGraph> BB) {
   for (unsigned i = 0; i < aut_graph.size(); i++) {
     std::cout << "From State " << i << " :" << std::endl;
     for (unsigned j = 0; j < aut_graph[i].size(); j++) {
-      std::cout << aut_graph[i][j].first << ' ' << aut_graph[i][j].second;
+      char temp = 'A';
+      if (aut_graph[i][j].second < 26) temp = 'A' + aut_graph[i][j].second;
+      else temp = 'a' + (aut_graph[i][j].second - 26);
+      std::cout << aut_graph[i][j].first << ' ' << temp;
       std::cout << std::endl;
     }
     std::cout << std::endl;
@@ -629,13 +632,15 @@ void Program::ParseThread(Function& Func) {
 #endif
 
   AdjacencyList<int> aut_graph = CreateAutGraph(bb_automata);
-  return;
+  thread_graphs_.push_back(aut_graph);
 }
 
 unsigned Program::FindInstruction(const InstructionType& inst) {
+  return inst_list_.size();
+  // Following code may be conficting with backend design
   auto iter = inst_map_.find(inst);
   if (iter == inst_map_.end()) {
-    return static_cast<int>(inst_list_.size());
+    return inst_list_.size();
   } else {
     return iter->second;
   }
@@ -672,6 +677,11 @@ bool Program::AddVariable(std::string name) {
     variable_expr_map_.insert(std::make_pair(name, exp));
     return true;
   }
+}
+
+
+std::vector<AdjacencyList<int> > Program::GetAutomata() {
+  return thread_graphs_;
 }
 
 //==============================================================================
@@ -740,7 +750,8 @@ void Program::MakeOldInterface() {
     );
   }
 #ifdef LOCAL_DEBUG
-  mProcessesregex.push_back("ABC(DE(GJ|FHICK)LC)*(DE(GJ|FHICK))MNOP(RSCABC(DE(GJ|FHICK)LC)*(DE(GJ|FHICK))MNOP)*Q");
-  mProcessesregex.push_back("TUC(VW(Yb|XZaCc)dC)*(VW(Yb|XZaCc))efgh(jkCTUC(VW(Yb|XZaCc)dC)*(VW(Yb|XZaCc))efgh)*i");
+  // Peterson's Example Regex
+  mProcessesregex.push_back("ABC(DE(GK|FHIJL)MO)*(DE(GK|FHIJL))NPQR(SVWABC(DE(GK|FHIJL)MO)*(DE(GK|FHIJL))NPQR)*T");
+  mProcessesregex.push_back("XYZ(ab(dh|cefgi)jl)*(ab(dh|cefgi))kmno(pstXYZ(ab(dh|cefgi)jl)*(ab(dh|cefgi))kmno)*q");
 #endif
 }

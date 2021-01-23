@@ -62,45 +62,73 @@ z3::expr SCTransSystem::GetEndStateAssertionFromWord(std::string afaword)
 
 }
 
+
+template <typename T>
+using AdjacencyList = std::vector<std::vector<std::pair<int, T> > >;
+
+struct fa* CreateFAutomata(const AdjacencyList<int>& adj) {
+  // Some assertions
+  assert(adj.size() >= 4 &&
+         adj[0].size() == 1 &&
+         adj[0][0] == std::make_pair(3, -1));
+  struct fa* ans = fa_make_empty();
+  std::map<unsigned, struct autstate*> state_map;
+  for (unsigned i = 0; i < adj.size(); i++) {
+    struct autstate* temp = add_autstate(ans, (i == 1 ? 1 : 0));
+    state_map.insert(
+      std::make_pair(
+        i,
+        temp
+      )
+    );
+    if (i == 3) {
+      ans->initial = temp;
+    }
+  }
+  for (unsigned i = 3; i < adj.size(); i++) {
+    auto from_it = state_map.find(i);
+    assert(from_it != state_map.end());
+    struct autstate* from = from_it->second;
+    for (std::pair<int, int> edge : adj[i]) {
+      auto to_it = state_map.find(edge.first);
+      assert(to_it != state_map.end());
+      struct autstate* to = to_it->second;
+      char sym = 'A';
+      if (edge.second < 26) sym = 'A' + edge.second;
+      else sym = 'a' + (edge.second - 26);
+      add_new_auttrans(from, to, sym, sym);
+    }
+  }
+  return ans;
+}
+
 struct fa* SCTransSystem::BuildSCTS(faudes::Generator& lGenerator){
-	std::vector<std::string> regexes = mProgram.GetRegexOfAllProcesses();
-		struct fa* aut = NULL;
-	std::map<std::string,z3::expr> assnMap = mProgram.GetAssnMapForAllProcesses();
-		std::vector<struct fa*> automata;
+  std::vector<std::string> regexes = mProgram.GetRegexOfAllProcesses();
+  struct fa* aut = NULL;
+  std::map<std::string,z3::expr> assnMap = mProgram.GetAssnMapForAllProcesses();
+  std::vector<struct fa*> automata;
 
-		BOOST_FOREACH(std::string regex, regexes)
-		{
-#ifdef	DBGPRNT
-			std::cout<<"Extracted Regex is "<<regex<<std::endl;
-#endif
-			//construct an automaton
-
-			int res = fa_compile(regex.c_str(),(size_t)regex.length(),&aut);
-			BOOST_ASSERT_MSG(aut!=NULL,"could not construct the automaton from a given expression");
-			automata.push_back(aut);
+  std::vector<AdjacencyList<int> > adjlists = mProgram.GetAutomata();
+  std::cout << "Here goes: " << adjlists.size() << std::endl;
+  for (unsigned i = 0; i < adjlists.size(); i++) {
+    aut = CreateFAutomata(adjlists[i]);
+    BOOST_ASSERT_MSG(aut != NULL, "could not construct automaton");
+    automata.push_back(aut);
 #ifdef DBGPRNT
-			char* example = static_cast<char*>("");
-			size_t example_len = 0;
-			std::cout << "An example accepted word is " << fa_example(aut, &example, &example_len) << " " << example << std::endl;
+    char* regi = "";
+    size_t regi_len = 0;
+    std::cout << "Accepts Regex: " << fa_as_regexp(aut, &regi, &regi_len);
+    std::cout << " " << regi << std::endl;
+    char* example = "";
+    size_t example_len = 0;
+    std::cout << "An example accepted word is ";
+    std::cout << fa_example(aut, &example, &example_len) << " " << example;
+    std::cout << std::endl;
 #endif
-
-		}
-		mMerged = FA_Merge(automata,assnMap,lGenerator);
-		/*FILE* OUT;
-					OUT=fopen("try.dot","w");
-					BOOST_ASSERT_MSG(OUT!=NULL,"Error");
-					fa_dot(OUT,mMerged);
-					fclose(OUT);*/
-
-		struct fa* forreverse = fa_clone(mMerged);
-		reverseInPlace(forreverse);
-//		mMerged->deterministic=0;
-//		mMerged->minimal=0;
-//		fa_minimize(mMerged);//For some examples generated FA is Non deterministic hence we need to make it deterministic
-				//minimiation make it deterministic but we can also separately call determinize which is not exported from fa
-				//library yet.. but I am doing this shortcut for checking the correctness .. speed can be improved later.
-		return forreverse ;//return reversed of merged FA..
-
+  }
+  mMerged = FA_Merge(automata, assnMap, lGenerator);
+  struct fa* forreverse = fa_clone(mMerged);
+  return forreverse;
 }
 
 struct fa* SCTransSystem::FA_Merge(std::vector<struct fa*>& autset,std::map<std::string,z3::expr>& assnMap, faudes::Generator& lGenerator)
@@ -138,6 +166,9 @@ struct fa* SCTransSystem::FA_Merge(std::vector<struct fa*>& autset,std::map<std:
 		for(std::string::iterator it = mProgram.mInitString.begin();it!=mProgram.mInitString.end();it++)
 		{
 			char sym = *it;
+#ifdef DBGPRNT
+      std::cout << sym << std::endl;
+#endif
 			std::string symstr(1,sym);
 			struct autstate* curr = add_autstate(merged,0);
 			st<<curr;

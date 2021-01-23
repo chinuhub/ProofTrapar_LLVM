@@ -59,18 +59,22 @@ class Program {
   std::string mInitString;
   z3::context context_;
   std::map<std::string, z3::expr> mVarExprMap;
-  std::map<std::string, std::tuple<z3::expr, z3::expr>> mRWLHRHMap;
+  std::map<std::string, std::tuple<z3::expr, z3::expr> > mRWLHRHMap;
   std::map<std::string, z3::expr> mAssumeLHRHMap;
   std::map<z3::expr, std::string, z3comparator> mRevAssumeLHRHMap;
-  std::map<std::string, std::tuple<z3::expr, z3::expr, z3::expr>> mCASLHRHMap;
+  std::map<std::string, std::tuple<z3::expr, z3::expr, z3::expr> > mCASLHRHMap;
   std::map<std::string, z3::expr> mAssnMap;
   std::vector<std::string> mProcessesregex;
   std::vector<std::string> mAllSyms;
 
   std::vector<std::string> GetRegexOfAllProcesses();
   std::map<std::string, z3::expr>& GetAssnMapForAllProcesses();
-
   /**
+   * A method to obtain thread_graphs_
+   */
+  std::vector<AdjacencyList<int> > GetAutomata();
+  /**
+
    * Default constructor for Program Class
    *
    * Constructor takes an llvm module and processes it into its class variables.
