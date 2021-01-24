@@ -277,7 +277,6 @@ struct fa* SCTransSystem::FA_Merge(std::vector<struct fa*>& autset,std::map<std:
 					delete d.first;
 				}
 #ifdef DBGPRNT
-				//minimize automaton and then return it.
 				FILE *fp;
 				fp = fopen("./originalMerged.dot", "w");
 				BOOST_ASSERT_MSG(fp!=NULL,"Can't open input file in.list!\n");

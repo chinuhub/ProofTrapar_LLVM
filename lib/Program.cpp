@@ -146,7 +146,7 @@ void debug_writer(unsigned id, InstructionType inst) {
   char sym;
   if (id < 26) sym = 'A' + id;
   else if (id < 52) sym = 'a' + (id - 26);
-  else sym = '0' + (id + 52);
+  else sym = '0' + (id - 52);
   z3_stream << sym << ": ";
   if (std::get<0>(inst) == kAssign) {
     z3_stream << std::get<1>(inst) << ":=" << std::get<2>(inst) << std::endl;
@@ -686,13 +686,14 @@ void Program::ParseThread(Function& Func) {
     );
     unsigned inst_num = FindInstruction(inst);
     if (inst_num == inst_list_.size()) {
-      inst_list_.push_back(inst);
       inst_map_.insert(
         std::make_pair(
           inst,
           inst_num
         )
       );
+      std::get<0>(inst) = kAssert;
+      inst_list_.push_back(inst);
     }
     aut_graph[1].push_back(std::make_pair(2, inst_num));
 #ifdef LOCAL_DEBUG
@@ -800,18 +801,29 @@ void Program::MakeOldInterface() {
           sym
         )
       );
+    } else if (std::get<0>(inst_list_[i]) == kAssert) {
+      z3::expr cond_expr = std::get<2>(inst_list_[i]);
+      mAssumeLHRHMap.insert(
+        std::make_pair(
+          sym,
+          cond_expr
+        )
+      );
     }
   }
   for (unsigned j = 0; j < thread_graphs_.size(); j++) {
     std::string sym;
-    int sym_num = thread_graphs_[j][1][0].first;
+    int sym_num = thread_graphs_[j][1][0].second;
     if (sym_num < 26) sym += ('A' + sym_num);
-    else sym += ('a' + sym_num - 26);
+    else sym += ('a' + (sym_num - 26));
     mAssnMap.insert(
       std::make_pair(
         sym,
         context_.bool_val(false)
       )
     );
+#ifdef LOCAL_DEBUG
+    std::cout << "Assertion Symbols " << sym << std::endl;
+#endif
   }
 }

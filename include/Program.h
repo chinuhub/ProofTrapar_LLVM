@@ -18,7 +18,8 @@
 /// assume types.
 enum InstClass {
   kAssign,
-  kAssume
+  kAssume,
+  kAssert
 };
 
 template <typename T>
