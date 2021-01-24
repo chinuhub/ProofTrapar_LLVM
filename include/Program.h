@@ -18,8 +18,7 @@
 /// assume types.
 enum InstClass {
   kAssign,
-  kAssume,
-  kAssert
+  kAssume
 };
 
 template <typename T>
@@ -28,7 +27,8 @@ using AdjacencyList = std::vector<std::vector<std::pair<int, T> > >;
 using InstructionType = std::tuple<InstClass, z3::expr, z3::expr>;
 
 struct InstructionComparator {
-  bool operator()(const InstructionType& lhs, const InstructionType& rhs) const;
+  bool operator()(const std::pair<std::string, InstructionType>& lhs,
+                  const std::pair<std::string, InstructionType>& rhs) const;
 };
 
 struct z3comparator {
@@ -109,7 +109,9 @@ class Program {
   // Mapping from variable names to their corresponding z3 expr
   std::map<std::string, z3::expr> variable_expr_map_;
 
-  std::map<InstructionType, int, InstructionComparator> inst_map_;
+  std::map<std::pair<std::string, InstructionType>,
+                                               int,
+                                               InstructionComparator> inst_map_;
   std::vector<InstructionType> inst_list_;
 
   std::vector<std::string> thread_names_;
@@ -118,7 +120,7 @@ class Program {
   void ParseGlobalVariables(llvm::Module&);
   void ParseThread(llvm::Function&);
   // Finds and returns an instruction if present in our vector
-  unsigned FindInstruction(const InstructionType&);
+  unsigned FindInstruction(std::pair<std::string, InstructionType>);
   // Returns a distinct string name for an llvm Value in function named scope
   std::string ValueToVariable(const llvm::Value*, std::string scope);
   // Returns the z3 expression corresponding to an llvm Value

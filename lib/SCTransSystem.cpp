@@ -277,6 +277,14 @@ struct fa* SCTransSystem::FA_Merge(std::vector<struct fa*>& autset,std::map<std:
 					delete d.first;
 				}
 #ifdef DBGPRNT
+        // struct fa* testfa = nullptr;
+        // std::string testregex = "0123ABT";
+        // fa_compile(testregex.c_str(), testregex.size(), &testfa);
+        // testfa = fa_intersect(testfa, merged);
+        // char* regi = "";
+        // size_t regi_len = 0;
+        // std::cout << "Accepts Test Regex: " << fa_as_regexp(testfa, &regi, &regi_len);
+        // std::cout << " " << regi << std::endl;
 				FILE *fp;
 				fp = fopen("./originalMerged.dot", "w");
 				BOOST_ASSERT_MSG(fp!=NULL,"Can't open input file in.list!\n");
