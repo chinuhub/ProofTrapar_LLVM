@@ -212,7 +212,7 @@ sudo apt install graphviz
 ```
 ### On Mac OS X:
 ```bash
-sudo brew install graphviz
+brew install graphviz
 ```
 ### On Arch Linux:
 ```bash
