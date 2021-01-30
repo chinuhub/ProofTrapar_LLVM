@@ -203,3 +203,24 @@ And this is how you run it with New PM:
 ```bash
 opt -disable-output -load-pass-plugin <build_dir>/lib/libSafetyVerificationPass.so -passes="verify-module-safety" input_for_new_pm.ll
 ```
+
+# Graphviz
+## Installing Graphviz
+### On Ubuntu:
+```bash
+sudo apt install graphviz
+```
+### On Mac OS X:
+```bash
+sudo brew install graphviz
+```
+### On Arch Linux:
+```bash
+sudo pacman -S graphviz
+```
+## Generating .png files from dot files
+It is recommended that you use neato instead of dot to obtain more human readable graphs. Use the following command to generate png
+image file from a dot file:
+```bash
+neato -Tpng <input_dot_file> -o <output_png_file>
+```
