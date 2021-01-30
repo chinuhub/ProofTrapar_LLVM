@@ -189,6 +189,43 @@ z3::expr Program::GetGlobalInit(std::string name) {
   return iter->second;
 }
 
+/**
+ * A utility function for debugging the automata created. Note that state 2 is
+ * considered as the accepting state, and -1 is the number used for representing
+ * epsilon transitions.
+ */
+void Program::DotWrite(std::ofstream& os, const AdjacencyList<int>& adj_list) {
+  os << "digraph G {\n";
+  os << "  nodesep = 2.0;\n";
+  os << "  edge [color=\"#ff5555\"];\n";
+  for (unsigned from = 0; from < adj_list.size(); from++) {
+    for (std::pair<int, int> edge : adj_list[from]) {
+      int to = edge.first, label = edge.second;
+      os << "  Q" << from << " -> " << "Q" << to << " ";
+      os << "[style=bold,label=\"";
+      if (label == -1) {
+        os << "eps";
+      } else {
+        char symbol;
+        if (label < 26) {
+          symbol = 'A' + label;
+        }
+        else {
+          symbol = 'a' + (label - 26);
+        }
+        os << symbol;
+      }
+      os << "\"];\n";
+    }
+  }
+  for (unsigned i = 0; i < adj_list.size(); i++) {
+    os << "  Q" << i << " [shape=circle";
+    if (i == 2) os << ",peripheries=2";
+    os << "];\n";
+  }
+  os << "}\n";
+}
+
 void Program::ParseGlobalVariables(Module& M) {
 #ifdef LOCAL_DEBUG
   z3_stream << "Here are global variables: " << std::endl;
@@ -807,6 +844,13 @@ void Program::ParseThread(Function& Func) {
     aut_graph[1].push_back(std::make_pair(2, inst_num));
   }
   thread_graphs_.push_back(aut_graph);
+#ifdef LOCAL_DEBUG
+  std::ofstream dot_os;
+  std::string file_name = thread_name + "_graph.dot";
+  dot_os.open(file_name);
+  DotWrite(dot_os, aut_graph);
+  dot_os.close();
+#endif
 }
 
 unsigned Program::FindInstruction(std::pair<std::string, InstructionType> inst) {
@@ -852,7 +896,6 @@ bool Program::AddVariable(std::string name) {
     return true;
   }
 }
-
 
 std::vector<AdjacencyList<int> > Program::GetAutomata() {
   return thread_graphs_;

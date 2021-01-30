@@ -101,6 +101,14 @@ class Program {
    */
   z3::expr GetGlobalInit(std::string name);
 
+  /**
+   * A method that takes an adjacency list and writes its dot graph to ofstream
+   * 
+   * @param os std::ofstream& where the dot file is written
+   * @param adj_list AdjacencyList<int> representation of the automata
+   */
+  void DotWrite(std::ofstream& os, const AdjacencyList<int>& adj_list);
+
  private:
   // z3::context context_;
 
