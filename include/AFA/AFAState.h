@@ -13,10 +13,10 @@
 #include<map>
 #include<tuple>
 #include "z3++.h"
-extern "C"
+/*extern "C"
 {
 #include "fa.h"
-}
+}*/
 
 #include <libfaudes.h>
 //Define a class that has the data you want to associate to every vertex and
@@ -65,7 +65,6 @@ class AFAState {
 
 
 public:
-	std::map<z3::expr, bool,mapexpcomparator> mUnsatMemoization;
 	std::string mAssumeSym;
 	StateType mType;
 	//set of transitions going out of this state..
@@ -93,19 +92,19 @@ public:
 		mAssumeSym="";
 	}
 	void PassOne(std::map<AFAStatePtr,AFAStatePtr,mapstatecomparator>& mAllStates);
-	bool PassTwo(std::map<AFAStatePtr,AFAStatePtr,mapstatecomparator>& mAllStates);
+	bool PassTwo(std::map<AFAStatePtr,AFAStatePtr,mapstatecomparator>& mAllStates, std::map<z3::expr, bool,mapexpcomparator>&);
 
 	//Pass to Print DOT file
 	void PassThree(Graph& g, std::map<AFAStatePtr, vertex_t,mapstatecomparator>& indmap);
 
-	std::set<std::tuple<std::string,AFAStatePtr>>  PassFourPhaseOne(std::set<AFAStatePtr>& ANDORStates, std::set<AFAStatePtr>& ORLitStates,std::set<std::tuple<AFAStatePtr,std::string,AFAStatePtr>, tuplecomparator>& toANDLink,std::map<AFAStatePtr,std::set<std::tuple<std::string,AFAStatePtr>>>& );
+	std::set<std::tuple<std::string,AFAStatePtr>>  PassFourPhaseOne(std::set<AFAStatePtr>& ANDORStates, std::set<AFAStatePtr>& ORLitStates,std::set<std::tuple<AFAStatePtr,std::string,AFAStatePtr>, tuplecomparator>& toANDLink,std::map<AFAStatePtr,std::set<std::tuple<std::string,AFAStatePtr>>>&, std::map<z3::expr, bool,mapexpcomparator>& );
 	std::set<std::set<AFAStatePtr>> PassFourPhaseZero(std::map<AFAStatePtr,std::set<std::set<AFAStatePtr>>>&);
 
 	//struct fa* PassFour(AFAStatePtr init, std::map<AFAStatePtr,AFAStatePtr,mapstatecomparator>& allStates );
 
 		//std::string getOredString(std::string& in);
-	struct fa* createRepeat(std::string &in);
-	struct fa* createOr(std::string &in);
+	//struct fa* createRepeat(std::string &in);
+	//struct fa* createOr(std::string &in);
 //BEWARE: having mapstatecomparator might be problematic if states do not have rword/amap in them like those created manually.
 	//bool HelperAddEdgeIfAbsent(AFAStatePtr src,AFAStatePtr dest,std::string sym,Graph& g,std::map<AFAStatePtr, vertex_t,mapstatecomparator>mapindex);
 	bool HelperAddEdgeIfAbsent(AFAStatePtr src,AFAStatePtr dest,std::string sym);
