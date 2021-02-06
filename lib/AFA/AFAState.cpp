@@ -477,36 +477,40 @@ bool AFAState::HelperAddEdgeIfAbsent(AFAStatePtr src,AFAStatePtr dest,std::strin
 
 AFAStatePtr AFAState::HelperAddStateIfAbsent(z3::expr& phi,std::string& mRWord,bool& isPresent, std::map<AFAStatePtr,AFAStatePtr,mapstatecomparator>& mAllStates){
 //create appropriate state based on the type of phi..also check if it is already present or not..
-	if(phi.decl().decl_kind()==Z3_OP_AND){
+
+if(phi.decl().decl_kind()==Z3_OP_AND){
 		AFAStatePtr st = new AFAState(AND,mRWord,phi);
 		if(mAllStates.find(st)!=mAllStates.end()){
-			delete st;
+            isPresent=false;
+            /*delete st;
 			st=mAllStates.find(st)->second;
-			isPresent=true;
+			isPresent=true;*/
 		}else{
-			//mAllStates.insert(std::make_pair(st,st));-- we wont add it hee.. but after hmap is over for this state..
+			//mAllStates.insert(std::make_pair(st,st));//-- we wont add it hee.. but after hmap is over for this state..
 			isPresent=false;
 		}
 		return st;
 	}else if(phi.decl().decl_kind()==Z3_OP_OR){
 		AFAStatePtr st = new AFAState(OR,mRWord,phi);
 		if(mAllStates.find(st)!=mAllStates.end()){
-			delete st;
+            isPresent=false;
+			/*delete st;
 			st=mAllStates.find(st)->second;
-			isPresent=true;
+			isPresent=true;*/
 		}else{
-			//mAllStates.insert(std::make_pair(st,st));-- same as above
+			//mAllStates.insert(std::make_pair(st,st));//-- same as above
 			isPresent=false;
 		}
 		return st;
 	}else{
 		AFAStatePtr st = new AFAState(ORLit,mRWord,phi);
 		if(mAllStates.find(st)!=mAllStates.end()){
-			delete st;
+            isPresent=false;
+            /*delete st;
 			st=mAllStates.find(st)->second;
-			isPresent=true;
+			isPresent=true;*/
 		}else{
-			//mAllStates.insert(std::make_pair(st,st));-- same as above
+			//mAllStates.insert(std::make_pair(st,st));//-- same as above
 			isPresent=false;
 		}
 		return st;
