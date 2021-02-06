@@ -1,4 +1,26 @@
 # Program Library
+# SafetyVerificationPass Library
+add_library(SafetyVerificationPass SHARED
+		SafetyVerificationPass.cpp
+		Program.cpp
+		AFA/AFAut.cpp
+		AFA/AFAState.cpp
+		AFA/PassTwo.cpp
+		AFA/PassThree.cpp
+		AFA/PassFourWeak.cpp
+		AFA/PassFourAFA.cpp
+		SCTransSystem.cpp
+		)
+
+target_include_directories(SafetyVerificationPass PUBLIC
+		"../include/"
+		)
+
+target_link_libraries(SafetyVerificationPass
+		boost_chrono
+		faudes
+		)
+
 #add_library(Program STATIC Program.cpp)
 
 #target_include_directories(Program PUBLIC
@@ -67,33 +89,3 @@
 #		     fa
 #                     )
 
-# SafetyVerificationPass Library
-add_library(SafetyVerificationPass SHARED 
-	SafetyVerificationPass.cpp
-	Program.cpp
-	AFA/AFAut.cpp
-	AFA/AFAState.cpp
-	AFA/PassTwo.cpp
-	AFA/PassThree.cpp
-	AFA/PassFourWeak.cpp
-	AFA/PassFourAFA.cpp
-	SCTransSystem.cpp
-)
-
-target_include_directories(SafetyVerificationPass PUBLIC
-                          "../include/"
-                          )
-
-target_link_libraries(SafetyVerificationPass
-#                     Program
-#                     SCTransSystem
-#                     AFAut
-#                     AFAState
-#                     PassTwo
-#		     PassThree
-#		     PassFourWeak
-#		     PassFourAFA     
-		     boost_chrono
-		     fa
-	             faudes	     
-	)

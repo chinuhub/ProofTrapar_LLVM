@@ -101,24 +101,20 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/lib")
 #===============================================================================
 # 3. OTHER LIBRARIES REQUIRED
 #===============================================================================
-# Augeas Library and Libfaudes Library
+# Libfaudes Library
 
 include_directories(SYSTEM
-                 #  "auges-latest/src/"
-		   "augeas-1.4.0/src/"
                    "libfaudes-2_29d/include/"
                  #  "libfaudes-latest/libfaudes-2_29d/include/"
                    )
 
 link_directories(
 	      #	 "auges-latest/src/"
-               "augeas-1.4.0/src/.libs/"
                 "libfaudes-2_29d/"
               #  "libfaudes-latest/libfaudes-2_29d/"
                 )
 
 link_libraries(
-              fa
               faudes
               )
 
