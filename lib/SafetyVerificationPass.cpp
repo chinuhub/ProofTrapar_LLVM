@@ -35,7 +35,7 @@ bool test_bench(Module& M) {
 	z3::context& ctx = P->context_;
 	z3::solver s(ctx);
 	SCTransSystem* T = new SCTransSystem(*P,s);
-	struct fa* revmerged = T->BuildSCTS(lGenerator);//it has initial values as well with them..This will construct reverse of shuffle
+	T->BuildSCTS(lGenerator);//it has initial values as well with them..This will construct reverse of shuffle
 	//it fills the generator as well..
   //lGenerator.StateNamesEnabled(false);
   faudes::Deterministic(lGenerator,generator);
@@ -54,7 +54,7 @@ bool test_bench(Module& M) {
   int cases=0;
   while(!faudes::IsEmptyLanguage(generator))
   {
-    std::string revword(generator.GetWord());
+    std::string revword(T->GetWord(generator));
     std::string original(revword);//for some debugging purposes
 #ifdef DBGPRNT
     std::cout<<"Original is "<<original<<std::endl;
