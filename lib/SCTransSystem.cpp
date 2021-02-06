@@ -39,7 +39,7 @@ struct newstateinfocompare{
  /*
   * Unused function: Delete it later
   */
-std::tuple<std::string,z3::expr> SCTransSystem::GetAcceptedWordWithEndState()
+/*std::tuple<std::string,z3::expr> SCTransSystem::GetAcceptedWordWithEndState()
 {
 	struct autstate* accstate=NULL;
 	char* word;
@@ -50,7 +50,7 @@ std::tuple<std::string,z3::expr> SCTransSystem::GetAcceptedWordWithEndState()
 	BOOST_ASSERT_MSG(mShuffautAssnMap.find(accstate)!=mShuffautAssnMap.end(),"SHould not be possible as this accepted state must have been set properly, check out");
 	z3::expr ex = mShuffautAssnMap.find(accstate)->second;
 	return (std::tuple<std::string,z3::expr>(accword,ex));
-}
+}*/
 
 z3::expr SCTransSystem::GetEndStateAssertionFromWord(std::string afaword)
 {
@@ -66,72 +66,219 @@ z3::expr SCTransSystem::GetEndStateAssertionFromWord(std::string afaword)
 template <typename T>
 using AdjacencyList = std::vector<std::vector<std::pair<int, T> > >;
 
-struct fa* CreateFAutomata(const AdjacencyList<int>& adj) {
-  // Some assertions
-  assert(adj.size() >= 4 &&
-         adj[0].size() == 1 &&
-         adj[0][0] == std::make_pair(3, -1));
-  struct fa* ans = fa_make_empty();
-  std::map<unsigned, struct autstate*> state_map;
-  for (unsigned i = 0; i < adj.size(); i++) {
-    struct autstate* temp = add_autstate(ans, (i == 2 ? 1 : 0));
-    state_map.insert(
-      std::make_pair(
-        i,
-        temp
-      )
-    );
-    if (i == 3) {
-      ans->initial = temp;
+
+
+void SCTransSystem::CreateFAutomataFaudes(const AdjacencyList<int>& adj, faudes::Generator& generator) {
+    // Some assertions
+    assert(adj.size() >= 4 &&
+           adj[0].size() == 1 &&
+           adj[0][0] == std::make_pair(3, -1));
+
+    for (unsigned source = 0; source < adj.size(); source++) {
+        //Find all connected vertices from this vertex and iterate over them.
+
+        std::string srcstr = std::to_string(source);
+        generator.InsState(srcstr);
+
+        if(source==2) //This is an expectation that the third entry will correspond to an accepting state.
+            generator.SetMarkedState(srcstr);
+        if(source==3) //This is an expectation that the fourth entry will correspond to initial state.
+            generator.SetInitState(srcstr);
     }
-  }
-  for (unsigned i = 1; i < adj.size(); i++) {
-    auto from_it = state_map.find(i);
-    assert(from_it != state_map.end());
-    struct autstate* from = from_it->second;
-    for (std::pair<int, int> edge : adj[i]) {
-      auto to_it = state_map.find(edge.first);
-      assert(to_it != state_map.end());
-      struct autstate* to = to_it->second;
-      char sym = 'A';
-      if (edge.second < 26) sym = 'A' + edge.second;
-      else sym = 'a' + (edge.second - 26);
-      add_new_auttrans(from, to, sym, sym);
+    for (unsigned source = 0; source < adj.size(); source++) {
+        for (std::pair<int, int> edge : adj[source]) {
+            std::string srcstr,dststr;
+            unsigned destination = edge.first;
+            unsigned symbolval = edge.second;
+            srcstr = std::to_string(source);
+            dststr = std::to_string(destination);
+            char sym = 'A';
+            if (symbolval < 26) sym = 'A' + symbolval;
+            else sym = 'a' + (symbolval - 26);
+            std::string symstr(1,sym);
+            generator.InsEvent(symstr);
+            //States corresponding to source and destination have already been added in the generator by previous loop.
+            // so just insert an edge between those states.
+            generator.SetTransition(srcstr, symstr, dststr);
+        }
     }
-  }
-  return ans;
 }
 
-struct fa* SCTransSystem::BuildSCTS(faudes::Generator& lGenerator){
-  struct fa* aut = NULL;
+void SCTransSystem::BuildSCTS(faudes::Generator& lGenerator){
   std::map<std::string,z3::expr> assnMap = mProgram.GetAssnMapForAllProcesses();
   std::vector<AdjacencyList<int> > adjlists = mProgram.GetAutomata();
-  std::vector<struct fa*> automata;
-  for (unsigned i = 0; i < adjlists.size(); i++) {
-    aut = CreateFAutomata(adjlists[i]);
-    BOOST_ASSERT_MSG(aut != NULL, "could not construct automaton");
-    automata.push_back(aut);
-#ifdef DBGPRNT
-    char* regi = "";
-    size_t regi_len = 0;
-    std::cout << "Accepts Regex: " << fa_as_regexp(aut, &regi, &regi_len);
-    std::cout << " " << regi << std::endl;
-    char* example = "";
-    size_t example_len = 0;
-    std::cout << "An example accepted word is ";
-    std::cout << fa_example(aut, &example, &example_len) << " " << example;
-    std::cout << std::endl;
-#endif
+
+  std::vector<faudes::Generator> faudesAutomata;
+
+    for (unsigned i = 0; i < adjlists.size(); i++) {
+        faudes::Generator faudesAut;
+        CreateFAutomataFaudes(adjlists[i], faudesAut);
+        //Assert that the constructed automaton should not be empty.
+        //push the returned automaton to the vector. If needed clone the generator as well.
+        faudesAutomata.push_back(faudesAut);
+
+        //To test, print a word accepted by this generator.
+        std::cout << "An example accepted word is " <<std::endl;
+        std::cout << GetWord(faudesAut)<<std::endl;
+        faudesAut.DotWrite("./auto"+std::to_string(i+1)+".dot");
+    //BOOST_ASSERT_MSG(aut != NULL, "could not construct automaton");
+
   }
-  mMerged = FA_Merge(automata, assnMap, lGenerator);
-  struct fa* forreverse = fa_clone(mMerged);
-  return forreverse;
+    BOOST_ASSERT_MSG(faudesAutomata.size()>0, " No process given as input.. Exiting");
+    faudes::Generator result = faudesAutomata.at(0);
+    for(unsigned i=1; i<adjlists.size(); i++) {
+        faudes::Generator tmpresult;
+        faudes::Parallel(result,faudesAutomata.at(i),tmpresult);
+        result = tmpresult;
+    }
+    /*
+     * IMP: Clear all marked states. Then set only those states as marked states which are one-step reachable
+     * by a transition on a symbol that is prsent in assnMap variable.
+     */
+    result.ClearMarkedStates();
+    //Iterate over all transitions.
+    //Iterate over all relations of original and insert them in reverse in rev generator.
+    faudes::TransSet::Iterator transit;
+    for(transit = result.TransRelBegin(); transit != result.TransRelEnd(); ++transit) {
+        std::string sym = result.EventName(transit->Ev);
+        if(assnMap.find(sym)!=assnMap.end()){
+            //then set transit->X2 as marked state.
+            result.SetMarkedState(transit->X2);
+        }
+    }
+
+
+    //To test, print a word accepted by this generator.
+    std::cout << "An example accepted word of the parallely composed generator is "<<std::endl;
+    std::cout << GetWord(result)<<std::endl;
+    result.DotWrite("./autoParallel.dot");
+    faudes::Generator tmpGen;
+
+    faudes::Deterministic(result,tmpGen);
+    ReverseGenerator(tmpGen,lGenerator);
+    //lGenerator=tmpGen;
+    //To test, print a word accepted by this reversed generator.
+    std::cout << "An example accepted word of the reversed parallely composed generator is "<<std::endl;
+    std::cout << GetWord(lGenerator)<<std::endl;
+    lGenerator.DotWrite("./autoParallelReversed.dot");
+
+
 }
 
+std::string SCTransSystem::GetWord(faudes::Generator generator){
+// initialize todo stack. It is a stack of pairs of state and the string reached so far.
+//We don't need to keep the path taken to reach this state because we are fine with finding only one word
+//accepted by this automaton. As soon as we reach the same state by different path we don't explore that any
+//more.
+    std::stack<std::pair<faudes::Idx,std::string>> todo;
+    std::set<faudes::Idx> seenSet;
+    faudes::StateSet::Iterator sit;
+    for(sit = generator.InitStatesBegin(); sit != generator.InitStatesEnd(); ++sit) {
+        std::pair<faudes::Idx,std::string> tmp;
+        tmp.first=*sit;
+        tmp.second= "";
+        FD_DG("Pushing initial "<<StateName(tmp.first)<<"\n");
+        todo.push(tmp);
+    }
+    // loop variables
+    faudes::TransSet::Iterator tit;
+    faudes::TransSet::Iterator tit_end;
+    // loop
+    while(!todo.empty()) {
+        // pop
+        std::pair<faudes::Idx, std::string> IdxStr = todo.top();
+        faudes::Idx x1 = IdxStr.first;
+        //Put x1 in the seen set.
+        seenSet.insert(x1);
+        std::string syms = IdxStr.second;
+        //if we have reached any marked state then we are done. Just return syms string.
+        faudes::StateSet::Iterator lit;
+        for(lit = generator.MarkedStatesBegin(); lit != generator.MarkedStatesEnd(); ++lit) {
+            FD_DG("Checking if "<<StateName(x1)<<" is accepting or not, checking against "<<StateName(*lit)<<"\n");
+            if (*lit == x1) {
+                FD_DG(" Found accepting state, returning with "<<syms<<"\n");
+                return syms;
+            }
+        }
+        //If we reached here then this is not the marked state. So continue exploring further.
+        todo.pop();
+        tit = generator.TransRelBegin(x1);
+        tit_end = generator.TransRelEnd(x1);
+        std::stack<std::pair<faudes::Idx,std::string>> interestingNext;
+        std::stack<std::pair<faudes::Idx,std::string>> notInterestingNext;
+
+        //Iterate over all transitions of x1..
+        for (; tit != tit_end; ++tit) {
+            //get the destination state
+            faudes::Idx x2 = tit->X2;
+            //get the symbol on the transition
+            std::string symtrans = generator.EventName(tit->Ev);
+
+            FD_DG(" Checking transition from "<<StateName(x1)<<" to "<<StateName(x2)<<" on "<<EventName(tit->Ev)<<"\n");
+            //if the destination state is not present in the seen set
+            //then prioritize the push (most suitable at the end) based on the symbol that is not seen so far.
+            //then add the pair (destination state, sym.symbol on this transition) to the todostack
+            if (seenSet.find(x2) == seenSet.end()) {
+                std::pair<faudes::Idx,std::string> tmp;
+                tmp.first=x2;
+                tmp.second=syms+symtrans;
+                FD_DG(" Pushing next state "<<StateName(x2)<<" with trace as "<<tmp.second<<"\n");
+                //if symtrans is already in syms string then push it in noninteresting stack else in interesting stack
+                if(syms.find(symtrans) == std::string::npos){
+                    interestingNext.push(tmp);//means it is not found. So put it at the top
+                }else{
+                    notInterestingNext.push(tmp);
+                }
+            }
+        }
+        while(!notInterestingNext.empty()) {
+            todo.push(notInterestingNext.top());
+            notInterestingNext.pop();
+        }
+
+        while(!interestingNext.empty()) {
+            todo.push(interestingNext.top());
+            interestingNext.pop();
+        }
+
+    }
+    //if reached here without return in between then no word is accepted here. So return empty word.
+    return "None";
+}
+/*
+ * This method takes a faudes generator and return another generate which accepts the reverse language of the original one.
+ */
+void SCTransSystem::ReverseGenerator(faudes::Generator& original, faudes::Generator& rev){
+    //To create a reverse automaton we
+    //1. Reverse all transitions
+    //2. Switch initial and marked states.
+
+    //Iterate over all states of original and insert them in rev generator
+    faudes::StateSet::Iterator lit;
+    for(lit = original.StatesBegin(); lit != original.StatesEnd(); ++lit) {
+        rev.InsState(*lit);
+    }
+    //Switch initial and marked states.
+    for(lit = original.InitStatesBegin(); lit != original.InitStatesEnd(); ++lit) {
+        rev.SetMarkedState(*lit);
+    }
+    for(lit = original.MarkedStatesBegin(); lit != original.MarkedStatesEnd(); ++lit) {
+        rev.SetInitState(*lit);
+    }
+    //Iterate over all relations of original and insert them in reverse in rev generator.
+    faudes::TransSet::Iterator transit;
+    for(transit = original.TransRelBegin(); transit != original.TransRelEnd(); ++transit) {
+        rev.InsEvent(transit->Ev);
+        rev.SetTransition(transit->X2,transit->Ev,transit->X1);
+    }
+    //Done with filling generator rev.
+}
+/*
 struct fa* SCTransSystem::FA_Merge(std::vector<struct fa*>& autset,std::map<std::string,z3::expr>& assnMap, faudes::Generator& lGenerator)
 {
 	std::set<struct autstate*, newsetofstatescomparator> initset;
 	std::map<struct autstate*, z3::expr> stateAssnMap;
+
 
 	BOOST_FOREACH(auto elem, autset){
 		initset.insert(elem->initial);
@@ -216,6 +363,7 @@ struct fa* SCTransSystem::FA_Merge(std::vector<struct fa*>& autset,std::map<std:
 							bool isacc=false;
 							if(assnMap.find(searched)!=assnMap.end()){
 								//means set this as accepting
+								//std::cout<<"Found an accepting state\n";
 								isacc=true;
 								std::get<1>(std::get<1>(*newstepstateinfo))=true;
 							}else
@@ -250,7 +398,7 @@ struct fa* SCTransSystem::FA_Merge(std::vector<struct fa*>& autset,std::map<std:
 									//means key found
 									z3::expr ex = assnMap.find(searched)->second;
 									newshuffledstate->accept=1;
-									mShuffautAssnMap.insert(std::make_pair(newshuffledstate,ex));
+									//mShuffautAssnMap.insert(std::make_pair(newshuffledstate,ex));
 								}else
 									newshuffledstate->accept=0;
 								std::get<0>(*newstepstateinfo) = newshuffledstate;
@@ -267,6 +415,8 @@ struct fa* SCTransSystem::FA_Merge(std::vector<struct fa*>& autset,std::map<std:
 							//add a transition from shuffstate to this shuffled state with label extracted from this transition
 							add_new_auttrans(shuffstate, newshuffledstate,trans.min,trans.max);
 							lGenerator.SetTransition(deststring,searched,currstring);
+							std::string tmpw = lGenerator.GetWord();
+							//std::cout<<"Word is "<<tmpw<<"\n";
 						}
 					}
 				}
@@ -296,9 +446,16 @@ struct fa* SCTransSystem::FA_Merge(std::vector<struct fa*>& autset,std::map<std:
 
 	return merged;
 }
+*/
 
 
-std::tuple<bool,z3::expr> SCTransSystem::GetAcceptAssn(std::set<struct autstate*, newsetofstatescomparator>&  productset, std::map<struct autstate*, z3::expr>& stateAssnMap)
+/**
+ * Commenting out this method as it is never used.
+ * @param productset
+ * @param stateAssnMap
+ * @return
+ */
+/*std::tuple<bool,z3::expr> SCTransSystem::GetAcceptAssn(std::set<struct autstate*, newsetofstatescomparator>&  productset, std::map<struct autstate*, z3::expr>& stateAssnMap)
 {
 	bool found=false;
 	z3::context& ctx = mSolver.ctx();
@@ -316,7 +473,7 @@ std::tuple<bool,z3::expr> SCTransSystem::GetAcceptAssn(std::set<struct autstate*
 		return std::tuple<bool,z3::expr>(false,trueexp);
 	else
 		return std::tuple<bool,z3::expr>(true,trueexp.simplify());
-}
+}*/
 
 SCTransSystem::~SCTransSystem() {
 
