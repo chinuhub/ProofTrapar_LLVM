@@ -127,7 +127,7 @@ bool tuplecomparator::operator() (const std::tuple<AFAStatePtr,std::string,AFASt
 
 //Following is an important function as it generates equivalence classes as well as put OR, ORlit states in some containers..
 //Also it keeps on filling a set to denote that an ORLit node has a path on sym to an ANDOR node.
-std::set<std::tuple<std::string,AFAStatePtr>>  AFAState::PassFourPhaseOne(std::set<AFAStatePtr>& ANDORStates, std::set<AFAStatePtr>& ORLitStates,std::set<std::tuple<AFAStatePtr,std::string,AFAStatePtr>, tuplecomparator>& toANDLink, std::map<AFAStatePtr,	std::set<std::tuple<std::string,AFAStatePtr>>>& assumeinfomap)
+std::set<std::tuple<std::string,AFAStatePtr>>  AFAState::PassFourPhaseOne(std::set<AFAStatePtr>& ANDORStates, std::set<AFAStatePtr>& ORLitStates,std::set<std::tuple<AFAStatePtr,std::string,AFAStatePtr>, tuplecomparator>& toANDLink, std::map<AFAStatePtr,	std::set<std::tuple<std::string,AFAStatePtr>>>& assumeinfomap, std::map<z3::expr, bool,mapexpcomparator>& mUnsatMemoization)
 {
 	std::set<std::tuple<std::string,AFAStatePtr>> assumeinfo;
 	if(this->mIsAccepted)
@@ -155,11 +155,19 @@ std::set<std::tuple<std::string,AFAStatePtr>>  AFAState::PassFourPhaseOne(std::s
 		}
 
 
-		std::set<std::tuple<std::string,AFAStatePtr>> retlink = nextone->PassFourPhaseOne(ANDORStates,ORLitStates,toANDLink,assumeinfomap);
+		std::set<std::tuple<std::string,AFAStatePtr>> retlink = nextone->PassFourPhaseOne(ANDORStates,ORLitStates,toANDLink,assumeinfomap,mUnsatMemoization);
 		//for every entry in retlink.. add thistate sym assumestate to toANDLink..
 		//ONly if mHMap of this node is unsat..
-		BOOST_ASSERT_MSG(mUnsatMemoization.find(*mHMap)!=mUnsatMemoization.end(),"Some issue, look into our invariant");
-		bool res = mUnsatMemoization.find(*mHMap)->second;
+		/////BOOST_ASSERT_MSG(mUnsatMemoization.find(*mHMap)!=mUnsatMemoization.end(),"Some issue, look into our invariant");
+		bool res;// = mUnsatMemoization.find(*mHMap)->second;
+        if(HelperIsUnsat(*mHMap)){
+            //mUnsatMemoization.insert(std::make_pair(*mHMap,true));
+            res= true;//true means it is unsat..
+        }
+        else{
+            //mUnsatMemoization.insert(std::make_pair(*mHMap,false));
+            res= false;
+        }
 		if(res)
 		{
 			BOOST_FOREACH(auto t, retlink){
@@ -189,14 +197,22 @@ std::set<std::tuple<std::string,AFAStatePtr>>  AFAState::PassFourPhaseOne(std::s
 		BOOST_FOREACH(auto t, mTransitions){
 			BOOST_ASSERT_MSG(t.first=="0","Some serious error");
 			BOOST_FOREACH(auto child, t.second){
-				std::set<std::tuple<std::string,AFAStatePtr>> retlink = child->PassFourPhaseOne(ANDORStates,ORLitStates,toANDLink,assumeinfomap);
+				std::set<std::tuple<std::string,AFAStatePtr>> retlink = child->PassFourPhaseOne(ANDORStates,ORLitStates,toANDLink,assumeinfomap,mUnsatMemoization);
 				assumeinfo.insert(retlink.begin(),retlink.end());
 			}
 		}
 		//check if mAMAp of this corresponds to phi of some assume symbol or not..
 		//if yes then add that symbol and this to assumeinfo and return..only if hMap of this node is unsat..
-		BOOST_ASSERT_MSG(mUnsatMemoization.find(*mHMap)!=mUnsatMemoization.end(),"Some issue, look into our invariant");
-		bool res = mUnsatMemoization.find(*mHMap)->second;
+		//BOOST_ASSERT_MSG(mUnsatMemoization.find(*mHMap)!=mUnsatMemoization.end(),"Some issue, look into our invariant");
+		bool res;// = mUnsatMemoization.find(*mHMap)->second;
+        if(HelperIsUnsat(*mHMap)){
+            //mUnsatMemoization.insert(std::make_pair(*mHMap,true));
+            res= true;//true means it is unsat..
+        }
+        else{
+            //mUnsatMemoization.insert(std::make_pair(*mHMap,false));
+            res= false;
+        }
 		if(res)
 		{
 					if(AFAut::mProgram->mRevAssumeLHRHMap.find(mAMap)!=AFAut::mProgram->mRevAssumeLHRHMap.end())
@@ -212,8 +228,12 @@ std::set<std::tuple<std::string,AFAStatePtr>>  AFAState::PassFourPhaseOne(std::s
 	}
 }
 
-
-struct fa* AFAState::createRepeat(std::string &in){
+/**
+ *  * Commenting out because it is never used and we want to get away with the fa library.
+ * @param in
+ * @return
+ */
+/*struct fa* AFAState::createRepeat(std::string &in){
 	struct fa* aut = fa_make_empty();
 
 	struct autstate* init = add_autstate(aut,1);//make it accepting as well.
@@ -222,10 +242,15 @@ struct fa* AFAState::createRepeat(std::string &in){
 		add_new_auttrans(init,init,ch,ch);
 	aut->initial=init;
 	return aut;
-}
+}*/
 
 
-struct fa* AFAState::createOr(std::string &in){
+/**
+ * Commenting out because it is never used and we want to get away with the fa library.
+ * @param in
+ * @return
+ */
+/*struct fa* AFAState::createOr(std::string &in){
 	struct fa* aut = fa_make_basic(FA_EMPTY);
 //it seems that sometime we had problem if order of end and init was changed.. or somethignwas set as accepted in construction
 	//need to be more comfortable with working of this fa library.
@@ -240,4 +265,4 @@ struct fa* AFAState::createOr(std::string &in){
 
 
 	return aut;
-}
+}*/

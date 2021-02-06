@@ -9,7 +9,7 @@
 #include "AFA/AFAut.h"
 
 
-AFAut* AFAut::PassFourNew(AFAStatePtr init, std::set<AFAStatePtr>& tobedeleted, int cases,faudes::Generator& lGenerator)
+AFAut* AFAut::PassFourNew(AFAStatePtr init, std::set<AFAStatePtr>& tobedeleted, int cases,faudes::Generator& lGenerator, std::map<z3::expr, bool,mapexpcomparator>& mUnsatMemoization)
 {
 
 
@@ -24,7 +24,7 @@ AFAut* AFAut::PassFourNew(AFAStatePtr init, std::set<AFAStatePtr>& tobedeleted, 
 	std::cout<<"About to construct phase1 pass4"<<std::endl;
 #endif
 
-	init->PassFourPhaseOne(ANDORStates,ORLitStates,toANDLink,assumeinfomap);
+	init->PassFourPhaseOne(ANDORStates,ORLitStates,toANDLink,assumeinfomap,mUnsatMemoization);
 	//when done in seenmap we have Eq classes for every distinct amap.
 	//delete all states present in the set allstates.., No we cant as we are currently in a state only..
 	//so its better to return it..

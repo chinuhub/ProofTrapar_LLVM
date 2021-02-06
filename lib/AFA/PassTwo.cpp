@@ -14,13 +14,22 @@
 
 
 //Changed the return type to show that the mHMap of this node/state is unsat.
-bool AFAState::PassTwo(std::map<AFAStatePtr,AFAStatePtr,mapstatecomparator>& mAllStates){
+bool AFAState::PassTwo(std::map<AFAStatePtr,AFAStatePtr,mapstatecomparator>& mAllStates, std::map<z3::expr, bool,mapexpcomparator>& mUnsatMemoization){
 //	std::cout<<"Inside pass two loop for node with type= "<<mType<<" mamap="<<mAMap<<" and hmap= "<<mHMap<<std::endl;
 	//check if we have already seen this state.. if yes then return
 	if(mAllStates.find(this)!=mAllStates.end()){
 //		std::cout<<"found and returne d"<<std::endl;
-		BOOST_ASSERT_MSG(mUnsatMemoization.find(*mHMap)!=mUnsatMemoization.end(),"Some serious issue");
-		return mUnsatMemoization.find(*mHMap)->second;
+//Check if *mHMap is sat or not.
+        if(HelperIsUnsat(*mHMap)){
+            //mUnsatMemoization.insert(std::make_pair(*mHMap,true));
+            return true;//true means it is unsat..
+        }
+        else{
+            //mUnsatMemoization.insert(std::make_pair(*mHMap,false));
+            return false;
+        }
+		//BOOST_ASSERT_MSG(mUnsatMemoization.find(*mHMap)!=mUnsatMemoization.end(),"Some serious issue");
+		//return mUnsatMemoization.find(*mHMap)->second;
 	}
 	else{
 		mAllStates.insert(std::make_pair(this,this));
@@ -115,7 +124,7 @@ bool AFAState::PassTwo(std::map<AFAStatePtr,AFAStatePtr,mapstatecomparator>& mAl
 		}
 		BOOST_FOREACH(auto st, mTransitions){
 					BOOST_FOREACH(auto st2, st.second)
-							st2->PassTwo(mAllStates);
+							st2->PassTwo(mAllStates,mUnsatMemoization);
 				}
 		return res;
 	}else if(mType==OR){
@@ -127,7 +136,7 @@ bool AFAState::PassTwo(std::map<AFAStatePtr,AFAStatePtr,mapstatecomparator>& mAl
 		bool res=true;
 		BOOST_FOREACH(auto st, mTransitions){
 				BOOST_FOREACH(auto st2, st.second)
-						res=res && (st2->PassTwo(mAllStates));
+						res=res && (st2->PassTwo(mAllStates,mUnsatMemoization));
 				}
 		mUnsatMemoization.insert(std::make_pair(*mHMap,res));
 
@@ -151,7 +160,7 @@ bool AFAState::PassTwo(std::map<AFAStatePtr,AFAStatePtr,mapstatecomparator>& mAl
 			BOOST_FOREACH(auto st, mTransitions){
 				BOOST_ASSERT_MSG(st.second.size()==1,"Can not  have size >1, some serious issue");
 						BOOST_FOREACH(auto st2, st.second)
-								res=st2->PassTwo(mAllStates);
+								res=st2->PassTwo(mAllStates,mUnsatMemoization);
 					}
 			mUnsatMemoization.insert(std::make_pair(*mHMap,res));
 			return res;
