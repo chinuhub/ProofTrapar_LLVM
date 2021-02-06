@@ -13,16 +13,16 @@
 #include <set>
 #include <boost/assert.hpp>
 #include <algorithm>
-extern "C"
+/*extern "C"
 {
 #include <fa.h>
-}
+}*/
 #include <libfaudes.h>
 class AFAut {
 private:
 	// Stores the initial state of AFA.
 
-	static AFAStatePtr RecMakeAFAutFromFA(struct autstate* state, std::map<struct autstate*, AFAStatePtr>&,z3::context& );
+	//static AFAStatePtr RecMakeAFAutFromFA(struct autstate* state, std::map<struct autstate*, AFAStatePtr>&,z3::context& );
 public:
 	AFAut(){}
 	AFAStatePtr mInit;
@@ -33,7 +33,7 @@ public:
 	/**
 	 * Function to convert an NFA/DFA to an AFA
 	 */
-	static AFAut* MakeAFAutFromFA(struct fa* nfa,Program* program,z3::context&);
+	//static AFAut* MakeAFAutFromFA(struct fa* nfa,Program* program,z3::context&);
 
 	static AFAut* MakeAFAutProof(std::string& word, z3::expr& mPhi,Program* p, int count, bool& bres, faudes::Generator& generator);
 	struct fa* ConvertToNFA();
@@ -59,7 +59,7 @@ public:
 	 */
 	std::string GetWord();
 
-	AFAut* PassFourNew(AFAStatePtr init, std::set<AFAStatePtr>& allStates , int, faudes::Generator&);
+	AFAut* PassFourNew(AFAStatePtr init, std::set<AFAStatePtr>& allStates , int, faudes::Generator&, std::map<z3::expr, bool,mapexpcomparator>&);
 
 	std::set<std::set<AFAStatePtr>> GetConjunctedTransitions(std::set<AFAStatePtr> stateset, std::string sym);
 	std::set<AFAStatePtr> GetDisjunctedTransitions(std::set<AFAStatePtr> stateset, std::string sym);

@@ -10,10 +10,12 @@
 #include <libfaudes.h>//WHY this ordering was important.. If I put it after c++/z3++ then lots of error..
 #include "Program.h"
 #include <set>
+/*
 extern "C"
 {
 #include <fa.h>
 }
+*/
 #include <map>
 #include <iostream>
 #include <vector>
@@ -31,16 +33,20 @@ class SCTransSystem {
 	Program& mProgram;
 	z3::solver& mSolver;
 
-	std::map<struct autstate*, z3::expr> mShuffautAssnMap;
+	//std::map<struct autstate*, z3::expr> mShuffautAssnMap;
 public:
-	struct fa* mMerged;
+	//struct fa* mMerged;
 	SCTransSystem(Program&,z3::solver& s);
-	struct fa* BuildSCTS(faudes::Generator&);
-	struct fa* FA_Merge(std::vector<struct fa*>& autset,std::map<std::string,z3::expr>& assnMap,faudes::Generator&);
-	std::tuple<bool,z3::expr> GetAcceptAssn(std::set<struct autstate*, newsetofstatescomparator>&, std::map<struct autstate*, z3::expr>&);
-	std::tuple<std::string,z3::expr> GetAcceptedWordWithEndState();
+	void BuildSCTS(faudes::Generator&);
+    void CreateFAutomataFaudes(const AdjacencyList<int>& adj, faudes::Generator& generator);
+	//struct fa* FA_Merge(std::vector<struct fa*>& autset,std::map<std::string,z3::expr>& assnMap,faudes::Generator&);
+	//std::tuple<bool,z3::expr> GetAcceptAssn(std::set<struct autstate*, newsetofstatescomparator>&, std::map<struct autstate*, z3::expr>&);
+	//std::tuple<std::string,z3::expr> GetAcceptedWordWithEndState();
 	z3::expr GetEndStateAssertionFromWord(std::string afaword);
 	virtual ~SCTransSystem();//here delete all expr stored in mShuffautAssnMap, fa as well..
+    void ReverseGenerator(faudes::Generator &original, faudes::Generator &rev);
+
+    std::string GetWord(faudes::Generator generator);
 };
 
 #endif /* SCTRANSSYSTEM_SCTRANSSYSTEM_H_ */
