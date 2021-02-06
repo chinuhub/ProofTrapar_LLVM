@@ -47,8 +47,9 @@ Program* AFAut::mProgram;
 
 /**
  * Function to convert an NFA/DFA to an AFA
+ * Commenting out for now as it is not being used and we want to get away with fa.h library.
  */
-AFAut* AFAut::MakeAFAutFromFA(struct fa* nfa,Program* program, z3::context& ctx){
+/*AFAut* AFAut::MakeAFAutFromFA(struct fa* nfa,Program* program, z3::context& ctx){
 	mProgram= program;
 
 	AFAut* afa = new AFAut();
@@ -57,13 +58,13 @@ AFAut* AFAut::MakeAFAutFromFA(struct fa* nfa,Program* program, z3::context& ctx)
 
 	BOOST_ASSERT_MSG(seenstates.find(nfa->initial)->second==init,"Some serious issue");
 	afa->mInit=init;
-/*
+*//*
 	BOOST_FOREACH(auto t, init->mTransitions){
 		BOOST_FOREACH(auto v, t.second)
 				std::cout<<v<<","<<std::endl;
 	}
 	afa->PrintToDot("tryinside.dot");
-*/
+*//*
 	//complete the AFA
 	//Now before returning, complete the AFA, i.e. for each state, get set of symbols on which it has
 		 	    //transitions, then find where it doesnt have and add an edge from this state on this symbol to error state.
@@ -88,9 +89,14 @@ AFAut* AFAut::MakeAFAutFromFA(struct fa* nfa,Program* program, z3::context& ctx)
 		 		   }
 		 	   }
 	return afa;
-}
+}*/
 
-AFAStatePtr AFAut::RecMakeAFAutFromFA(struct autstate* state, std::map<struct autstate*, AFAStatePtr>& seenstates,z3::context& ctx)
+
+/**
+ * Commenting out this method as it was only used by MakeAFAutFromFA method (above) which is no longer present.
+ * We want to avoid the usage of fa.h.
+ */
+/*AFAStatePtr AFAut::RecMakeAFAutFromFA(struct autstate* state, std::map<struct autstate*, AFAStatePtr>& seenstates,z3::context& ctx)
 {
 //std::cout<<"iter"<<std::endl;
 	if(seenstates.find(state)!=seenstates.end())
@@ -127,7 +133,7 @@ AFAStatePtr AFAut::RecMakeAFAutFromFA(struct autstate* state, std::map<struct au
 			st->HelperAddEdgeIfAbsent(st,destafa,sym);
 		}
 	return st;
-}
+}*/
 
 
 /**
@@ -135,7 +141,9 @@ AFAStatePtr AFAut::RecMakeAFAutFromFA(struct autstate* state, std::map<struct au
  */
 AFAut* AFAut::MakeAFAutProof(std::string& word, z3::expr& mPhi,Program* p, int count, bool& bres, faudes::Generator& generator){
 	mProgram= p;
-	 //for mPhi, create a state appropriately.., add this state to a worklist.. and repeat until worklist is empty..
+    std::map<z3::expr, bool,mapexpcomparator> mUnsatMemoization;
+
+    //for mPhi, create a state appropriately.., add this state to a worklist.. and repeat until worklist is empty..
 			//inside loop, remove an element from this worklist and invoke the function FillState on it..
 			//whatever is returned is added to the worklist.
 			z3::context& ctx= mPhi.ctx();
@@ -206,7 +214,7 @@ AFAut* AFAut::MakeAFAutProof(std::string& word, z3::expr& mPhi,Program* p, int c
 			std::cout<<"Starting Pass two"<<std::endl;
 #endif
 			std::map<AFAStatePtr,AFAStatePtr,mapstatecomparator> passtwoallstates;
-			afa->mInit->PassTwo(passtwoallstates);
+			afa->mInit->PassTwo(passtwoallstates, mUnsatMemoization);
 #ifdef	DBGPRNT
 			std::cout<<"Pass two ended"<<std::endl;
 			afa->PrintToDot("Pass2.dot");
@@ -233,7 +241,7 @@ AFAut* AFAut::MakeAFAutProof(std::string& word, z3::expr& mPhi,Program* p, int c
 	 	   //struct fa* complementedaut=afa->mInit->PassFour(afa->mInit,passtwoallstates);
 //	 	   struct fa* complementedaut=
 	 	    std::set<AFAStatePtr> allStatesDel;
-	 	    AFAut* proofafa = afa->PassFourNew(afa->mInit,allStatesDel,count,generator);
+	 	    AFAut* proofafa = afa->PassFourNew(afa->mInit,allStatesDel,count,generator,mUnsatMemoization);
 	 	   //delete alls tates in passtwoallstates;-- Do it later;;
 	 	  BOOST_FOREACH(auto t, allStatesDel){
 	 	  		delete(t);
@@ -753,7 +761,11 @@ void AFAut::Intersection(faudes::Generator& rGen, faudes::Generator& rRes)
 }
 
 
-struct fa* AFAut::ConvertToNFA(){
+/**
+ * Commenting out this method as it is no longer used. Also it helps us to avoid using fa.h
+ * @return
+ */
+/*struct fa* AFAut::ConvertToNFA(){
 	struct fa* nfa = fa_make_empty();
 	std::map<SetAFAStatesPtr, struct autstate*> seenmap;
 	std::set<SetAFAStatesPtr> workset;
@@ -861,7 +873,7 @@ struct fa* AFAut::ConvertToNFA(){
 	return nfa;
 
 
-}
+}*/
 
 bool AFAut::IsUnsafe(){
 	z3::expr wp(*(mInit->mHMap));
