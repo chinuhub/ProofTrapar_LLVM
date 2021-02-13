@@ -24,6 +24,13 @@ wget https://apt.llvm.org/llvm.sh
 chmod +x llvm.sh
 sudo ./llvm.sh 11
 ```
+or you can also install via apt-get
+
+```bash
+sudo apt-get install llvm-11-dev
+sudo apt-get install llvm-11
+sudo apt-get install llvm
+```
 
 ## Building LLVM from source
 Building from sources can be slow and tricky but might be your preferred method to obtain LLVM.
