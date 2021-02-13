@@ -56,13 +56,15 @@ For further details read the [official documentation](https://llvm.org/docs/CMak
 The following steps will work on Linux:
 
 ```bash
-git clone https://github.com/Z3Prover/z3
-cd z3
-mkdir build
-cd build
-cmake -G Ninja ../
-ninja
-ninja install
+    * download the source code of 4.8.7 to some directory, say <z3dir> from https://github.com/Z3Prover/z3/releases/tag/z3-4.8.7
+    * cd <z3dir>
+    * Create a directory called build inside <z3dir>
+    * Change to build directory
+    * run 
+        * cmake ../
+        * make (It will take around 15 minutes to build)
+        * sudo make install
+
 ```
 For further details read the [official documentation](https://github.com/Z3Prover/z3/blob/master/README-CMake.md).
 
