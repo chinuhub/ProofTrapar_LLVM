@@ -58,6 +58,10 @@ sudo apt-get install libboost-program-options-dev
 ## Building
 You can build **llvm-verify-pass** as follows:
 ```bash
+# Clone the repository to a directory, say <projectdir>
+git clone https://github.com/chinuhub/ProofTrapar_LLVM.git 
+# Change to the project directory
+cd <projectdir>
 Currently you are inside the cloned repository.
 # create a build directory
 mkdir build
