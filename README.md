@@ -50,10 +50,29 @@ For further details read the [official documentation](https://github.com/Z3Prove
 
 ## Installing Boost library
 
+For Ubuntu 20.04 install version 1.71 of Boost library using the following commands.
 ```bash
 sudo apt-get install libboost1.71-all-dev
 sudo apt-get install libboost-program-options-dev
 ```
+
+On Ubuntu 18.04 the available version is 1.65 which can be installed using
+```bash
+sudo apt-get install libboost1.65-all-dev
+sudo apt-get install libboost-program-options-dev
+```
+
+If you installed Boost version 1.65 then you need to change the following line in CMakeLists.txt in <projctdir>.
+ ```bash
+find_package(Boost 1.71 COMPONENTS program_options REQUIRED)
+```
+ to
+  ```bash
+find_package(Boost 1.65 COMPONENTS program_options REQUIRED)
+```
+
+ 
+
 # Building the project
 ## Building
 You can build **llvm-verify-pass** as follows:
@@ -62,8 +81,8 @@ You can build **llvm-verify-pass** as follows:
 git clone https://github.com/chinuhub/ProofTrapar_LLVM.git 
 # Change to the project directory
 cd <projectdir>
-Currently you are inside the cloned repository.
-# create a build directory
+# Currently you are inside the cloned repository.
+# Create a build directory inside it.
 mkdir build
 # change to build directory
 cd build
