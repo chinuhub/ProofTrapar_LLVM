@@ -78,9 +78,14 @@ sudo apt-get install libboost-program-options-dev
 ## Building
 You can build **llvm-verify-pass** as follows:
 ```bash
-mkdir <build/dir>
-cd <build/dir>
+Currently you are inside the cloned repository.
+# create a build directory
+mkdir build
+# change to build directory
+cd build
+# run cmake
 cmake ..
+# It will creata a makefile inside build directory. Now run make command.
 make -j4 (j4 is for forking 4 threads to perform make build)
 ```
 
@@ -175,7 +180,8 @@ you want to use (see [here](#llvm-pass-managers) for more details).
 
 ```bash
 # Generate an LLVM IR file for New PM interface
-clang -emit-llvm -S input_file.c > output_file.ll
+clang -emit-llvm -S input_file.c
+# It will create a file input_file.ll in the current directory
 # Generate an LLVM bitcode file Legacy PM interface
 clang -emit-llvm -o input_file.c > output_file.bc
 ```
