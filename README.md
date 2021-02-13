@@ -18,6 +18,8 @@ On Ubuntu, you can install LLVM using apt-get command.
 sudo apt-get install llvm-11-dev
 sudo apt-get install llvm-11
 sudo apt-get install llvm
+sudo apt-get install clang-11
+sudo apt-get install opt
 ```
 
 If it doesn't work then you can get it from official [repository](https://apt.llvm.org/)
