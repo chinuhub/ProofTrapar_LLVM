@@ -68,6 +68,12 @@ The following steps will work on Linux:
 ```
 For further details read the [official documentation](https://github.com/Z3Prover/z3/blob/master/README-CMake.md).
 
+## Installing Boost library
+
+```bash
+sudo apt-get install libboost1.71-all-dev
+sudo apt-get install libboost-program-options-dev
+```
 # Building the project
 ## Building
 You can build **llvm-verify-pass** as follows:
