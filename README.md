@@ -62,7 +62,7 @@ The following steps will work on Linux:
     * Change to build directory
     * run 
         * cmake ../
-        * make (It will take around 15 minutes to build)
+        * make -j4 (j4 is for forking 4 threads to speed up make build. It will take around 15 minutes to build)
         * sudo make install
 
 ```
@@ -81,7 +81,7 @@ You can build **llvm-verify-pass** as follows:
 mkdir <build/dir>
 cd <build/dir>
 cmake ..
-make
+make -j4 (j4 is for forking 4 threads to perform make build)
 ```
 
 # Running and testing
