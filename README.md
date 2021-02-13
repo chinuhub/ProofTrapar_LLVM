@@ -62,7 +62,7 @@ sudo apt-get install libboost1.65-all-dev
 sudo apt-get install libboost-program-options-dev
 ```
 
-If you installed Boost version 1.65 then you need to change the following line in CMakeLists.txt in <projctdir>.
+If you installed Boost version 1.65 then you need to change the following line in CMakeLists.txt file. This file is present in the root directory of the project.
  ```bash
 find_package(Boost 1.71 COMPONENTS program_options REQUIRED)
 ```
@@ -89,7 +89,7 @@ cd build
 # run cmake
 cmake ..
 # It will creata a makefile inside build directory. Now run make command.
-make -j4 (j4 is for forking 4 threads to perform make build)
+make -j4 # (j4 is for forking 4 threads to perform make build)
 ```
 
 # Running and testing
