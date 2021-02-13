@@ -13,7 +13,14 @@ In order to run the pass you will need:
   * **opt** (to load and execute the pass)
 
 ## Install LLVM on Ubuntu
-On Ubuntu, you can install LLVM from official [repository](https://apt.llvm.org/)
+On Ubuntu, you can install LLVM using apt-get command.
+```bash
+sudo apt-get install llvm-11-dev
+sudo apt-get install llvm-11
+sudo apt-get install llvm
+```
+
+If it doesn't work then you can get it from official [repository](https://apt.llvm.org/)
 
 ```bash
 # Install the latest stable version
@@ -24,34 +31,7 @@ wget https://apt.llvm.org/llvm.sh
 chmod +x llvm.sh
 sudo ./llvm.sh 11
 ```
-or you can also install via apt-get
 
-```bash
-sudo apt-get install llvm-11-dev
-sudo apt-get install llvm-11
-sudo apt-get install llvm
-```
-
-## Building LLVM from source
-Building from sources can be slow and tricky but might be your preferred method to obtain LLVM.
-It is strongly recommended that you use ninja build or other faster generators instead of using
-"Unix Makefile", otherwise it may take hours to build a project as big as llvm. Following steps
-will work on any Linux distro:
-
-```bash
-# Install ninja if not installed
-sudo apt install ninja-build
-
-# Install latest LLVM
-git clone https://github.com/llvm/llvm-project.git
-cd llvm-project
-mkdir build
-cd build
-cmake -G Ninja <llvm-project/root/dir>/llvm/
-ninja
-ninja install
-```
-For further details read the [official documentation](https://llvm.org/docs/CMake.html).
 ## Building Z3 from source
 The following steps will work on Linux:
 
