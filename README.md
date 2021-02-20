@@ -205,17 +205,18 @@ opt -disable-output -load <build_dir>/lib/libSafetyVerificationPass.so -legacy-v
 
 ## An Overview of LLVM Pass Managers
 There are two pass managers for llvm:
-* **Legacy Pass Manager** which currently is the default pass manager in LLVM:
-  * It is implemented in the _legacy_ namespace.
-  * It is documented very well. You can read about writing and registering
-    pass [here](https://llvm.org/docs/WritingAnLLVMPass.html).
 * **New Pass Manager**:
   * LLVM is slowly transitioning to New Pass Manager and this will eventually
     become the default pass manager in LLVM.
   * There is no official documentation for New Pass Manager right now. However,
     a short tutorial is given [here](https://llvm.org/docs/WritingAnLLVMNewPMPass.html).
+* **Legacy Pass Manager** which currently is the default pass manager in LLVM:
+  * It is implemented in the _legacy_ namespace.
+  * It is documented very well. You can read about writing and registering
+    pass [here](https://llvm.org/docs/WritingAnLLVMPass.html).
 
-## Runnig New PM vs Legacy PM using opt
+
+## Running New PM vs Legacy PM using opt
 
 Input for Legacy PM is llvm bitcode files i.e. .bc extension. Input for New PM
 is llvm IR i.e. .ll extension.
