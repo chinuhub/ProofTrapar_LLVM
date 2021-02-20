@@ -216,21 +216,6 @@ There are two pass managers for llvm:
     pass [here](https://llvm.org/docs/WritingAnLLVMPass.html).
 
 
-## Running New PM vs Legacy PM using opt
-
-Input for Legacy PM is llvm bitcode files i.e. .bc extension. Input for New PM
-is llvm IR i.e. .ll extension.
-
-Our **SafetyVerificationPass** implements interface for both pass managers. This
-is how you can run it with Legacy PM:
-```bash
-opt -disable-output -load <build_dir>/lib/libSafetyVerificationPass.so -legacy-verify-module-safety input_for_legacy_pm.bc
-```
-
-And this is how you run it with New PM:
-```bash
-opt -disable-output -load-pass-plugin <build_dir>/lib/libSafetyVerificationPass.so -passes="verify-module-safety" input_for_new_pm.ll
-```
 
 # Graphviz
 ## Installing Graphviz
