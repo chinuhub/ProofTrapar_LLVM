@@ -181,24 +181,25 @@ you want to use (see [here](#llvm-pass-managers) for more details).
 **Note**: You may have to use ```opt-11``` instead of ```opt``` and similarly,
 ```clang-11``` instead of ```clang```.
 
-### Generating .bc and .ll from .c files]
-
+### For New PM interface
 ```bash
 # Generate an LLVM IR file for New PM interface
 clang -emit-llvm -S input_file.c
 # It will create a file input_file.ll in the current directory
-# Generate an LLVM bitcode file Legacy PM interface
-clang -emit-llvm -o input_file.c > output_file.bc
-```
-
-### Running the pass through opt
-```bash
-# Run the pass through opt - Legacy PM
-opt -disable-output -load <build_dir>/lib/libSafetyVerificationPass.so -legacy-verify-module-safety input_for_legacy_pm.bc
 # Run the pass through opt - New PM
-opt -disable-output -load-pass-plugin <build_dir>/lib/libSafetyVerificationPass.so -passes="verify-module-safety" input_for_new_pm.ll
+opt -disable-output -load-pass-plugin <build_dir>/lib/libSafetyVerificationPass.so -passes="verify-module-safety" input_file.ll
 ```
 
+
+### For Legacy PM interface
+
+```bash
+# Generate an LLVM bitcode file for Legacy PM interface
+clang -emit-llvm -o input_file.c
+# It will create a file input_file.bc in the current directory
+# Run the pass through opt - Legacy PM
+opt -disable-output -load <build_dir>/lib/libSafetyVerificationPass.so -legacy-verify-module-safety input_file.bc
+```
 
 # LLVM Pass Managers
 
