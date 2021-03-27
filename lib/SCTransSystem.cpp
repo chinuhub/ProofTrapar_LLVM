@@ -92,10 +92,19 @@ void SCTransSystem::CreateFAutomataFaudes(const AdjacencyList<int>& adj, faudes:
             unsigned symbolval = edge.second;
             srcstr = std::to_string(source);
             dststr = std::to_string(destination);
-            char sym = 'A';
+            
+            /*char sym = 'A';
             if (symbolval < 26) sym = 'A' + symbolval;
             else sym = 'a' + (symbolval - 26);
-            std::string symstr(1,sym);
+            */
+            
+          
+            //std::string symstr(1,sym);
+            
+            std::string symstr="L";
+  	    symstr= symstr + std::to_string(symbolval+1);
+            
+            
             generator.InsEvent(symstr);
             //States corresponding to source and destination have already been added in the generator by previous loop.
             // so just insert an edge between those states.

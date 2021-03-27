@@ -110,10 +110,21 @@ AdjacencyList<int> CreateAutGraph(std::vector<BasicBlockGraph> BB) {
   for (unsigned i = 0; i < aut_graph.size(); i++) {
     std::cout << "From State " << i << " :" << std::endl;
     for (unsigned j = 0; j < aut_graph[i].size(); j++) {
-      char temp = 'A';
-      if (aut_graph[i][j].second < 26) temp = 'A' + aut_graph[i][j].second;
-      else temp = 'a' + (aut_graph[i][j].second - 26);
+    
+    
+      //char temp = 'A';
+      //if (aut_graph[i][j].second < 26) temp = 'A' + aut_graph[i][j].second;
+      //else temp = 'a' + (aut_graph[i][j].second - 26);
+      
+      
+      std::string temp="L";
+      temp= temp + std::to_string(aut_graph[i][j].second+1);
+      
       std::cout << aut_graph[i][j].first << ' ' << temp;
+      
+      
+      
+      
       std::cout << std::endl;
     }
     std::cout << std::endl;
@@ -152,10 +163,16 @@ bool InstructionComparator::operator()(
 std::ofstream z3_stream;
 
 void debug_writer(unsigned id, InstructionType inst) {
+  /*
   char sym;
   if (id < 26) sym = 'A' + id;
   else if (id < 52) sym = 'a' + (id - 26);
   else sym = '0' + (id - 52);
+  */
+  
+  std::string sym="L";
+  sym= sym + std::to_string(id+1);
+
   z3_stream << sym << ": ";
   if (std::get<0>(inst) == kAssign) {
     z3_stream << std::get<1>(inst) << ":=" << std::get<2>(inst) << std::endl;
@@ -206,6 +223,8 @@ void Program::DotWrite(std::ofstream& os, const AdjacencyList<int>& adj_list) {
       if (label == -1) {
         os << "eps";
       } else {
+      
+      /*
         char symbol;
         if (label < 26) {
           symbol = 'A' + label;
@@ -213,7 +232,10 @@ void Program::DotWrite(std::ofstream& os, const AdjacencyList<int>& adj_list) {
         else {
           symbol = 'a' + (label - 26);
         }
-        os << symbol;
+     */
+        std::string symbol="L";
+        symbol= symbol + std::to_string(label+1);
+      	os << symbol;
       }
       os << "\"];\n";
     }
@@ -915,12 +937,18 @@ std::map<std::string, z3::expr>& Program::GetAssnMapForAllProcesses() {
 void Program::MakeOldInterface() {
   mVarExprMap = variable_expr_map_;
   // assert that we don't have more instructions than symbols available
-  assert(inst_list_.size() <= 52);
+  //assert(inst_list_.size() <= 52);
+  
   unsigned i = 0;
   for (i = 0; i < inst_list_.size(); i++) {
-    std::string sym;
-    if (i < 26) sym += ('A' + i);
-    else sym += ('a' + i - 26);
+  
+   // std::string sym;
+   //if (i < 26) sym += ('A' + i);
+   //else sym += ('a' + i - 26);
+   
+   std::string sym="L";
+   sym= sym + std::to_string(i+1);
+
     mAllSyms.push_back(sym);
     if (std::get<0>(inst_list_[i]) == kAssign) {
       std::tuple<z3::expr, z3::expr> inst =
@@ -951,10 +979,16 @@ void Program::MakeOldInterface() {
     }
   }
   for (unsigned j = 0; j < thread_graphs_.size(); j++) {
-    std::string sym;
+  
+    //std::string sym;
     int sym_num = thread_graphs_[j][1][0].second;
-    if (sym_num < 26) sym += ('A' + sym_num);
-    else sym += ('a' + (sym_num - 26));
+    
+    //if (sym_num < 26) sym += ('A' + sym_num);
+    //else sym += ('a' + (sym_num - 26));
+    
+    std::string sym="L";
+    sym= sym + std::to_string(sym_num+1);
+
     mAssnMap.insert(
       std::make_pair(
         sym,
