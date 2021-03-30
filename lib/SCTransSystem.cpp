@@ -55,7 +55,21 @@ struct newstateinfocompare{
 z3::expr SCTransSystem::GetEndStateAssertionFromWord(std::string afaword)
 {
 	size_t length=afaword.length();
-	std::string lastsym(afaword.substr(length-1,1));
+
+	//std::string lastsym(afaword.substr(length-1,1));
+
+    std::stringstream temp(afaword);
+    std::vector<std::string> tokens;
+    std::string get_tokens;
+    while(getline(temp, get_tokens, 'L')){
+        tokens.push_back(get_tokens);
+    }
+
+    //for(int i = tokens.size()-1; i >0; i--) {
+    //    rev=rev+ "L" + tokens[i];
+    //}
+    std::string lastsym = "L" + tokens[tokens.size()-1];
+
 	std::map<std::string,z3::expr> assnMap = mProgram.GetAssnMapForAllProcesses();
 	BOOST_ASSERT_MSG(assnMap.find(lastsym)!=assnMap.end(),"Some serious issue as the last char must be the one where assn is defined");
 	return assnMap.find(lastsym)->second;
@@ -102,7 +116,7 @@ void SCTransSystem::CreateFAutomataFaudes(const AdjacencyList<int>& adj, faudes:
             //std::string symstr(1,sym);
             
             std::string symstr="L";
-  	    symstr= symstr + std::to_string(symbolval+1);
+  	        symstr= symstr + std::to_string(symbolval+1);
             
             
             generator.InsEvent(symstr);
