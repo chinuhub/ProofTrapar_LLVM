@@ -83,7 +83,6 @@ bool AFAState::HelperIsValid(z3::expr formula)
 		z3::params pc(ctx);
 		pc.set(":unsat-core",true);
 		solv.set(pc);
-		//std::cout<<"Adding formula "<<formula;
 		solv.add(!formula);
 		if(solv.check()==z3::check_result::unsat){
 			return true;
@@ -347,13 +346,30 @@ void AFAState::PassOne(std::map<AFAStatePtr,AFAStatePtr,mapstatecomparator>& mAl
 			int i=1;
 			bool notasingleall=true;
 
-		    for (std::string::reverse_iterator rit= mRWord.rbegin(); rit!=mRWord.rend(); ++rit,i++)
-		    {
-				bool notasingle=true;
-		   	    std::string rest(mRWord.begin(),mRWord.end()-i);
-				//for each character encountered..
-		    	char c = *rit;
-		    	std::string sym(1,c);
+
+
+			//-----------------------modification starts-------------------------------
+
+
+            std::stringstream temp(mRWord);
+            std::vector<std::string> tokens;
+            std::string get_tokens;
+            while(getline(temp, get_tokens, 'L')){
+                tokens.push_back(get_tokens);
+            }
+
+            std::string rest;
+
+            for(int i = tokens.size()-1; i >0; i--) {
+
+                bool notasingle=true;
+                std::string sym = "L"+ tokens[i];
+                rest="";
+                for(int j=1;j<i;j++){
+                    rest= rest+"L" + tokens[j];
+                }
+
+
 		    	if(AFAut::mProgram->mRWLHRHMap.find(sym)!=AFAut::mProgram->mRWLHRHMap.end()){
 		    		//means it is a read/write symbol
 		    		bool isPresent;
@@ -545,6 +561,14 @@ void AFAState::PassOne(std::map<AFAStatePtr,AFAStatePtr,mapstatecomparator>& mAl
 		    					HelperAddEdgeIfAbsent(this,this,sym);
 		    			    }*/
 		    }//end for loop
+
+
+
+
+
+
+		    //--------------------------modification ends----------------------
+
 		    if(notasingleall)//if this is the case then make it accepting state as well.
 		    {
 		       	mHMap = new z3::expr(mAMap);
