@@ -125,6 +125,8 @@ void SCTransSystem::BuildSCTS(faudes::Generator& lGenerator){
         faudesAut.DotWrite("./auto"+std::to_string(i+1)+".dot");
     //BOOST_ASSERT_MSG(aut != NULL, "could not construct automaton");
 
+
+
   }
     BOOST_ASSERT_MSG(faudesAutomata.size()>0, " No process given as input.. Exiting");
     faudes::Generator result = faudesAutomata.at(0);
@@ -223,7 +225,8 @@ std::string SCTransSystem::GetWord(faudes::Generator generator){
                 tmp.first=x2;
                 tmp.second=syms+symtrans;
                 FD_DG(" Pushing next state "<<StateName(x2)<<" with trace as "<<tmp.second<<" at the end of the todo queue\n");
-
+                //Add this pair to the end of the todo queue.
+                todo.push(tmp);
             }
         }
 
