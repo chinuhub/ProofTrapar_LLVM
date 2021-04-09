@@ -197,6 +197,15 @@ AFAut* AFAut::MakeAFAutProof(std::string& word, z3::expr& mPhi,Program* p, int c
 #ifdef DBGPRNT
 			afa->PrintToDot("Pass1.dot");
 #endif
+			/*
+			 * We will now construct HMap by traversing over the AFA constructed so far. Earlier we were doing AFA construction (forward) and HMap
+			 * computation simultaneously in PassOne. HMap was being computed by looking at the HMap of the children nodes of a AFA node. However,
+			 * if we allow sharing of multiple AFA states with same AMap and RWord, it is necessary to postpone the computation of HMap until the whole
+			 * AFA construction is over. That is why we now call another pass just to compute HMap for the given AFA.
+			 */
+
+			afa->mInit->PassHMap();
+
 			afa->PrintToDot("Pass1.dot");
 			if(!afa->mInit->HelperIsUnsat(*(afa->mInit->mHMap)))
 			{
