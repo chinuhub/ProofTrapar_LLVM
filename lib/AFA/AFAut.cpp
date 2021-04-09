@@ -204,7 +204,7 @@ AFAut* AFAut::MakeAFAutProof(std::string& word, z3::expr& mPhi,Program* p, int c
 			 * AFA construction is over. That is why we now call another pass just to compute HMap for the given AFA.
 			 */
 
-			afa->mInit->PassHMap();
+			//afa->mInit->PassHMap();
 
 			afa->PrintToDot("Pass1.dot");
 			if(!afa->mInit->HelperIsUnsat(*(afa->mInit->mHMap)))
