@@ -10,6 +10,8 @@
 #include<unordered_map>
 #include<vector>
 #include "AFA/AFAut.h"
+#include "SCTransSystem.h"
+
 
 bool mapstatecomparator::operator() (const AFAStatePtr& one, const AFAStatePtr& two) const
 	{
@@ -76,6 +78,8 @@ bool AFAState::HelperIsUnsat(z3::expr formula)
 
 	}
 
+
+
 bool AFAState::HelperIsValid(z3::expr formula)
 	{
 		z3::context& ctx = mAMap.ctx();
@@ -108,6 +112,8 @@ z3::expr AFAState::HelperSimplifyExpr(z3::expr exp)
 		}
 
 	}
+
+
 
 std::set<z3::expr,mapexpcomparator> AFAState::HelperGetFreeVars(z3::expr& phi){
 	if(phi.is_var()){
@@ -142,6 +148,8 @@ std::set<z3::expr,mapexpcomparator> AFAState::HelperGetFreeVars(z3::expr& phi){
 
 
 }
+
+
 
 void AFAState::PassOne(std::map<AFAStatePtr,AFAStatePtr,mapstatecomparator>& mAllStates){
 
@@ -252,7 +260,6 @@ void AFAState::PassOne(std::map<AFAStatePtr,AFAStatePtr,mapstatecomparator>& mAl
 
 			//-----------------------modification starts-------------------------------
 
-
             std::stringstream temp(mRWord);
             std::vector<std::string> tokens;
             std::string get_tokens;
@@ -260,12 +267,18 @@ void AFAState::PassOne(std::map<AFAStatePtr,AFAStatePtr,mapstatecomparator>& mAl
                 tokens.push_back(get_tokens);
             }
 
+            //SCTransSystem* s = new SCTransSystem();
+            //std::vector<std::string> tokens;
+            //tokens = s->GetSymbols(mRWord);
+
+
             std::string rest;
 
             for(int i = tokens.size()-1; i >0; i--) {
 
                 bool notasingle=true;
                 std::string sym = "L"+ tokens[i];
+
                 rest="";
                 for(int j=1;j<i;j++){
                     rest= rest+"L" + tokens[j];

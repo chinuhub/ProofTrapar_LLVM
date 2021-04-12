@@ -12,6 +12,7 @@
 #include<boost/graph/graphviz.hpp>
 #include<map>
 #include<tuple>
+#include<vector>
 #include "z3++.h"
 /*extern "C"
 {
@@ -80,6 +81,8 @@ public:
 	//adn we cant use normal var becaus then it is like o argument constructor which odes not exist for z3::expr
 	//and hence give error.. Hence w have to live with * declaration., or rathe rmake it shared_ptr;;
 	z3::expr* mHMap;
+
+
 	AFAState(StateType type, std::string& wrd, z3::expr& phi):mRWord(wrd), mAMap(phi)
 	{mType=type; mIsAccepted=false;mHMap=NULL; mAssumeSym="";
 	}
@@ -113,6 +116,8 @@ public:
 	z3::expr HelperSimplifyExpr(z3::expr exp);
 	bool HelperIsUnsat(z3::expr formula);
 	bool HelperIsValid(z3::expr formula);
+
+
 
 	std::set<std::string> getTransitionKeys();
 

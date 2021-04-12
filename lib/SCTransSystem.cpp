@@ -33,7 +33,7 @@ struct newstateinfocompare{
 };
 
 
- SCTransSystem::SCTransSystem(Program& P, z3::solver& s):mProgram(P), mSolver(s) {
+SCTransSystem::SCTransSystem(Program& P, z3::solver& s):mProgram(P), mSolver(s) {
 }
 
  /*
@@ -52,22 +52,40 @@ struct newstateinfocompare{
 	return (std::tuple<std::string,z3::expr>(accword,ex));
 }*/
 
+std::vector<std::string> SCTransSystem::GetSymbols(std::string word) {
+    std::stringstream temp(word);
+    std::vector<std::string> tokens;
+    std::string get_tokens;
+    while (getline(temp, get_tokens, 'L')) {
+        tokens.push_back(get_tokens);
+    }
+    return tokens;
+}
+
+
+
+
 z3::expr SCTransSystem::GetEndStateAssertionFromWord(std::string afaword)
 {
 	size_t length=afaword.length();
 
 	//std::string lastsym(afaword.substr(length-1,1));
 
+/*
     std::stringstream temp(afaword);
     std::vector<std::string> tokens;
     std::string get_tokens;
     while(getline(temp, get_tokens, 'L')){
         tokens.push_back(get_tokens);
     }
-
+*/
     //for(int i = tokens.size()-1; i >0; i--) {
     //    rev=rev+ "L" + tokens[i];
     //}
+
+    std::vector<std::string> tokens;
+    tokens = GetSymbols(afaword);
+
     std::string lastsym = "L" + tokens[tokens.size()-1];
 
 	std::map<std::string,z3::expr> assnMap = mProgram.GetAssnMapForAllProcesses();
