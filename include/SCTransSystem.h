@@ -47,6 +47,8 @@ public:
     void ReverseGenerator(faudes::Generator &original, faudes::Generator &rev);
 
     std::string GetWord(faudes::Generator generator);
+
+    std::vector<std::string> GetSymbols(std::string word);
 };
 
 #endif /* SCTRANSSYSTEM_SCTRANSSYSTEM_H_ */

@@ -54,6 +54,7 @@ SCTransSystem::SCTransSystem(Program& P, z3::solver& s):mProgram(P), mSolver(s) 
 	return (std::tuple<std::string,z3::expr>(accword,ex));
 }*/
 
+
 std::vector<std::string> SCTransSystem::GetSymbols(std::string word) {
     std::stringstream temp(word);
     std::vector<std::string> tokens;

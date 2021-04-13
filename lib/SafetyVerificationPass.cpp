@@ -65,14 +65,15 @@ bool test_bench(Module& M) {
 
 
     //std::reverse(revword.begin(), revword.end());//reverse the word to get it back.
+
     std::stringstream temp(original);
     std::vector<std::string> tokens;
     std::string get_tokens;
-    std::string rev="";
     while(getline(temp, get_tokens, 'L')){
         tokens.push_back(get_tokens);
     }
 
+    std::string rev="";
     for(int i = tokens.size()-1; i >0; i--) {
         rev=rev+ "L" + tokens[i];
     }
@@ -82,7 +83,7 @@ bool test_bench(Module& M) {
 #ifdef DBGPRNT
     std::cout<<"Getting accepted state for "<<revword<<std::endl;
 #endif
-    //z3::expr wordphi= T->GetEndStateAssertionFromWord(revword);
+    //::expr wordphz3i= T->GetEndStateAssertionFromWord(revword);
     //std::string exword = revword;
 
     z3::expr wordphi= T->GetEndStateAssertionFromWord(rev);
