@@ -87,7 +87,6 @@ bool AFAState::HelperIsValid(z3::expr formula)
 		z3::params pc(ctx);
 		pc.set(":unsat-core",true);
 		solv.set(pc);
-		std::cout<<"Adding formula "<<formula;
 		solv.add(!formula);
 		if(solv.check()==z3::check_result::unsat){
 			return true;
@@ -149,7 +148,102 @@ std::set<z3::expr,mapexpcomparator> AFAState::HelperGetFreeVars(z3::expr& phi){
 
 }
 
+void AFAState::PassHMap(){
+    //Start with this state. Its HMap computation depends upon the HMap present in its children.
 
+    //If this state is an accepting state then HMap will be same as AMap. (assign that to this state's HMap variable and return).
+
+    if(mIsAccepted){
+        mHMap = new z3::expr(mAMap);
+        return;
+    }
+    //If this state's HMap is already non-null then return.
+    if(mHMap!= nullptr)
+        return;
+    //Case 1. If it is AND state then recursively call PassHMap on all of its children. After the calls are done. Get HMap from children and use that to compute the HMap
+    //of this node. return
+
+    //Case 2. If it is OR state then recursively call PassHMap on all of its children. After the calls are done. Get HMap from children and use that to compute the HMap
+    //of this node. return
+
+    //Case 3. If it is OrLit then get the HMap of it's child (Guaranteed to have only one child for OrLit node). The child's HMap will become the HMap of this node.
+    //return.
+    if(mType==AND){
+        //by this time we are sure that mPhi of this state is of the form a and b and c
+        //extract a, b,c such clauses..
+#ifdef	DBGPRNT
+        std::cout<<" inside conjfillstate "<<this->mAMap<<std::endl;
+#endif
+        BOOST_ASSERT_MSG(mAMap.decl().decl_kind()==Z3_OP_AND," Expeceting a conjunction , failed.. SOme issue");
+        z3::context& ctx= mAMap.ctx();
+        z3::tactic t = z3::tactic(ctx,"tseitin-cnf");
+        z3::goal g(ctx);
+        SetAFAStatesPtr nextset;
+        BOOST_FOREACH(auto st, mTransitions){
+                        BOOST_FOREACH(auto st2, st.second) {
+                                        if(st2!=this) {
+                                            st2->PassHMap(); //After this call returns we are sure that HMap for that state has been computed.
+                                            nextset.insert(st2);
+                                        }
+                                    }
+                    }
+        //add HMap, by this time the returned state's must have proper HMap set as well..
+        z3::expr trueexp = ctx.bool_val(true);
+        BOOST_FOREACH(auto stp, nextset)
+                    {
+                        BOOST_ASSERT_MSG((*stp).mHMap!=NULL,"Some serious issue as by this time HMap of children must have been set");
+                        trueexp = trueexp && (*((*stp).mHMap));
+                    }
+        trueexp=HelperSimplifyExpr(trueexp);
+        mHMap = new z3::expr(trueexp);//delete it when removin the states.. i.e. in the destructor of this state..
+        return; //We are done as now this state has a valid HMap.
+    }
+    else if(mType==OR){
+        //by this time we are sure that mPhi of this state is of the form a or b or c
+        (mAMap.decl().decl_kind()==Z3_OP_OR," Expeceting a disjunction, failed.. SOme issue");
+        //extract a, b,c such clauses..
+        z3::context& ctx= mAMap.ctx();
+        z3::tactic t = z3::repeat(z3::tactic(ctx, "split-clause") | z3::tactic(ctx, "skip"));
+        SetAFAStatesPtr nextset;
+        BOOST_FOREACH(auto st, mTransitions){
+                        BOOST_FOREACH(auto st2, st.second) {
+                                        if(st2!=this) {
+                                            st2->PassHMap(); //After this call returns we are sure that HMap for that state has been computed.
+                                            nextset.insert(st2);
+                                        }
+                                    }
+                    }
+        //add HMap, by this time the returned state's must have proper HMap set as well..
+        //add HMap, by this time the returned state's must have proper HMap set as well..
+        z3::expr falseexp = ctx.bool_val(false);
+        BOOST_FOREACH(auto stp, nextset)
+                    {
+                        BOOST_ASSERT_MSG((*stp).mHMap!=NULL,"Some serious issue as by this time HMap of children must have been set");
+                        falseexp = falseexp || (*((*stp).mHMap));
+                    }
+        falseexp=HelperSimplifyExpr(falseexp);
+        mHMap = new z3::expr(falseexp);//delete it when removin the states.. i.e. in the destructor of this state..
+        return; //we are done now. HMap has been set for this state, return.
+    }
+    else if(mType==ORLit) {
+        SetAFAStatesPtr nextset;
+        BOOST_ASSERT_MSG(mTransitions.size() == 1, "Can not have more than one outgoing edges, some issue");
+        BOOST_FOREACH(auto st, mTransitions) {
+                        BOOST_ASSERT_MSG(st.second.size() == 1, "Can not  have size >1, some serious issue");
+                        BOOST_FOREACH(auto st2, st.second) {
+                                        if (st2 != this) {
+                                            st2->PassHMap(); //After this call returns we are sure that HMap for that state has been computed.
+                                            //This state's HMap will be now same as st2->mHMap. Set this and return.
+                                            mHMap = new z3::expr(*(st2->mHMap));
+                                            return;
+                                        }
+                                    }
+                    }
+    }
+    else
+        BOOST_ASSERT_MSG(false,"State should either be AND, OR or ORLit, some serious problem");
+
+}
 
 void AFAState::PassOne(std::map<AFAStatePtr,AFAStatePtr,mapstatecomparator>& mAllStates){
 
@@ -198,7 +292,8 @@ void AFAState::PassOne(std::map<AFAStatePtr,AFAStatePtr,mapstatecomparator>& mAl
 				trueexp=HelperSimplifyExpr(trueexp);
 				mHMap = new z3::expr(trueexp);//delete it when removin the states.. i.e. in the destructor of this state..
 				mTransitions.insert(std::make_pair("0",nextset));
-	}else if(mType==OR){
+	}
+	else if(mType==OR){
 		//by this time we are sure that mPhi of this state is of the form a or b or c
 				(mAMap.decl().decl_kind()==Z3_OP_OR," Expeceting a disjunction, failed.. SOme issue");
 				//extract a, b,c such clauses..
@@ -232,7 +327,8 @@ void AFAState::PassOne(std::map<AFAStatePtr,AFAStatePtr,mapstatecomparator>& mAl
 				mHMap = new z3::expr(falseexp);//delete it when removin the states.. i.e. in the destructor of this state..
 				mTransitions.insert(std::make_pair("0",nextset));
 
-	}else if(mType==ORLit){
+	}
+	else if(mType==ORLit){
 		//if mRWrod becomes empty then add it to acceptance state..(even before doing anything else in this loop
 			if(mRWord.length()==0||mIsAccepted){
 				//add this to accepting state and return with empty set..
@@ -490,7 +586,8 @@ void AFAState::PassOne(std::map<AFAStatePtr,AFAStatePtr,mapstatecomparator>& mAl
 		       	mIsAccepted=true;
 		    }
 
-	}else
+	}
+	else
 		BOOST_ASSERT_MSG(false,"State should either be AND, OR or ORLit, some serious problem");
 }
 

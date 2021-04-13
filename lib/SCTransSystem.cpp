@@ -8,6 +8,8 @@
 #include "SCTransSystem.h"
 #include <boost/foreach.hpp>
 #include <boost/assert.hpp>
+#include <queue>
+
 extern "C" {
 #include <stdio.h>
 }
@@ -164,6 +166,8 @@ void SCTransSystem::BuildSCTS(faudes::Generator& lGenerator){
         faudesAut.DotWrite("./auto"+std::to_string(i+1)+".dot");
     //BOOST_ASSERT_MSG(aut != NULL, "could not construct automaton");
 
+
+
   }
     BOOST_ASSERT_MSG(faudesAutomata.size()>0, " No process given as input.. Exiting");
     faudes::Generator result = faudesAutomata.at(0);
@@ -206,12 +210,13 @@ void SCTransSystem::BuildSCTS(faudes::Generator& lGenerator){
 
 }
 
+/**
+ * This method does a breadth first search of the input automaton to find the shortest accepting word starting from the
+ * initial state.
+ */
 std::string SCTransSystem::GetWord(faudes::Generator generator){
-// initialize todo stack. It is a stack of pairs of state and the string reached so far.
-//We don't need to keep the path taken to reach this state because we are fine with finding only one word
-//accepted by this automaton. As soon as we reach the same state by different path we don't explore that any
-//more.
-    std::stack<std::pair<faudes::Idx,std::string>> todo;
+// initialize todo queue. It is a queue of pairs of state and the string reached so far.
+    std::queue<std::pair<faudes::Idx,std::string>> todo;
     std::set<faudes::Idx> seenSet;
     faudes::StateSet::Iterator sit;
     for(sit = generator.InitStatesBegin(); sit != generator.InitStatesEnd(); ++sit) {
@@ -227,7 +232,7 @@ std::string SCTransSystem::GetWord(faudes::Generator generator){
     // loop
     while(!todo.empty()) {
         // pop
-        std::pair<faudes::Idx, std::string> IdxStr = todo.top();
+        std::pair<faudes::Idx, std::string> IdxStr = todo.front();
         faudes::Idx x1 = IdxStr.first;
         //Put x1 in the seen set.
         seenSet.insert(x1);
@@ -245,8 +250,7 @@ std::string SCTransSystem::GetWord(faudes::Generator generator){
         todo.pop();
         tit = generator.TransRelBegin(x1);
         tit_end = generator.TransRelEnd(x1);
-        std::stack<std::pair<faudes::Idx,std::string>> interestingNext;
-        std::stack<std::pair<faudes::Idx,std::string>> notInterestingNext;
+
 
         //Iterate over all transitions of x1..
         for (; tit != tit_end; ++tit) {
@@ -256,30 +260,15 @@ std::string SCTransSystem::GetWord(faudes::Generator generator){
             std::string symtrans = generator.EventName(tit->Ev);
 
             FD_DG(" Checking transition from "<<StateName(x1)<<" to "<<StateName(x2)<<" on "<<EventName(tit->Ev)<<"\n");
-            //if the destination state is not present in the seen set
-            //then prioritize the push (most suitable at the end) based on the symbol that is not seen so far.
-            //then add the pair (destination state, sym.symbol on this transition) to the todostack
+            //if the destination state is not present in the seen set then add the pair (destination state, sym.symbol on this transition) to the todo queue
             if (seenSet.find(x2) == seenSet.end()) {
                 std::pair<faudes::Idx,std::string> tmp;
                 tmp.first=x2;
                 tmp.second=syms+symtrans;
-                FD_DG(" Pushing next state "<<StateName(x2)<<" with trace as "<<tmp.second<<"\n");
-                //if symtrans is already in syms string then push it in noninteresting stack else in interesting stack
-                if(syms.find(symtrans) == std::string::npos){
-                    interestingNext.push(tmp);//means it is not found. So put it at the top
-                }else{
-                    notInterestingNext.push(tmp);
-                }
+                FD_DG(" Pushing next state "<<StateName(x2)<<" with trace as "<<tmp.second<<" at the end of the todo queue\n");
+                //Add this pair to the end of the todo queue.
+                todo.push(tmp);
             }
-        }
-        while(!notInterestingNext.empty()) {
-            todo.push(notInterestingNext.top());
-            notInterestingNext.pop();
-        }
-
-        while(!interestingNext.empty()) {
-            todo.push(interestingNext.top());
-            interestingNext.pop();
         }
 
     }

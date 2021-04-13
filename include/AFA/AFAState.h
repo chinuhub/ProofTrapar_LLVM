@@ -80,9 +80,10 @@ public:
 	//NOte that we cant use rference here because then we wont be able to set it later,,
 	//adn we cant use normal var becaus then it is like o argument constructor which odes not exist for z3::expr
 	//and hence give error.. Hence w have to live with * declaration., or rathe rmake it shared_ptr;;
-	z3::expr* mHMap;
 
 
+
+	z3::expr* mHMap= nullptr;
 	AFAState(StateType type, std::string& wrd, z3::expr& phi):mRWord(wrd), mAMap(phi)
 	{mType=type; mIsAccepted=false;mHMap=NULL; mAssumeSym="";
 	}
@@ -97,6 +98,8 @@ public:
 	void PassOne(std::map<AFAStatePtr,AFAStatePtr,mapstatecomparator>& mAllStates);
 	bool PassTwo(std::map<AFAStatePtr,AFAStatePtr,mapstatecomparator>& mAllStates, std::map<z3::expr, bool,mapexpcomparator>&);
 
+	//Pass to compute HMap by iterating over an AFA.
+	void PassHMap();
 	//Pass to Print DOT file
 	void PassThree(Graph& g, std::map<AFAStatePtr, vertex_t,mapstatecomparator>& indmap);
 
