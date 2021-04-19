@@ -330,63 +330,37 @@ void AFAState::PassOne(std::map<AFAStatePtr,AFAStatePtr,mapstatecomparator>& mAl
 		    		//with the input state's mAMap.
 		    		notasingle=false;
 		    		notasingleall=false;
-		    		// trying this
 
+                    z3::expr lc1(mAMap);
+                    z3::expr lc2(mAMap);
 
-		    			z3::expr l2(l1 && !(left==readarg));
+                    z3::expr_vector s_(ctx),d_(ctx);
+                    s_.push_back(assignvar);
+                    s_.push_back(left);
+                    d_.push_back(ctx.int_val(1));
+                    d_.push_back(writearg);
+                    lc1 = lc1.substitute(s_,d_) && (left == readarg);
 
-                        a = l2.to_string();
-                        z3::expr_vector src1(ctx),dest1(ctx);
-                        src1.push_back(assignvar);
-                        dest1.push_back(ctx.int_val(0));
-                        z3::expr l5(l2.substitute(src1,dest1));
-                        auto b = l5.to_string();
-                        l2=HelperSimplifyExpr(l5);
+                    z3::expr_vector s(ctx),d(ctx);
+                    s.push_back(assignvar);
+                    d.push_back(ctx.int_val(0));
+                    lc2 = lc2.substitute(s,d) && !(left == readarg) ;
 
-                        bool isFalse=false;
-		    			bool istrue = false;
-		    			if(HelperIsUnsat(l2))
-		    			{
-		    				  l2=ctx.bool_val(false);
-		    				  isFalse = true;
-		    			}
-		    			if(HelperIsValid(l2)){
-		    				l2=ctx.bool_val(true);
-		    				istrue=true;
-		    			}
-		    			AFAStatePtr p = HelperAddStateIfAbsent(l2,rest,isPresent,mAllStates);
-		    			if(isFalse||(istrue&& rest.length()==0)){
-		    				p->mIsAccepted=true;
-		    			}
+                    z3::expr lc (lc1||lc2);
+                    lc = HelperSimplifyExpr(lc);
 
-		    			if(!isPresent){
-		    				mAllStates.insert(std::make_pair(p,p));
-		    			    p->PassOne(mAllStates);
-		    			}
-		    			nextset.insert(p);
-
-                    z3::expr l3(l1 );
-                    a = l3.to_string();
-                    z3::expr_vector src(ctx),dest(ctx);
-                    src.push_back(left);
-                    src.push_back(assignvar);
-                    dest.push_back(writearg);
-                    dest.push_back(ctx.int_val(1));
-                    z3::expr l4(l3.substitute(src,dest)&& (left==readarg));
-                    a = l4.to_string();
-                    l3=HelperSimplifyExpr(l4);
-                    isFalse=false;
-                    istrue = false;
-                    if(HelperIsUnsat(l3))
+                    bool isFalse=false;
+                    bool istrue = false;
+                    if(HelperIsUnsat(lc))
                     {
-                        l3=ctx.bool_val(false);
+                        lc=ctx.bool_val(false);
                         isFalse = true;
                     }
-                    if(HelperIsValid(l3)){
-                        l3=ctx.bool_val(true);
+                    if(HelperIsValid(lc)){
+                        lc=ctx.bool_val(true);
                         istrue=true;
                     }
-                    p = HelperAddStateIfAbsent(l3,rest,isPresent,mAllStates);
+                    AFAStatePtr p = HelperAddStateIfAbsent(lc,rest,isPresent,mAllStates);
                     if(isFalse||(istrue&& rest.length()==0)){
                         p->mIsAccepted=true;
                     }
@@ -397,8 +371,7 @@ void AFAState::PassOne(std::map<AFAStatePtr,AFAStatePtr,mapstatecomparator>& mAl
                     }
                     nextset.insert(p);
 
-
-                    //add HMap, by this time the returned state's must have proper HMap set as well..
+  //add HMap, by this time the returned state's must have proper HMap set as well..
 						z3::context& ctx = mAMap.ctx();
 						z3::expr falseexp = ctx.bool_val(false);
 						BOOST_FOREACH(auto stp, nextset)
