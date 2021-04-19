@@ -365,14 +365,14 @@ void Program::ParseThread(Function& Func) {
 
         }
         case Instruction::ExtractValue:{
-//              ExtractValueInst *EV = dyn_cast<ExtractValueInst>(&Inst);
-//              Value *Agg = EV->getAggregateOperand();
+              ExtractValueInst *EV = dyn_cast<ExtractValueInst>(&Inst);
+              Value *Agg = EV->getAggregateOperand();
               std::string lval_operand = ValueToVariable(&Inst, thread_name);
               z3::expr exp = context_.int_const(lval_operand.c_str());            // some handling needs to be done but it would require me to look at the structure of what has to come.
               variable_expr_map_.insert(std::make_pair(lval_operand, exp));
               z3::expr lval_expr = GetVariableExpr(lval_operand);
-              z3::expr  rhs_expr = z3::ite(temp== context_.bool_val(true),context_.int_val(1),context_.int_val(0));
-            InstructionType inst =std::make_tuple(kAssign,lval_expr,rhs_expr);
+              z3::expr rhs_expr = ValueToExpr(Agg,thread_name);
+              InstructionType inst =std::make_tuple(kAssign,lval_expr,rhs_expr);
 
               unsigned inst_num =FindInstruction(std::make_pair(thread_name,inst) );
 
@@ -1086,9 +1086,8 @@ void Program::MakeOldInterface() {
     else if (std::get<0>(inst_list_[i]) == cas) {
         z3::expr cond_expr = std::get<2>(inst_list_[i]);
         z3::expr assign_expr = std::get<2>(inst_list_[i]);
-
         mCASLHRHMap.insert(
-                std::make_pair(  sym, std::make_tuple(assign_expr.arg(0),cond_expr.arg(1),assign_expr.arg(1))  )
+                std::make_pair(  sym, std::make_tuple(cond_expr.arg(1),assign_expr.arg(0),assign_expr.arg(1),cond_expr.arg(0)) )
         );       // the reason why there needs to be so much trouble in extracting values and arguments is because I need 3 expressions but I can only store two .
     }
 

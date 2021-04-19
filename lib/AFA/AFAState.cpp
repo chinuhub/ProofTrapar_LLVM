@@ -323,13 +323,25 @@ void AFAState::PassOne(std::map<AFAStatePtr,AFAStatePtr,mapstatecomparator>& mAl
 
 		    		z3::expr l1(mAMap);
 		    		z3::expr readarg(std::get<1>(AFAut::mProgram->mCASLHRHMap.find(sym)->second));
-		    		//BEWARE that even if no substituteion takes place in cas we still need to conjunct assume part
+                    z3::expr writearg(std::get<2>(AFAut::mProgram->mCASLHRHMap.find(sym)->second));
+                    z3::expr assignvar(std::get<3>(AFAut::mProgram->mCASLHRHMap.find(sym)->second)) ;
+		    		//BEWARE that even if no substitution takes place in cas we still need to conjunct assume part
 		    		//with the input state's mAMap.
 		    		notasingle=false;
 		    		notasingleall=false;
-		    		if(freevars.find(left)!=freevars.end()){
+		    		// trying this
+                    z3::expr_vector src1(ctx),dest1(ctx);
+                    src1.push_back(assignvar);
+                    dest1.push_back(z3::ite(left==readarg,ctx.int_val(1),ctx.int_val(0)));
+                    z3::expr l4(mAMap.substitute(src1,dest1));
+                    l1=l4;
+                    l1=HelperSimplifyExpr(l1);
+
+
+
+                    if(freevars.find(left)!=freevars.end()){
 		    			//means this symbol conflict with phi and hence must be used for processing..
-		    			z3::expr writearg(std::get<2>(AFAut::mProgram->mCASLHRHMap.find(sym)->second));
+
 #ifdef	DBGPRNT
 		    			std::cout<<"CAS:first arg of exp is "<<readarg<<std::endl;
 		    			std::cout<<"CAS:second arg of exp is "<<writearg<<std::endl;
