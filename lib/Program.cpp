@@ -310,7 +310,13 @@ void Program::ParseThread(Function& Func) {
 #endif
           break;
         }
- 		case Instruction::AtomicCmpXchg :{          // this is lazy way to do things , I have to change it later
+ 		case Instruction::AtomicCmpXchg :{
+            std::string llval_operand = ValueToVariable(&Inst, thread_name);
+            z3::expr exp_ = context_.int_const(llval_operand.c_str());            // some handling needs to be done but it would require me to look at the structure of what has to come.
+            variable_expr_map_.insert(std::make_pair(llval_operand, exp_));
+
+
+            // this is lazy way to do things , I have to change it later
             AtomicCmpXchgInst *AI = dyn_cast<AtomicCmpXchgInst>(&Inst);
             Value* ptr = AI->getPointerOperand();
             Value *old_value  = AI->getCompareOperand();
@@ -320,8 +326,8 @@ void Program::ParseThread(Function& Func) {
             z3::expr ptr_expr = GetVariableExpr(lval_operand);
             z3::expr old_expr = ValueToExpr(old_value, thread_name);
             z3::expr new_expr = ValueToExpr(new_value, thread_name);
-            z3::expr condition_part = (ptr_expr == old_expr);
-            z3::expr assignment_part = (ptr_expr == new_expr);  // need to see whether I can use this or this must go ;
+            z3::expr condition_part = (exp_ ==ptr_expr );
+            z3::expr assignment_part = (old_expr == new_expr);  // need to see whether I can use this or this must go ;
 
             InstructionType inst =
                     std::make_tuple(
