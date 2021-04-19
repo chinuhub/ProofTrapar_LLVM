@@ -325,6 +325,7 @@ void AFAState::PassOne(std::map<AFAStatePtr,AFAStatePtr,mapstatecomparator>& mAl
 		    		z3::expr readarg(std::get<1>(AFAut::mProgram->mCASLHRHMap.find(sym)->second));
                     z3::expr writearg(std::get<2>(AFAut::mProgram->mCASLHRHMap.find(sym)->second));
                     z3::expr assignvar(std::get<3>(AFAut::mProgram->mCASLHRHMap.find(sym)->second)) ;
+                    auto a = assignvar.to_string();
 		    		//BEWARE that even if no substitution takes place in cas we still need to conjunct assume part
 		    		//with the input state's mAMap.
 		    		notasingle=false;
@@ -332,11 +333,17 @@ void AFAState::PassOne(std::map<AFAStatePtr,AFAStatePtr,mapstatecomparator>& mAl
 		    		// trying this
 
 
-
-
 		    			z3::expr l2(l1 && !(left==readarg));
-		    			l2=HelperSimplifyExpr(l2);
-		    			bool isFalse=false;
+
+                        a = l2.to_string();
+                        z3::expr_vector src1(ctx),dest1(ctx);
+                        src1.push_back(assignvar);
+                        dest1.push_back(ctx.int_val(0));
+                        z3::expr l5(l2.substitute(src1,dest1));
+                        auto b = l5.to_string();
+                        l2=HelperSimplifyExpr(l5);
+
+                        bool isFalse=false;
 		    			bool istrue = false;
 		    			if(HelperIsUnsat(l2))
 		    			{
@@ -358,13 +365,15 @@ void AFAState::PassOne(std::map<AFAStatePtr,AFAStatePtr,mapstatecomparator>& mAl
 		    			}
 		    			nextset.insert(p);
 
-                    z3::expr l3(l1 && (left==readarg));
-
+                    z3::expr l3(l1 );
+                    a = l3.to_string();
                     z3::expr_vector src(ctx),dest(ctx);
                     src.push_back(left);
+                    src.push_back(assignvar);
                     dest.push_back(writearg);
-                    z3::expr l4(mAMap.substitute(src,dest));
-
+                    dest.push_back(ctx.int_val(1));
+                    z3::expr l4(l3.substitute(src,dest)&& (left==readarg));
+                    a = l4.to_string();
                     l3=HelperSimplifyExpr(l4);
                     isFalse=false;
                     istrue = false;

@@ -315,7 +315,6 @@ void Program::ParseThread(Function& Func) {
             z3::expr exp_ = context_.int_const(llval_operand.c_str());            // some handling needs to be done but it would require me to look at the structure of what has to come.
             variable_expr_map_.insert(std::make_pair(llval_operand, exp_));
 
-
             // this is lazy way to do things , I have to change it later
             AtomicCmpXchgInst *AI = dyn_cast<AtomicCmpXchgInst>(&Inst);
             Value* ptr = AI->getPointerOperand();
@@ -1084,8 +1083,12 @@ void Program::MakeOldInterface() {
       );
     }
     else if (std::get<0>(inst_list_[i]) == cas) {
-        z3::expr cond_expr = std::get<2>(inst_list_[i]);
+        z3::expr cond_expr = std::get<1>(inst_list_[i]);
         z3::expr assign_expr = std::get<2>(inst_list_[i]);
+        z3::expr ptr = cond_expr.arg(1);
+        z3::expr old = assign_expr.arg(0);
+        z3::expr new1 = assign_expr.arg(0);
+        z3::expr assignvar = cond_expr.arg(0);
         mCASLHRHMap.insert(
                 std::make_pair(  sym, std::make_tuple(cond_expr.arg(1),assign_expr.arg(0),assign_expr.arg(1),cond_expr.arg(0)) )
         );       // the reason why there needs to be so much trouble in extracting values and arguments is because I need 3 expressions but I can only store two .
