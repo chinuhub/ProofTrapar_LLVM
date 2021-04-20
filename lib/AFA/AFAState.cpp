@@ -6,6 +6,7 @@
  */
 
 #include "AFA/AFAState.h"
+#include "Utils.h"
 #include<boost/foreach.hpp>
 #include<unordered_map>
 #include<vector>
@@ -352,34 +353,15 @@ void AFAState::PassOne(std::map<AFAStatePtr,AFAStatePtr,mapstatecomparator>& mAl
 			int i=1;
 			bool notasingleall=true;
 
-
-
-			//-----------------------modification starts-------------------------------
-
-            std::stringstream temp(mRWord);
-            std::vector<std::string> tokens;
-            std::string get_tokens;
-            while(getline(temp, get_tokens, 'L')){
-                tokens.push_back(get_tokens);
-            }
-
-            //SCTransSystem* s = new SCTransSystem();
-            //std::vector<std::string> tokens;
-            //tokens = s->GetSymbols(mRWord);
-
-
-            std::string rest;
+            std::vector<std::string> tokens = Utils::GetTokens(mRWord); //getting all symbols of mRWord in vector
 
             for(int i = tokens.size()-1; i >0; i--) {
 
                 bool notasingle=true;
-                std::string sym = "L"+ tokens[i];
 
-                rest="";
-                for(int j=1;j<i;j++){
-                    rest= rest+"L" + tokens[j];
-                }
+                std::string sym = tokens[i];  // last symbol
 
+                std::string rest = Utils::RestOfWord(tokens,i);   //rest of the word
 
 		    	if(AFAut::mProgram->mRWLHRHMap.find(sym)!=AFAut::mProgram->mRWLHRHMap.end()){
 		    		//means it is a read/write symbol
@@ -575,10 +557,6 @@ void AFAState::PassOne(std::map<AFAStatePtr,AFAStatePtr,mapstatecomparator>& mAl
 
 
 
-
-
-
-		    //--------------------------modification ends----------------------
 
 		    if(notasingleall)//if this is the case then make it accepting state as well.
 		    {

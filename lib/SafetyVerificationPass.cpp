@@ -6,6 +6,7 @@
  * @author Yaduraj Rao
  */
 #include "SafetyVerificationPass.h"
+#include "Utils.h"
 
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/Passes/PassBuilder.h"
@@ -63,28 +64,11 @@ bool test_bench(Module& M) {
     std::cout<<"Original is "<<original<<std::endl;
 #endif
 
-
-    //std::reverse(revword.begin(), revword.end());//reverse the word to get it back.
-
-    std::stringstream temp(original);
-    std::vector<std::string> tokens;
-    std::string get_tokens;
-    while(getline(temp, get_tokens, 'L')){
-        tokens.push_back(get_tokens);
-    }
-
-    std::string rev="";
-    for(int i = tokens.size()-1; i >0; i--) {
-        rev=rev+ "L" + tokens[i];
-    }
-
-
+    std::string rev= Utils::ReverseWord(revword); //reverse the word to get it back.
 
 #ifdef DBGPRNT
-    std::cout<<"Getting accepted state for "<<revword<<std::endl;
+    std::cout<<"Getting accepted state for "<<rev<<std::endl;
 #endif
-    //::expr wordphz3i= T->GetEndStateAssertionFromWord(revword);
-    //std::string exword = revword;
 
     z3::expr wordphi= T->GetEndStateAssertionFromWord(rev);
     std::string exword = rev;

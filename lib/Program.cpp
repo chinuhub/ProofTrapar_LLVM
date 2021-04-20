@@ -6,6 +6,7 @@
  * @author Yaduraj Rao
  */
 #include "Program.h"
+#include "Utils.h"
 
 #include <iostream>
 #include <fstream>
@@ -110,21 +111,15 @@ AdjacencyList<int> CreateAutGraph(std::vector<BasicBlockGraph> BB) {
   for (unsigned i = 0; i < aut_graph.size(); i++) {
     std::cout << "From State " << i << " :" << std::endl;
     for (unsigned j = 0; j < aut_graph[i].size(); j++) {
-    
-    
+
       //char temp = 'A';
       //if (aut_graph[i][j].second < 26) temp = 'A' + aut_graph[i][j].second;
       //else temp = 'a' + (aut_graph[i][j].second - 26);
-      
-      
-      std::string temp="L";
-      temp= temp + std::to_string(aut_graph[i][j].second+1);
+
+      std::string temp = Utils::GetLabel(aut_graph[i][j].second);
       
       std::cout << aut_graph[i][j].first << ' ' << temp;
-      
-      
-      
-      
+
       std::cout << std::endl;
     }
     std::cout << std::endl;
@@ -169,9 +164,8 @@ void debug_writer(unsigned id, InstructionType inst) {
   else if (id < 52) sym = 'a' + (id - 26);
   else sym = '0' + (id - 52);
   */
-  
-  std::string sym="L";
-  sym= sym + std::to_string(id+1);
+
+  std::string sym = Utils::GetLabel(id);
 
   z3_stream << sym << ": ";
   if (std::get<0>(inst) == kAssign) {
@@ -233,8 +227,9 @@ void Program::DotWrite(std::ofstream& os, const AdjacencyList<int>& adj_list) {
           symbol = 'a' + (label - 26);
         }
      */
-        std::string symbol="L";
-        symbol= symbol + std::to_string(label+1);
+
+        std::string symbol = Utils::GetLabel(label);
+
       	os << symbol;
       }
       os << "\"];\n";
@@ -329,7 +324,7 @@ void Program::ParseThread(Function& Func) {
           break;
         }
         case Instruction::Ret: {
-          bb_struct.has_branch = true;
+            bb_struct.has_branch = true;
           z3::expr cond_expr = context_.bool_val(true);
           InstructionType inst =
           std::make_tuple(
@@ -344,12 +339,14 @@ void Program::ParseThread(Function& Func) {
               inst
             )
           );
+
           bb_struct.branch_map.insert(
             std::make_pair(
               inst_num,
               0
             )
           );
+
           if (inst_num == inst_list_.size()) {
             inst_list_.push_back(inst);
             inst_map_.insert(
@@ -945,9 +942,8 @@ void Program::MakeOldInterface() {
    // std::string sym;
    //if (i < 26) sym += ('A' + i);
    //else sym += ('a' + i - 26);
-   
-   std::string sym="L";
-   sym= sym + std::to_string(i+1);
+
+   std::string sym = Utils::GetLabel(i);
 
     mAllSyms.push_back(sym);
     if (std::get<0>(inst_list_[i]) == kAssign) {
@@ -980,14 +976,13 @@ void Program::MakeOldInterface() {
   }
   for (unsigned j = 0; j < thread_graphs_.size(); j++) {
   
-    //std::string sym;
+    std::string sym;
     int sym_num = thread_graphs_[j][1][0].second;
     
     //if (sym_num < 26) sym += ('A' + sym_num);
     //else sym += ('a' + (sym_num - 26));
-    
-    std::string sym="L";
-    sym= sym + std::to_string(sym_num+1);
+
+    sym = Utils::GetLabel(sym_num);
 
     mAssnMap.insert(
       std::make_pair(

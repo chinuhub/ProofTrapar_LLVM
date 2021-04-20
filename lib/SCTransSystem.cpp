@@ -6,9 +6,11 @@
  */
 
 #include "SCTransSystem.h"
+#include "Utils.h"
 #include <boost/foreach.hpp>
 #include <boost/assert.hpp>
 #include <queue>
+
 
 extern "C" {
 #include <stdio.h>
@@ -55,41 +57,11 @@ SCTransSystem::SCTransSystem(Program& P, z3::solver& s):mProgram(P), mSolver(s) 
 }*/
 
 
-std::vector<std::string> SCTransSystem::GetSymbols(std::string word) {
-    std::stringstream temp(word);
-    std::vector<std::string> tokens;
-    std::string get_tokens;
-    while (getline(temp, get_tokens, 'L')) {
-        tokens.push_back(get_tokens);
-    }
-    return tokens;
-}
-
-
 
 
 z3::expr SCTransSystem::GetEndStateAssertionFromWord(std::string afaword)
 {
-	size_t length=afaword.length();
-
-	//std::string lastsym(afaword.substr(length-1,1));
-
-/*
-    std::stringstream temp(afaword);
-    std::vector<std::string> tokens;
-    std::string get_tokens;
-    while(getline(temp, get_tokens, 'L')){
-        tokens.push_back(get_tokens);
-    }
-*/
-    //for(int i = tokens.size()-1; i >0; i--) {
-    //    rev=rev+ "L" + tokens[i];
-    //}
-
-    std::vector<std::string> tokens;
-    tokens = GetSymbols(afaword);
-
-    std::string lastsym = "L" + tokens[tokens.size()-1];
+    std::string lastsym = Utils::GetLastSymbol(afaword);  // Getting the last symbol from the afa word
 
 	std::map<std::string,z3::expr> assnMap = mProgram.GetAssnMapForAllProcesses();
 	BOOST_ASSERT_MSG(assnMap.find(lastsym)!=assnMap.end(),"Some serious issue as the last char must be the one where assn is defined");
@@ -131,14 +103,11 @@ void SCTransSystem::CreateFAutomataFaudes(const AdjacencyList<int>& adj, faudes:
             /*char sym = 'A';
             if (symbolval < 26) sym = 'A' + symbolval;
             else sym = 'a' + (symbolval - 26);
+
+             std::string symstr(1,sym);
             */
-            
-          
-            //std::string symstr(1,sym);
-            
-            std::string symstr="L";
-  	        symstr= symstr + std::to_string(symbolval+1);
-            
+
+            std::string symstr = Utils::GetLabel(symbolval);
             
             generator.InsEvent(symstr);
             //States corresponding to source and destination have already been added in the generator by previous loop.
