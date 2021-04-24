@@ -439,6 +439,7 @@ void AFAut::PrintToDot(std::string filename){
 			 	    Graph graph;
 			 	    std::map<AFAStatePtr,vertex_t,mapstatecomparator> mapindex;
 			 	    mInit->PassThree(graph,mapindex);//fill the graph object
+
 		  	    myEdgeWriter<Graph> ew(graph);
 			 	    myVertWriter<Graph> vw(graph);
 			 	    //IMPO we need to put writers after graph is filled.

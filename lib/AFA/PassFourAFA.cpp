@@ -287,7 +287,8 @@ z3::expr truev=newinit->mAMap.ctx().bool_val(true);
                      // continue;
                    std::string sym = t.first;
                    z3::expr lhs = std::get<0>(t.second);
-                   if(freevars.find(lhs)==freevars.end())//means not found as a free variable..
+                   z3::expr assignvar = std::get<3>(t.second);
+                   if(freevars.find(lhs)==freevars.end() && freevars.find(assignvar)==freevars.end() )//means not found as a free variable..
 					{
 						//add a self loop on this symbol to itself..
 						w->mTransitions.insert(std::make_pair(sym,own));

@@ -163,7 +163,8 @@ void debug_writer(unsigned id, InstructionType inst) {
     z3_stream << "assume(" << std::get<2>(inst) << ")" << std::endl;
   }
    else
-   	z3_stream << "This is condition" << std::get<1>(inst) << ",this is assignment" << std::get<2>(inst)<< std::endl;        
+   //	z3_stream << "This is condition" << std::get<1>(inst) << ",this is assignment" << std::get<2>(inst)<< std::endl;
+   z3_stream << std::get<1>(inst).arg(0)<<" = "<<"cas("<<std::get<1>(inst).arg(1)<<","<<std::get<2>(inst).arg(0)<<","<<std::get<2>(inst).arg(1)<<")\n";
 }
 
 #endif

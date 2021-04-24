@@ -334,17 +334,28 @@ void AFAState::PassOne(std::map<AFAStatePtr,AFAStatePtr,mapstatecomparator>& mAl
                     z3::expr lc1(mAMap);
                     z3::expr lc2(mAMap);
 
-                    z3::expr_vector s_(ctx),d_(ctx);
-                    s_.push_back(assignvar);
-                    s_.push_back(left);
-                    d_.push_back(ctx.int_val(1));
-                    d_.push_back(writearg);
-                    lc1 = lc1.substitute(s_,d_) && (left == readarg);
+                    if(freevars.find(left)!=freevars.end()) {
+                        z3::expr_vector s_(ctx), d_(ctx);
+                        s_.push_back(left);
+                        d_.push_back(writearg);
+                        lc1 = lc1.substitute(s_, d_) ;
+                    }
 
-                    z3::expr_vector s(ctx),d(ctx);
-                    s.push_back(assignvar);
-                    d.push_back(ctx.int_val(0));
-                    lc2 = lc2.substitute(s,d) && !(left == readarg) ;
+                    if(freevars.find(assignvar)!=freevars.end()){
+                        z3::expr_vector s(ctx),d(ctx);
+                        s.push_back(assignvar);
+                        d.push_back(ctx.int_val(0));
+                        lc2 = lc2.substitute(s,d)  ;
+
+                        z3::expr_vector s_(ctx), d_(ctx);
+                        s_.push_back(assignvar);
+                        d_.push_back(ctx.int_val(1));
+                        lc1 = lc1.substitute(s_, d_) ;
+
+                    }
+
+                    lc1 = HelperSimplifyExpr(lc1 && (left == readarg));
+                    lc2 = HelperSimplifyExpr(lc2 && !(left == readarg)) ;
 
                     z3::expr lc (lc1||lc2);
                     lc = HelperSimplifyExpr(lc);
