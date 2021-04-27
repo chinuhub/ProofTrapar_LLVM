@@ -179,7 +179,7 @@ void AFAState::PassOne(std::map<AFAStatePtr,AFAStatePtr,mapstatecomparator>& mAl
 					}
 					cond++;
 				}
-				//add HMap, by this time the returned state's must have proper HMap set as well..
+				/*//add HMap, by this time the returned state's must have proper HMap set as well..
 				z3::expr trueexp = ctx.bool_val(true);
 				BOOST_FOREACH(auto stp, nextset)
 				{
@@ -187,7 +187,7 @@ void AFAState::PassOne(std::map<AFAStatePtr,AFAStatePtr,mapstatecomparator>& mAl
 					trueexp = trueexp && (*((*stp).mHMap));
 				}
 				trueexp=HelperSimplifyExpr(trueexp);
-				mHMap = new z3::expr(trueexp);//delete it when removin the states.. i.e. in the destructor of this state..
+				mHMap = new z3::expr(trueexp);//delete it when removin the states.. i.e. in the destructor of this state..*/
 				mTransitions.insert(std::make_pair("0",nextset));
 	}else if(mType==OR){
 		//by this time we are sure that mPhi of this state is of the form a or b or c
@@ -213,14 +213,14 @@ void AFAState::PassOne(std::map<AFAStatePtr,AFAStatePtr,mapstatecomparator>& mAl
 					}
 				}
 				//add HMap, by this time the returned state's must have proper HMap set as well..
-				z3::expr falseexp = ctx.bool_val(false);
+				/*z3::expr falseexp = ctx.bool_val(false);
 				BOOST_FOREACH(auto stp, nextset)
 				{
 					BOOST_ASSERT_MSG((*stp).mHMap!=NULL,"Some serious issue as by this time HMap of children must have been set");
 					falseexp = falseexp || (*((*stp).mHMap));
 				}
 				falseexp=HelperSimplifyExpr(falseexp);
-				mHMap = new z3::expr(falseexp);//delete it when removin the states.. i.e. in the destructor of this state..
+				mHMap = new z3::expr(falseexp);//delete it when removin the states.. i.e. in the destructor of this state..*/
 				mTransitions.insert(std::make_pair("0",nextset));
 
 	}else if(mType==ORLit){
@@ -298,7 +298,7 @@ void AFAState::PassOne(std::map<AFAStatePtr,AFAStatePtr,mapstatecomparator>& mAl
 		    			}
 		    			nextset.insert(p);
 						//add HMap, by this time the returned state's must have proper HMap set as well..
-						z3::context& ctx = mAMap.ctx();
+						/*z3::context& ctx = mAMap.ctx();
 						z3::expr trueexp = ctx.bool_val(true);
 						BOOST_FOREACH(auto stp, nextset)
 						{
@@ -306,7 +306,7 @@ void AFAState::PassOne(std::map<AFAStatePtr,AFAStatePtr,mapstatecomparator>& mAl
 							trueexp = trueexp && (*((*stp).mHMap));
 						}
 						trueexp=HelperSimplifyExpr(trueexp);
-						mHMap = new z3::expr(trueexp);//delete it when removin the states.. i.e. in the destructor of this state..
+						mHMap = new z3::expr(trueexp);//delete it when removin the states.. i.e. in the destructor of this state..*/
 		    			mTransitions.insert(std::make_pair(sym,nextset));
 		    			break;
 		    		}
@@ -373,7 +373,7 @@ void AFAState::PassOne(std::map<AFAStatePtr,AFAStatePtr,mapstatecomparator>& mAl
 		    			}
 		    			nextset.insert(p);
 						//add HMap, by this time the returned state's must have proper HMap set as well..
-						z3::context& ctx = mAMap.ctx();
+						/*z3::context& ctx = mAMap.ctx();
 						z3::expr trueexp = ctx.bool_val(true);
 						BOOST_FOREACH(auto stp, nextset)
 						{
@@ -382,7 +382,7 @@ void AFAState::PassOne(std::map<AFAStatePtr,AFAStatePtr,mapstatecomparator>& mAl
 						}
 
 						trueexp=HelperSimplifyExpr(trueexp);
-						mHMap = new z3::expr(trueexp);//delete it when removin the states.. i.e. in the destructor of this state..
+						mHMap = new z3::expr(trueexp);//delete it when removin the states.. i.e. in the destructor of this state..*/
 
 		    			mTransitions.insert(std::make_pair(sym,nextset));
 		    			break;
@@ -423,7 +423,7 @@ void AFAState::PassOne(std::map<AFAStatePtr,AFAStatePtr,mapstatecomparator>& mAl
 		    		}
 		    		nextset.insert(p);
 					//add HMap, by this time the returned state's must have proper HMap set as well..
-					z3::context& ctx = mAMap.ctx();
+					/*z3::context& ctx = mAMap.ctx();
 					z3::expr trueexp = ctx.bool_val(true);
 					BOOST_FOREACH(auto stp, nextset)
 					{
@@ -431,7 +431,7 @@ void AFAState::PassOne(std::map<AFAStatePtr,AFAStatePtr,mapstatecomparator>& mAl
 						trueexp = trueexp && (*((*stp).mHMap));
 					}
 					trueexp=HelperSimplifyExpr(trueexp);
-					mHMap = new z3::expr(trueexp);//delete it when removin the states.. i.e. in the destructor of this state..
+					mHMap = new z3::expr(trueexp);//delete it when removin the states.. i.e. in the destructor of this state..*/
 
 		    		mTransitions.insert(std::make_pair(sym,nextset));
 		    		break;//This break is important
@@ -481,36 +481,36 @@ AFAStatePtr AFAState::HelperAddStateIfAbsent(z3::expr& phi,std::string& mRWord,b
 if(phi.decl().decl_kind()==Z3_OP_AND){
 		AFAStatePtr st = new AFAState(AND,mRWord,phi);
 		if(mAllStates.find(st)!=mAllStates.end()){
-            isPresent=false;
-            /*delete st;
+            //isPresent=false;
+            delete st;
 			st=mAllStates.find(st)->second;
-			isPresent=true;*/
+			isPresent=true;
 		}else{
-			//mAllStates.insert(std::make_pair(st,st));//-- we wont add it hee.. but after hmap is over for this state..
+			mAllStates.insert(std::make_pair(st,st));//-- we wont add it hee.. but after hmap is over for this state..
 			isPresent=false;
 		}
 		return st;
 	}else if(phi.decl().decl_kind()==Z3_OP_OR){
 		AFAStatePtr st = new AFAState(OR,mRWord,phi);
 		if(mAllStates.find(st)!=mAllStates.end()){
-            isPresent=false;
-			/*delete st;
+            //isPresent=false;
+			delete st;
 			st=mAllStates.find(st)->second;
-			isPresent=true;*/
+			isPresent=true;
 		}else{
-			//mAllStates.insert(std::make_pair(st,st));//-- same as above
+			mAllStates.insert(std::make_pair(st,st));//-- same as above
 			isPresent=false;
 		}
 		return st;
 	}else{
 		AFAStatePtr st = new AFAState(ORLit,mRWord,phi);
 		if(mAllStates.find(st)!=mAllStates.end()){
-            isPresent=false;
-            /*delete st;
+            //isPresent=false;
+            delete st;
 			st=mAllStates.find(st)->second;
-			isPresent=true;*/
+			isPresent=true;
 		}else{
-			//mAllStates.insert(std::make_pair(st,st));//-- same as above
+			mAllStates.insert(std::make_pair(st,st));//-- same as above
 			isPresent=false;
 		}
 		return st;
