@@ -325,21 +325,24 @@ void AFAState::PassOne(std::map<AFAStatePtr,AFAStatePtr,mapstatecomparator>& mAl
 		    		z3::expr readarg(std::get<1>(AFAut::mProgram->mCASLHRHMap.find(sym)->second));
                     z3::expr writearg(std::get<2>(AFAut::mProgram->mCASLHRHMap.find(sym)->second));
                     z3::expr assignvar(std::get<3>(AFAut::mProgram->mCASLHRHMap.find(sym)->second)) ;
-                    auto a = assignvar.to_string();
 		    		//BEWARE that even if no substitution takes place in cas we still need to conjunct assume part
 		    		//with the input state's mAMap.
+		    		// consider ret = cas ( ptr , old  , new )
+		    		// left is ptr , old is readarg  , new is writearg and ret is assignvar
+
 		    		notasingle=false;
 		    		notasingleall=false;
 
                     z3::expr lc1(mAMap);
                     z3::expr lc2(mAMap);
+                    // lc1 is for the case where cas instruction is successful and lc2 for when cas instruction in not successful.
 
                     if(freevars.find(left)!=freevars.end()) {
                         z3::expr_vector s_(ctx), d_(ctx);
                         s_.push_back(left);
                         d_.push_back(writearg);
                         lc1 = lc1.substitute(s_, d_) ;
-                    }
+                    }    //  if phi was the original Amap then  lc1 is phi[ptr - > new]
 
                     if(freevars.find(assignvar)!=freevars.end()){
                         z3::expr_vector s(ctx),d(ctx);
@@ -352,10 +355,11 @@ void AFAState::PassOne(std::map<AFAStatePtr,AFAStatePtr,mapstatecomparator>& mAl
                         d_.push_back(ctx.int_val(1));
                         lc1 = lc1.substitute(s_, d_) ;
 
-                    }
+                    }    // if phi was original Amap then lc2 is phi [ret -> 0]
+                        // if phi was original Amap then overall lc1 is phi[ret -> 1 , ptr -> new]
 
-                    lc1 = HelperSimplifyExpr(lc1 && (left == readarg));
-                    lc2 = HelperSimplifyExpr(lc2 && !(left == readarg)) ;
+                    lc1 = HelperSimplifyExpr(lc1 && (left == readarg));    // lc1 is now phi[ret -> 1 , ptr -> new] && (ptr == old)
+                    lc2 = HelperSimplifyExpr(lc2 && !(left == readarg)) ;  // lc2 is now phi [ret -> 0] && (ptr! =old)
 
                     z3::expr lc (lc1||lc2);
                     lc = HelperSimplifyExpr(lc);
@@ -385,7 +389,7 @@ void AFAState::PassOne(std::map<AFAStatePtr,AFAStatePtr,mapstatecomparator>& mAl
   //add HMap, by this time the returned state's must have proper HMap set as well..
 						z3::context& ctx = mAMap.ctx();
 						z3::expr falseexp = ctx.bool_val(false);
-						BOOST_FOREACH(auto stp, nextset)
+						BOOST_FOREACH(auto stp, nextset)   // this loop is only executed once
 						{
 							BOOST_ASSERT_MSG((*stp).mHMap!=NULL,"Some serious issue as by this time HMap of children must have been set");
 							falseexp = falseexp || (*((*stp).mHMap));

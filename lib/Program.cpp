@@ -300,7 +300,6 @@ void Program::ParseThread(Function& Func) {
     std::cout << "Entering Block " << ValueToVariable(&BB, thread_name);
     std::cout << " now" << std::endl;
 #endif
-      z3::expr temp=context_.int_val(0);
     for (Instruction& Inst : BB) {
 
       switch (Inst.getOpcode()) {
@@ -313,10 +312,10 @@ void Program::ParseThread(Function& Func) {
         }
  		case Instruction::AtomicCmpXchg :{
             std::string llval_operand = ValueToVariable(&Inst, thread_name);
-            z3::expr exp_ = context_.int_const(llval_operand.c_str());            // some handling needs to be done but it would require me to look at the structure of what has to come.
+            z3::expr exp_ = context_.int_const(llval_operand.c_str());
             variable_expr_map_.insert(std::make_pair(llval_operand, exp_));
 
-            // this is lazy way to do things , I have to change it later
+
             AtomicCmpXchgInst *AI = dyn_cast<AtomicCmpXchgInst>(&Inst);
             Value* ptr = AI->getPointerOperand();
             Value *old_value  = AI->getCompareOperand();
@@ -327,7 +326,8 @@ void Program::ParseThread(Function& Func) {
             z3::expr old_expr = ValueToExpr(old_value, thread_name);
             z3::expr new_expr = ValueToExpr(new_value, thread_name);
             z3::expr condition_part = (exp_ ==ptr_expr );
-            z3::expr assignment_part = (old_expr == new_expr);  // need to see whether I can use this or this must go ;
+            z3::expr assignment_part = (old_expr == new_expr);  // these variable names are random , don't pay attention.
+            // we can only have 2 expression in instruction I just fit 4 expr in two . it is taken care of when we push it into cas map
 
             InstructionType inst =
                     std::make_tuple(
@@ -355,7 +355,6 @@ void Program::ParseThread(Function& Func) {
                         )
                 );
             }
-            temp = condition_part;
 
 #ifdef LOCAL_DEBUG
             std::cout <<"cas caught";
@@ -365,10 +364,16 @@ void Program::ParseThread(Function& Func) {
 
         }
         case Instruction::ExtractValue:{
+            // the output of cas should be {i32 ,i1 } pair where boolean(i1 integer 1 bit) true/false denotes whether cas was successful or not
+            // and i32(integer 32 bit) is the present value of ptr variable after  cas .
+            // we only have integer variables so true and false are 0 and 1 respectively.
+            // and we have to ignore the i32 part as well because we do not have support for pairs .
+            // extractValue here is only assigning values and nothing else.
+
               ExtractValueInst *EV = dyn_cast<ExtractValueInst>(&Inst);
               Value *Agg = EV->getAggregateOperand();
               std::string lval_operand = ValueToVariable(&Inst, thread_name);
-              z3::expr exp = context_.int_const(lval_operand.c_str());            // some handling needs to be done but it would require me to look at the structure of what has to come.
+              z3::expr exp = context_.int_const(lval_operand.c_str());
               variable_expr_map_.insert(std::make_pair(lval_operand, exp));
               z3::expr lval_expr = GetVariableExpr(lval_operand);
               z3::expr rhs_expr = ValueToExpr(Agg,thread_name);
@@ -399,13 +404,16 @@ void Program::ParseThread(Function& Func) {
             break;
         }
         case Instruction::Xor:{
+            // xor can be further improved
+            // what is doing right now is "NOT" operation rather than Xor.
+            // reason for this is we don't have boolean variable so we can not implement xor anyway .
+
             std::string lval_operand = ValueToVariable(&Inst, thread_name);
             AddVariable(lval_operand);
             z3::expr lval_expr = GetVariableExpr(lval_operand);
             Value* op1 = Inst.getOperand(0);
             z3::expr x = ValueToExpr(op1, thread_name);
-            z3::expr y = context_.bool_val(true);         // this is what is being passed but being a 1 bit integer has a strange way to mess things
-    //        z3::expr rhs_expr =  operator&&(x,!y)||operator&&(!x,y);
+            z3::expr y = context_.bool_val(true);
             z3::expr  rhs_expr = z3::ite(x==0,context_.int_val(1),context_.int_val(0));
 
             InstructionType inst =
@@ -1086,13 +1094,9 @@ void Program::MakeOldInterface() {
     else if (std::get<0>(inst_list_[i]) == cas) {
         z3::expr cond_expr = std::get<1>(inst_list_[i]);
         z3::expr assign_expr = std::get<2>(inst_list_[i]);
-        z3::expr ptr = cond_expr.arg(1);
-        z3::expr old = assign_expr.arg(0);
-        z3::expr new1 = assign_expr.arg(0);
-        z3::expr assignvar = cond_expr.arg(0);
         mCASLHRHMap.insert(
                 std::make_pair(  sym, std::make_tuple(cond_expr.arg(1),assign_expr.arg(0),assign_expr.arg(1),cond_expr.arg(0)) )
-        );       // the reason why there needs to be so much trouble in extracting values and arguments is because I need 3 expressions but I can only store two .
+        );       //  for cas instruction ret = cas(ptr, old,new) the above stores  tuple <ptr, old , new , ret>
     }
 
     
