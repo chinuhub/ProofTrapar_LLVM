@@ -18,7 +18,8 @@
 /// assume types.
 enum InstClass {
   kAssign,
-  kAssume
+  kAssume,
+  cas
 };
 
 template <typename T>
@@ -63,7 +64,7 @@ class Program {
   std::map<std::string, std::tuple<z3::expr, z3::expr> > mRWLHRHMap;
   std::map<std::string, z3::expr> mAssumeLHRHMap;
   std::map<z3::expr, std::string, z3comparator> mRevAssumeLHRHMap;
-  std::map<std::string, std::tuple<z3::expr, z3::expr, z3::expr> > mCASLHRHMap;
+  std::map<std::string, std::tuple<z3::expr, z3::expr, z3::expr,z3::expr> > mCASLHRHMap;
   std::map<std::string, z3::expr> mAssnMap;
   std::vector<std::string> mAllSyms;
 

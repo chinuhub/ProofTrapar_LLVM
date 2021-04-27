@@ -159,9 +159,12 @@ void debug_writer(unsigned id, InstructionType inst) {
   z3_stream << sym << ": ";
   if (std::get<0>(inst) == kAssign) {
     z3_stream << std::get<1>(inst) << ":=" << std::get<2>(inst) << std::endl;
-  } else {
+  } else if (std::get<0>(inst) == kAssume){
     z3_stream << "assume(" << std::get<2>(inst) << ")" << std::endl;
   }
+   else
+   //	z3_stream << "This is condition" << std::get<1>(inst) << ",this is assignment" << std::get<2>(inst)<< std::endl;
+   z3_stream << std::get<1>(inst).arg(0)<<" = "<<"cas("<<std::get<1>(inst).arg(1)<<","<<std::get<2>(inst).arg(0)<<","<<std::get<2>(inst).arg(1)<<")\n";
 }
 
 #endif
@@ -297,7 +300,9 @@ void Program::ParseThread(Function& Func) {
     std::cout << "Entering Block " << ValueToVariable(&BB, thread_name);
     std::cout << " now" << std::endl;
 #endif
+      z3::expr temp=context_.int_val(0);
     for (Instruction& Inst : BB) {
+
       switch (Inst.getOpcode()) {
         case Instruction::Call: {
           bb_struct.is_accepting = true;
@@ -305,6 +310,135 @@ void Program::ParseThread(Function& Func) {
           std::cout << "Accepting State Here" << std::endl;
 #endif
           break;
+        }
+ 		case Instruction::AtomicCmpXchg :{
+            std::string llval_operand = ValueToVariable(&Inst, thread_name);
+            z3::expr exp_ = context_.int_const(llval_operand.c_str());            // some handling needs to be done but it would require me to look at the structure of what has to come.
+            variable_expr_map_.insert(std::make_pair(llval_operand, exp_));
+
+            // this is lazy way to do things , I have to change it later
+            AtomicCmpXchgInst *AI = dyn_cast<AtomicCmpXchgInst>(&Inst);
+            Value* ptr = AI->getPointerOperand();
+            Value *old_value  = AI->getCompareOperand();
+            Value *new_value = AI->getNewValOperand();
+            std::string lval_operand = ValueToVariable(ptr, thread_name);
+            AddVariable(lval_operand);
+            z3::expr ptr_expr = GetVariableExpr(lval_operand);
+            z3::expr old_expr = ValueToExpr(old_value, thread_name);
+            z3::expr new_expr = ValueToExpr(new_value, thread_name);
+            z3::expr condition_part = (exp_ ==ptr_expr );
+            z3::expr assignment_part = (old_expr == new_expr);  // need to see whether I can use this or this must go ;
+
+            InstructionType inst =
+                    std::make_tuple(
+                            cas,
+                            condition_part,
+                            assignment_part
+                    );
+            unsigned inst_num =
+                    FindInstruction(
+                            std::make_pair(
+                                    thread_name,
+                                    inst
+                            )
+                    );
+            bb_struct.inst.push_back(inst_num);
+            if (inst_num == inst_list_.size()) {
+                inst_list_.push_back(inst);
+                inst_map_.insert(
+                        std::make_pair(
+                                std::make_pair(
+                                        thread_name,
+                                        inst
+                                ),
+                                inst_num
+                        )
+                );
+            }
+            temp = condition_part;
+
+#ifdef LOCAL_DEBUG
+            std::cout <<"cas caught";
+            debug_writer(inst_num, inst);
+#endif
+            break;
+
+        }
+        case Instruction::ExtractValue:{
+              ExtractValueInst *EV = dyn_cast<ExtractValueInst>(&Inst);
+              Value *Agg = EV->getAggregateOperand();
+              std::string lval_operand = ValueToVariable(&Inst, thread_name);
+              z3::expr exp = context_.int_const(lval_operand.c_str());            // some handling needs to be done but it would require me to look at the structure of what has to come.
+              variable_expr_map_.insert(std::make_pair(lval_operand, exp));
+              z3::expr lval_expr = GetVariableExpr(lval_operand);
+              z3::expr rhs_expr = ValueToExpr(Agg,thread_name);
+              InstructionType inst =std::make_tuple(kAssign,lval_expr,rhs_expr);
+
+              unsigned inst_num =FindInstruction(std::make_pair(thread_name,inst) );
+
+              bb_struct.inst.push_back(inst_num);
+              if (inst_num == inst_list_.size()) {
+                  inst_list_.push_back(inst);
+                  inst_map_.insert(
+                          std::make_pair(
+                                  std::make_pair(
+                                          thread_name,
+                                          inst
+                                  ),
+                                  inst_num
+                          )
+                  );
+              }
+
+
+              #ifdef LOCAL_DEBUG
+              debug_writer(inst_num, inst);
+              std::cout<<"extract caught";
+#endif
+
+            break;
+        }
+        case Instruction::Xor:{
+            std::string lval_operand = ValueToVariable(&Inst, thread_name);
+            AddVariable(lval_operand);
+            z3::expr lval_expr = GetVariableExpr(lval_operand);
+            Value* op1 = Inst.getOperand(0);
+            z3::expr x = ValueToExpr(op1, thread_name);
+            z3::expr y = context_.bool_val(true);         // this is what is being passed but being a 1 bit integer has a strange way to mess things
+    //        z3::expr rhs_expr =  operator&&(x,!y)||operator&&(!x,y);
+            z3::expr  rhs_expr = z3::ite(x==0,context_.int_val(1),context_.int_val(0));
+
+            InstructionType inst =
+                    std::make_tuple(
+                            kAssign,
+                            lval_expr,
+                            rhs_expr
+                    );
+            unsigned inst_num =
+                    FindInstruction(
+                            std::make_pair(
+                                    thread_name,
+                                    inst
+                            )
+                    );
+            bb_struct.inst.push_back(inst_num);
+            if (inst_num == inst_list_.size()) {
+                inst_list_.push_back(inst);
+                inst_map_.insert(
+                        std::make_pair(
+                                std::make_pair(
+                                        thread_name,
+                                        inst
+                                ),
+                                inst_num
+                        )
+                );
+#ifdef LOCAL_DEBUG
+                debug_writer(inst_num, inst);
+#endif
+
+        }
+        break;
         }
         case Instruction::Ret: {
           bb_struct.has_branch = true;
@@ -949,6 +1083,19 @@ void Program::MakeOldInterface() {
         )
       );
     }
+    else if (std::get<0>(inst_list_[i]) == cas) {
+        z3::expr cond_expr = std::get<1>(inst_list_[i]);
+        z3::expr assign_expr = std::get<2>(inst_list_[i]);
+        z3::expr ptr = cond_expr.arg(1);
+        z3::expr old = assign_expr.arg(0);
+        z3::expr new1 = assign_expr.arg(0);
+        z3::expr assignvar = cond_expr.arg(0);
+        mCASLHRHMap.insert(
+                std::make_pair(  sym, std::make_tuple(cond_expr.arg(1),assign_expr.arg(0),assign_expr.arg(1),cond_expr.arg(0)) )
+        );       // the reason why there needs to be so much trouble in extracting values and arguments is because I need 3 expressions but I can only store two .
+    }
+
+    
   }
   for (unsigned j = 0; j < thread_graphs_.size(); j++) {
     std::string sym;

@@ -323,66 +323,76 @@ void AFAState::PassOne(std::map<AFAStatePtr,AFAStatePtr,mapstatecomparator>& mAl
 
 		    		z3::expr l1(mAMap);
 		    		z3::expr readarg(std::get<1>(AFAut::mProgram->mCASLHRHMap.find(sym)->second));
-		    		//BEWARE that even if no substituteion takes place in cas we still need to conjunct assume part
+                    z3::expr writearg(std::get<2>(AFAut::mProgram->mCASLHRHMap.find(sym)->second));
+                    z3::expr assignvar(std::get<3>(AFAut::mProgram->mCASLHRHMap.find(sym)->second)) ;
+                    auto a = assignvar.to_string();
+		    		//BEWARE that even if no substitution takes place in cas we still need to conjunct assume part
 		    		//with the input state's mAMap.
 		    		notasingle=false;
 		    		notasingleall=false;
-		    		if(freevars.find(left)!=freevars.end()){
-		    			//means this symbol conflict with phi and hence must be used for processing..
-		    			z3::expr writearg(std::get<2>(AFAut::mProgram->mCASLHRHMap.find(sym)->second));
-#ifdef	DBGPRNT
-		    			std::cout<<"CAS:first arg of exp is "<<readarg<<std::endl;
-		    			std::cout<<"CAS:second arg of exp is "<<writearg<<std::endl;
-#endif
-		    			z3::expr_vector src(ctx),dest(ctx);
-		    			src.push_back(left);
-		    			dest.push_back(writearg);
-		    			z3::expr l3(mAMap.substitute(src,dest));
-		    			l1=l3;
-		    			l1=HelperSimplifyExpr(l1);
-		    			}
-		    			z3::expr l2(l1 && (left==readarg));
-		    			l2=HelperSimplifyExpr(l2);
-		    			bool isFalse=false;
-		    			bool istrue = false;
-		    			if(HelperIsUnsat(l2))
-		    			{
-		    				  l2=ctx.bool_val(false);
-		    				  isFalse = true;
-		    			}
-		    			if(HelperIsValid(l2)){
-		    				l2=ctx.bool_val(true);
-		    				istrue=true;
-		    			}
-		    			AFAStatePtr p = HelperAddStateIfAbsent(l2,rest,isPresent,mAllStates);
-		    			if(isFalse||(istrue&& rest.length()==0)){
-		    				//On set of all symbols add self loop to p itself
-#ifdef	DBGPRNT
-		    				std::cout<<"inside cas, setting accepted state with amap as "<<mAMap<<std::endl;
-#endif
-		    				p->mIsAccepted=true;
-		    				/*BOOST_FOREACH(auto t, AFAut::mProgram->mAllSyms){
-		    					HelperAddEdgeIfAbsent(p,p,t);
-		    				}*/
 
-		    			}
+                    z3::expr lc1(mAMap);
+                    z3::expr lc2(mAMap);
 
-		    			if(!isPresent){
-		    				mAllStates.insert(std::make_pair(p,p));
-		    			    p->PassOne(mAllStates);
-		    			}
-		    			nextset.insert(p);
-						//add HMap, by this time the returned state's must have proper HMap set as well..
+                    if(freevars.find(left)!=freevars.end()) {
+                        z3::expr_vector s_(ctx), d_(ctx);
+                        s_.push_back(left);
+                        d_.push_back(writearg);
+                        lc1 = lc1.substitute(s_, d_) ;
+                    }
+
+                    if(freevars.find(assignvar)!=freevars.end()){
+                        z3::expr_vector s(ctx),d(ctx);
+                        s.push_back(assignvar);
+                        d.push_back(ctx.int_val(0));
+                        lc2 = lc2.substitute(s,d)  ;
+
+                        z3::expr_vector s_(ctx), d_(ctx);
+                        s_.push_back(assignvar);
+                        d_.push_back(ctx.int_val(1));
+                        lc1 = lc1.substitute(s_, d_) ;
+
+                    }
+
+                    lc1 = HelperSimplifyExpr(lc1 && (left == readarg));
+                    lc2 = HelperSimplifyExpr(lc2 && !(left == readarg)) ;
+
+                    z3::expr lc (lc1||lc2);
+                    lc = HelperSimplifyExpr(lc);
+
+                    bool isFalse=false;
+                    bool istrue = false;
+                    if(HelperIsUnsat(lc))
+                    {
+                        lc=ctx.bool_val(false);
+                        isFalse = true;
+                    }
+                    if(HelperIsValid(lc)){
+                        lc=ctx.bool_val(true);
+                        istrue=true;
+                    }
+                    AFAStatePtr p = HelperAddStateIfAbsent(lc,rest,isPresent,mAllStates);
+                    if(isFalse||(istrue&& rest.length()==0)){
+                        p->mIsAccepted=true;
+                    }
+
+                    if(!isPresent){
+                        mAllStates.insert(std::make_pair(p,p));
+                        p->PassOne(mAllStates);
+                    }
+                    nextset.insert(p);
+
+  //add HMap, by this time the returned state's must have proper HMap set as well..
 						z3::context& ctx = mAMap.ctx();
-						z3::expr trueexp = ctx.bool_val(true);
+						z3::expr falseexp = ctx.bool_val(false);
 						BOOST_FOREACH(auto stp, nextset)
 						{
 							BOOST_ASSERT_MSG((*stp).mHMap!=NULL,"Some serious issue as by this time HMap of children must have been set");
-							trueexp = trueexp && (*((*stp).mHMap));
+							falseexp = falseexp || (*((*stp).mHMap));
 						}
 
-						trueexp=HelperSimplifyExpr(trueexp);
-						mHMap = new z3::expr(trueexp);//delete it when removin the states.. i.e. in the destructor of this state..
+						falseexp=HelperSimplifyExpr(falseexp);
+						mHMap = new z3::expr(falseexp);//delete it when removin the states.. i.e. in the destructor of this state..
 
 		    			mTransitions.insert(std::make_pair(sym,nextset));
 		    			break;

@@ -111,6 +111,7 @@ bool test_bench(Module& M) {
  	auto end = boost::chrono::system_clock::now();
  	auto   elapsed = boost::chrono::duration_cast<boost::chrono::duration<double> >(end- start).count();
  	std::cout << "Time spent = "<<elapsed << "seconds "<<'\n';
+ 	std::cout << "Cas instruction has been successfully implemented";
   return false;
 }
 

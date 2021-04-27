@@ -372,7 +372,7 @@ void AFAut::RecComplement(AFAStatePtr state, std::map<AFAStatePtr,bool>& mapseen
 			//add new ones..
 			state->mTransitions.erase(sym);//remove all elements of this symbol..
 			BOOST_FOREACH(auto ele, tobeaddedset){
-        if(ele.find(falseacc)!=ele.end())//if old accepted state is present in the tobeadded trans continue;;
+        if(falseacc!=NULL && ele.find(falseacc)!=ele.end())//if old accepted state is present in the tobeadded trans continue;;
           continue;
 				state->mTransitions.insert(std::make_pair(sym,ele));
       }
@@ -439,6 +439,7 @@ void AFAut::PrintToDot(std::string filename){
 			 	    Graph graph;
 			 	    std::map<AFAStatePtr,vertex_t,mapstatecomparator> mapindex;
 			 	    mInit->PassThree(graph,mapindex);//fill the graph object
+
 		  	    myEdgeWriter<Graph> ew(graph);
 			 	    myVertWriter<Graph> vw(graph);
 			 	    //IMPO we need to put writers after graph is filled.
