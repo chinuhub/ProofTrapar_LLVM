@@ -9,6 +9,8 @@
 #include <iterator>
 #include <map>
 #include<set>
+#include "boost/chrono.hpp"
+
 template <class Name>
 
 class myEdgeWriter {
@@ -190,8 +192,15 @@ AFAut* AFAut::MakeAFAutProof(std::string& word, z3::expr& mPhi,Program* p, int c
 #ifdef	DBGPRNT
 					std::cout<<mPhi<<" found to be a literal "<<" and type is "<<st->mType<<std::endl;
 #endif
-					st->PassOne(allStates);
-					afa->mInit = st;
+                    auto mystart8 =  boost::chrono::system_clock::now();
+
+                    st->PassOne(allStates);
+
+                    auto myend8 = boost::chrono::system_clock::now();
+                    auto myelapsed8 = boost::chrono::duration_cast<boost::chrono::duration<double> >(myend8- mystart8).count();
+                    std::cout << "Time spent in PassOne = "<<myelapsed8 << "seconds "<<'\n';
+
+                    afa->mInit = st;
 				}
 			}
 #ifdef DBGPRNT
@@ -223,7 +232,15 @@ AFAut* AFAut::MakeAFAutProof(std::string& word, z3::expr& mPhi,Program* p, int c
 			std::cout<<"Starting Pass two"<<std::endl;
 #endif
 			std::map<AFAStatePtr,AFAStatePtr,mapstatecomparator> passtwoallstates;
-			afa->mInit->PassTwo(passtwoallstates, mUnsatMemoization);
+            auto mystart9 =  boost::chrono::system_clock::now();
+
+            afa->mInit->PassTwo(passtwoallstates, mUnsatMemoization);
+
+
+            auto myend9 = boost::chrono::system_clock::now();
+            auto myelapsed9 = boost::chrono::duration_cast<boost::chrono::duration<double> >(myend9- mystart9).count();
+            std::cout << "Time spent in PassTwo = "<<myelapsed9 << "seconds "<<'\n';
+
 #ifdef	DBGPRNT
 			std::cout<<"Pass two ended"<<std::endl;
 			afa->PrintToDot("Pass2.dot");

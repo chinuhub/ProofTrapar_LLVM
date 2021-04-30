@@ -10,6 +10,8 @@
 #include <boost/foreach.hpp>
 #include <boost/assert.hpp>
 #include <queue>
+#include "boost/chrono.hpp"
+
 
 
 extern "C" {
@@ -123,7 +125,9 @@ void SCTransSystem::BuildSCTS(faudes::Generator& lGenerator){
 
   std::vector<faudes::Generator> faudesAutomata;
 
-    for (unsigned i = 0; i < adjlists.size(); i++) {
+  auto mystart3 =  boost::chrono::system_clock::now();
+
+  for (unsigned i = 0; i < adjlists.size(); i++) {
         faudes::Generator faudesAut;
         CreateFAutomataFaudes(adjlists[i], faudesAut);
         //Assert that the constructed automaton should not be empty.
@@ -136,11 +140,17 @@ void SCTransSystem::BuildSCTS(faudes::Generator& lGenerator){
         faudesAut.DotWrite("./auto"+std::to_string(i+1)+".dot");
     //BOOST_ASSERT_MSG(aut != NULL, "could not construct automaton");
 
-
-
   }
+
+    auto myend3 = boost::chrono::system_clock::now();
+    auto myelapsed3 = boost::chrono::duration_cast<boost::chrono::duration<double> >(myend3- mystart3).count();
+    std::cout << "Time spent in creating automata for each thread and choosing one example of accepting word for each automata  = "<<myelapsed3 << "seconds "<<'\n';
+
     BOOST_ASSERT_MSG(faudesAutomata.size()>0, " No process given as input.. Exiting");
     faudes::Generator result = faudesAutomata.at(0);
+
+    auto mystart4 =  boost::chrono::system_clock::now();
+
     for(unsigned i=1; i<adjlists.size(); i++) {
         faudes::Generator tmpresult;
         faudes::Parallel(result,faudesAutomata.at(i),tmpresult);
@@ -162,15 +172,29 @@ void SCTransSystem::BuildSCTS(faudes::Generator& lGenerator){
         }
     }
 
+    auto myend4 = boost::chrono::system_clock::now();
+    auto myelapsed4 = boost::chrono::duration_cast<boost::chrono::duration<double> >(myend4- mystart4).count();
+    std::cout << "Time spent in Product automata = "<<myelapsed4 << "seconds "<<'\n';
+
 
     //To test, print a word accepted by this generator.
     std::cout << "An example accepted word of the parallely composed generator is "<<std::endl;
     std::cout << GetWord(result)<<std::endl;
+
+
+
     result.DotWrite("./autoParallel.dot");
     faudes::Generator tmpGen;
 
     faudes::Deterministic(result,tmpGen);
+    auto mystart5 =  boost::chrono::system_clock::now();
+
     ReverseGenerator(tmpGen,lGenerator);
+
+    auto myend5 = boost::chrono::system_clock::now();
+    auto myelapsed5 = boost::chrono::duration_cast<boost::chrono::duration<double> >(myend5- mystart5).count();
+    std::cout << "Time spent in Reversed Automata = "<<myelapsed5 << "seconds "<<'\n';
+
     //lGenerator=tmpGen;
     //To test, print a word accepted by this reversed generator.
     std::cout << "An example accepted word of the reversed parallely composed generator is "<<std::endl;
@@ -189,6 +213,8 @@ std::string SCTransSystem::GetWord(faudes::Generator generator){
     std::queue<std::pair<faudes::Idx,std::string>> todo;
     std::set<faudes::Idx> seenSet;
     faudes::StateSet::Iterator sit;
+
+
     for(sit = generator.InitStatesBegin(); sit != generator.InitStatesEnd(); ++sit) {
         std::pair<faudes::Idx,std::string> tmp;
         tmp.first=*sit;
@@ -196,10 +222,12 @@ std::string SCTransSystem::GetWord(faudes::Generator generator){
         FD_DG("Pushing initial "<<StateName(tmp.first)<<"\n");
         todo.push(tmp);
     }
+
     // loop variables
     faudes::TransSet::Iterator tit;
     faudes::TransSet::Iterator tit_end;
     // loop
+
     while(!todo.empty()) {
         // pop
         std::pair<faudes::Idx, std::string> IdxStr = todo.front();
@@ -209,13 +237,17 @@ std::string SCTransSystem::GetWord(faudes::Generator generator){
         std::string syms = IdxStr.second;
         //if we have reached any marked state then we are done. Just return syms string.
         faudes::StateSet::Iterator lit;
+
         for(lit = generator.MarkedStatesBegin(); lit != generator.MarkedStatesEnd(); ++lit) {
             FD_DG("Checking if "<<StateName(x1)<<" is accepting or not, checking against "<<StateName(*lit)<<"\n");
             if (*lit == x1) {
                 FD_DG(" Found accepting state, returning with "<<syms<<"\n");
+
+
                 return syms;
             }
         }
+
         //If we reached here then this is not the marked state. So continue exploring further.
         todo.pop();
         tit = generator.TransRelBegin(x1);
@@ -241,10 +273,13 @@ std::string SCTransSystem::GetWord(faudes::Generator generator){
             }
         }
 
+
     }
     //if reached here without return in between then no word is accepted here. So return empty word.
+
     return "None";
 }
+
 /*
  * This method takes a faudes generator and return another generate which accepts the reverse language of the original one.
  */

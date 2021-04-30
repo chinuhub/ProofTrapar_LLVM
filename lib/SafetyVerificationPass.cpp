@@ -58,8 +58,18 @@ bool test_bench(Module& M) {
   int cases=0;
   while(!faudes::IsEmptyLanguage(generator))
   {
-    std::string revword(T->GetWord(generator));
-    std::string original(revword);//for some debugging purposes
+      auto mystart6 =  boost::chrono::system_clock::now();
+
+      std::string revword(T->GetWord(generator));
+      auto myend6 = boost::chrono::system_clock::now();
+      auto myelapsed6 = boost::chrono::duration_cast<boost::chrono::duration<double> >(myend6- mystart6).count();
+      std::cout << "Time spent by GetWord() in automata having "<<generator.Size()<<" states = "<<myelapsed6 << "seconds "<<'\n';
+
+      generator.DotWrite("./a"+std::to_string(cases+1)+".dot");
+
+
+
+      std::string original(revword);//for some debugging purposes
 #ifdef DBGPRNT
     std::cout<<"Original is "<<original<<std::endl;
 #endif
@@ -79,8 +89,17 @@ bool test_bench(Module& M) {
 		//struct fa* prooffa = AFAut::MakeAFAutProof(exword,negphi,P,cases);
 		bool result=false;
 		faudes::Generator proofgens;
-		AFAut* proofafa = AFAut::MakeAFAutProof(exword,negphi,P,cases,result,proofgens);
-		//what we got is already complemented version..
+
+      auto mystart7 =  boost::chrono::system_clock::now();
+
+      AFAut* proofafa = AFAut::MakeAFAutProof(exword,negphi,P,cases,result,proofgens);
+
+
+      auto myend7 = boost::chrono::system_clock::now();
+      auto myelapsed7 = boost::chrono::duration_cast<boost::chrono::duration<double> >(myend7- mystart7).count();
+      std::cout << "Time spent in MakeAFAutProof = "<<myelapsed7 << "seconds "<<'\n';
+
+      //what we got is already complemented version..
 		if(result==false)//return null if hmap of initial state is unsat.
 		{
 			std::cout<<"An errorneous trace "<<std::endl;

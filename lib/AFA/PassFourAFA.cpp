@@ -7,6 +7,8 @@
  */
 
 #include "AFA/AFAut.h"
+#include "boost/chrono.hpp"
+
 
 
 AFAut* AFAut::PassFourNew(AFAStatePtr init, std::set<AFAStatePtr>& tobedeleted, int cases,faudes::Generator& lGenerator, std::map<z3::expr, bool,mapexpcomparator>& mUnsatMemoization)
@@ -337,8 +339,16 @@ z3::expr truev=newinit->mAMap.ctx().bool_val(true);
 
 		//Create generator
 
+    auto mystart10 =  boost::chrono::system_clock::now();
 
     AFAStatePtr falseerror=tm->Complement(falseaccepted);
+
+    auto myend10 = boost::chrono::system_clock::now();
+    auto myelapsed10 = boost::chrono::duration_cast<boost::chrono::duration<double> >(myend10- mystart10).count();
+    std::cout << "Time spent in Complement = "<<myelapsed10 << "seconds "<<'\n';
+
+
+
 #ifdef DBGPRNT
 	std::cout<<"Complement done "<<std::endl;
 	tm->PrintToDot(std::string("Pass4PhaseComplement.dot"));

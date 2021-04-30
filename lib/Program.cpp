@@ -11,6 +11,8 @@
 #include <iostream>
 #include <fstream>
 #include <map>
+#include "boost/chrono.hpp"
+
 
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/Module.h"
@@ -181,11 +183,24 @@ Program::Program(Module& M) {
 #ifdef LOCAL_DEBUG
   z3_stream.open("z3debug.txt");
 #endif
+  auto mystart1 =  boost::chrono::system_clock::now();
+
   ParseGlobalVariables(M);
   for (Function& Func : M) {
     ParseThread(Func);
   }
+  auto myend1 = boost::chrono::system_clock::now();
+  auto myelapsed1 = boost::chrono::duration_cast<boost::chrono::duration<double> >(myend1- mystart1).count();
+  std::cout << "Time spent in parsing = "<<myelapsed1 << "seconds "<<'\n';
+
+  auto mystart2 =  boost::chrono::system_clock::now();
+
   MakeOldInterface();
+  auto myend2 = boost::chrono::system_clock::now();
+  auto myelapsed2 = boost::chrono::duration_cast<boost::chrono::duration<double> >(myend2- mystart2).count();
+  std::cout << "Time spent in MakeOldInterface = "<<myelapsed2 << "seconds "<<'\n';
+
+
 }
 
 z3::expr& Program::GetVariableExpr(std::string name) {
@@ -340,12 +355,14 @@ void Program::ParseThread(Function& Func) {
             )
           );
 
+        /*
           bb_struct.branch_map.insert(
             std::make_pair(
               inst_num,
               0
             )
           );
+        */
 
           if (inst_num == inst_list_.size()) {
             inst_list_.push_back(inst);
