@@ -6,6 +6,7 @@
  * @author Yaduraj Rao
  */
 #include "SafetyVerificationPass.h"
+#include "Utils.h"
 
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/Passes/PassBuilder.h"
@@ -19,6 +20,9 @@
 #include "AFA/AFAut.h"
 #include "SCTransSystem.h"
 #include "Program.h"
+
+#include <vector>
+#include <sstream>
 
 using namespace llvm;
 
@@ -59,12 +63,16 @@ bool test_bench(Module& M) {
 #ifdef DBGPRNT
     std::cout<<"Original is "<<original<<std::endl;
 #endif
-    std::reverse(revword.begin(), revword.end());//reverse the word to get it back.
+
+    std::string rev= Utils::ReverseWord(revword); //reverse the word to get it back.
+
 #ifdef DBGPRNT
-    std::cout<<"Getting accepted state for "<<revword<<std::endl;
+    std::cout<<"Getting accepted state for "<<rev<<std::endl;
 #endif
-    z3::expr wordphi= T->GetEndStateAssertionFromWord(revword);
-    std::string exword = revword;
+
+    z3::expr wordphi= T->GetEndStateAssertionFromWord(rev);
+    std::string exword = rev;
+
     std::cout<<"Checking word "<<exword<<" with postcondition phi = "<<wordphi<<std::endl;
 
 		z3::expr negphi = !wordphi;

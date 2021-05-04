@@ -10,6 +10,7 @@ add_library(SafetyVerificationPass SHARED
 		AFA/PassFourWeak.cpp
 		AFA/PassFourAFA.cpp
 		SCTransSystem.cpp
+		Utils.cpp
 		)
 
 target_include_directories(SafetyVerificationPass PUBLIC

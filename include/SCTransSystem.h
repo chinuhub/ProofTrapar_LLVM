@@ -18,7 +18,6 @@ extern "C"
 */
 #include <map>
 #include <iostream>
-#include <vector>
 #include <list>
 #include <tuple>
 #include "z3++.h"
