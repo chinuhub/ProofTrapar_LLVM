@@ -3,7 +3,7 @@
 #include <sstream>
 
 
-
+extern int global_i;
 class Utils {
 public:
 

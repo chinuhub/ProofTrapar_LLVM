@@ -14,6 +14,7 @@
 #include<tuple>
 #include<vector>
 #include "z3++.h"
+#include "Utils.h"
 /*extern "C"
 {
 #include "fa.h"
@@ -65,8 +66,10 @@ enum StateType {AND,OR,ORLit};
 class AFAState {
 
 
+
 public:
-	std::string mAssumeSym;
+    int mID=0;
+	std::string mAssumeSym= "";
 	StateType mType;
 	//set of transitions going out of this state..
 	std::multimap<std::string,SetAFAStatesPtr> mTransitions;
@@ -86,6 +89,9 @@ public:
 	z3::expr* mHMap= nullptr;
 	AFAState(StateType type, std::string& wrd, z3::expr& phi):mRWord(wrd), mAMap(phi)
 	{mType=type; mIsAccepted=false;mHMap=NULL; mAssumeSym="";
+
+    mID = global_i;
+    global_i = global_i+1;
 	}
 	AFAState(StateType type, z3::expr& phi): mAMap(phi)
 	{
@@ -94,6 +100,8 @@ public:
 		st<<this;
 		mRWord=st.str();
 		mAssumeSym="";
+        mID = global_i;
+        global_i = global_i+1;
 	}
 	void PassOne(std::map<AFAStatePtr,AFAStatePtr,mapstatecomparator>& mAllStates);
 	bool PassTwo(std::map<AFAStatePtr,AFAStatePtr,mapstatecomparator>& mAllStates, std::map<z3::expr, bool,mapexpcomparator>&);

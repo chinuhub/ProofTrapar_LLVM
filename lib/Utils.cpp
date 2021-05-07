@@ -1,5 +1,6 @@
 #include "Utils.h"
 
+int global_i=0;
 std::vector<std::string> Utils::GetTokens(std::string word) {
     std::stringstream temp(word);
     std::vector<std::string> tokens;

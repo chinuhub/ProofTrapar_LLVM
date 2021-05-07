@@ -6,7 +6,6 @@
  * @author Yaduraj Rao
  */
 #include "SafetyVerificationPass.h"
-#include "Utils.h"
 
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/Passes/PassBuilder.h"

@@ -6,7 +6,7 @@
  */
 
 #include "AFA/AFAState.h"
-#include "Utils.h"
+//#include "Utils.h"
 #include<boost/foreach.hpp>
 #include<unordered_map>
 #include<vector>
@@ -16,7 +16,10 @@
 
 bool mapstatecomparator::operator() (const AFAStatePtr& one, const AFAStatePtr& two) const
 	{
-		z3::expr onephi = (*one).mAMap;
+    int id1 = (*one).mID;
+    int id2 = (*two).mID;
+    return id1<id2;
+		/*z3::expr onephi = (*one).mAMap;
 		z3::expr twophi = (*two).mAMap;
 		std::string& onestr = (*one).mRWord;
 		std::string& twostr = (*two).mRWord;
@@ -24,7 +27,7 @@ bool mapstatecomparator::operator() (const AFAStatePtr& one, const AFAStatePtr& 
 		if(onephi.hash()==twophi.hash())
 			return onestr<twostr;
 		else
-			return (onephi.hash()<twophi.hash());
+			return (onephi.hash()<twophi.hash());*/
 
 	}
 
