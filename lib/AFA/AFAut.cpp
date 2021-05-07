@@ -245,7 +245,10 @@ AFAut* AFAut::MakeAFAutProof(std::string& word, z3::expr& mPhi,Program* p, int c
 #ifdef	DBGPRNT
 	 	    std::cout<<"Starting Pass four "<<std::endl;
 #endif
-	 	    //Pass four- adding more edges respecting implications, this is a function of AFAut only not of AFAstate
+
+    afa->PrintToDot("Pass2AfterDeletion.dot");
+
+    //Pass four- adding more edges respecting implications, this is a function of AFAut only not of AFAstate
 	 	    //std::tuple<SetAFAStatesPtr,SetAFAStatesPtr,AFAStatePtr> retvals =afa->mInit->PassFour(afa->mInit,passtwoallstates);
 	 	   //struct fa* complementedaut=afa->mInit->PassFour(afa->mInit,passtwoallstates);
 //	 	   struct fa* complementedaut=
