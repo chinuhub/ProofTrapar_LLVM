@@ -20,11 +20,21 @@ void AFAState::PassThree(Graph& g, std::map<AFAStatePtr, vertex_t,mapstatecompar
 
 		VertexProp vp;
 		std::stringstream stream;
-		stream << mAMap<<","<<(*mHMap)<<","<<this;//<mRWord;
+		if(mHMap!=NULL) {
+            stream << mAMap << "," << (*mHMap) << "," << mRWord << "," << this;//<mRWord;
+        }
+		else{
+            stream << mAMap << ",NULL," << mRWord << "," << this;//<mRWord;
+        }
+
 		vp.vertlabel=stream.str();
 		stream.str(std::string());//erase the buffer
-		stream<<((*mHMap));
-		vp.xlabel=stream.str();
+        if(mHMap!=NULL) {
+            stream<<((*mHMap));
+        }else
+            stream<<"NULL";
+
+        vp.xlabel=stream.str();
 		vp.shape="rectangle";
 		vp.color="yellow";
 		g[vthis]=vp;
