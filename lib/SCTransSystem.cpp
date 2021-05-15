@@ -6,9 +6,11 @@
  */
 
 #include "SCTransSystem.h"
+#include "Utils.h"
 #include <boost/foreach.hpp>
 #include <boost/assert.hpp>
 #include <queue>
+
 
 extern "C" {
 #include <stdio.h>
@@ -35,7 +37,7 @@ struct newstateinfocompare{
 };
 
 
- SCTransSystem::SCTransSystem(Program& P, z3::solver& s):mProgram(P), mSolver(s) {
+SCTransSystem::SCTransSystem(Program& P, z3::solver& s):mProgram(P), mSolver(s) {
 }
 
  /*
@@ -54,10 +56,13 @@ struct newstateinfocompare{
 	return (std::tuple<std::string,z3::expr>(accword,ex));
 }*/
 
+
+
+
 z3::expr SCTransSystem::GetEndStateAssertionFromWord(std::string afaword)
 {
-	size_t length=afaword.length();
-	std::string lastsym(afaword.substr(length-1,1));
+    std::string lastsym = Utils::GetLastSymbol(afaword);  // Getting the last symbol from the afa word
+
 	std::map<std::string,z3::expr> assnMap = mProgram.GetAssnMapForAllProcesses();
 	BOOST_ASSERT_MSG(assnMap.find(lastsym)!=assnMap.end(),"Some serious issue as the last char must be the one where assn is defined");
 	return assnMap.find(lastsym)->second;
@@ -94,10 +99,16 @@ void SCTransSystem::CreateFAutomataFaudes(const AdjacencyList<int>& adj, faudes:
             unsigned symbolval = edge.second;
             srcstr = std::to_string(source);
             dststr = std::to_string(destination);
-            char sym = 'A';
+            
+            /*char sym = 'A';
             if (symbolval < 26) sym = 'A' + symbolval;
             else sym = 'a' + (symbolval - 26);
-            std::string symstr(1,sym);
+
+             std::string symstr(1,sym);
+            */
+
+            std::string symstr = Utils::GetLabel(symbolval);
+            
             generator.InsEvent(symstr);
             //States corresponding to source and destination have already been added in the generator by previous loop.
             // so just insert an edge between those states.
@@ -124,6 +135,8 @@ void SCTransSystem::BuildSCTS(faudes::Generator& lGenerator){
         std::cout << GetWord(faudesAut)<<std::endl;
         faudesAut.DotWrite("./auto"+std::to_string(i+1)+".dot");
     //BOOST_ASSERT_MSG(aut != NULL, "could not construct automaton");
+
+
 
   }
     BOOST_ASSERT_MSG(faudesAutomata.size()>0, " No process given as input.. Exiting");
@@ -169,8 +182,8 @@ void SCTransSystem::BuildSCTS(faudes::Generator& lGenerator){
 
 /**
 * This method does a breadth first search of the input automaton to find the shortest accepting word starting from the
-* initial state.
-*/
+ * initial state.
+ */
 std::string SCTransSystem::GetWord(faudes::Generator generator){
 // initialize todo queue. It is a queue of pairs of state and the string reached so far.
     std::queue<std::pair<faudes::Idx,std::string>> todo;

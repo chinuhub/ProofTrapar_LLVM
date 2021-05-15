@@ -6,10 +6,13 @@
  */
 
 #include "AFA/AFAState.h"
+#include "Utils.h"
 #include<boost/foreach.hpp>
 #include<unordered_map>
 #include<vector>
 #include "AFA/AFAut.h"
+#include "SCTransSystem.h"
+
 
 bool mapstatecomparator::operator() (const AFAStatePtr& one, const AFAStatePtr& two) const
 	{
@@ -76,6 +79,8 @@ bool AFAState::HelperIsUnsat(z3::expr formula)
 
 	}
 
+
+
 bool AFAState::HelperIsValid(z3::expr formula)
 	{
 		z3::context& ctx = mAMap.ctx();
@@ -108,6 +113,8 @@ z3::expr AFAState::HelperSimplifyExpr(z3::expr exp)
 
 	}
 
+
+
 std::set<z3::expr,mapexpcomparator> AFAState::HelperGetFreeVars(z3::expr& phi){
 	if(phi.is_var()){
 		BOOST_ASSERT_MSG(phi.is_var(),"Some problem: This must be var only");
@@ -139,6 +146,103 @@ std::set<z3::expr,mapexpcomparator> AFAState::HelperGetFreeVars(z3::expr& phi){
 	}else
 		BOOST_ASSERT_MSG(false,"None type of expr found in freevar");
 
+
+}
+
+void AFAState::PassHMap(){
+    //Start with this state. Its HMap computation depends upon the HMap present in its children.
+
+    //If this state is an accepting state then HMap will be same as AMap. (assign that to this state's HMap variable and return).
+
+    if(mIsAccepted){
+        mHMap = new z3::expr(mAMap);
+        return;
+    }
+    //If this state's HMap is already non-null then return.
+    if(mHMap!= nullptr)
+        return;
+    //Case 1. If it is AND state then recursively call PassHMap on all of its children. After the calls are done. Get HMap from children and use that to compute the HMap
+    //of this node. return
+
+    //Case 2. If it is OR state then recursively call PassHMap on all of its children. After the calls are done. Get HMap from children and use that to compute the HMap
+    //of this node. return
+
+    //Case 3. If it is OrLit then get the HMap of it's child (Guaranteed to have only one child for OrLit node). The child's HMap will become the HMap of this node.
+    //return.
+    if(mType==AND){
+        //by this time we are sure that mPhi of this state is of the form a and b and c
+        //extract a, b,c such clauses..
+#ifdef	DBGPRNT
+        std::cout<<" inside conjfillstate "<<this->mAMap<<std::endl;
+#endif
+        BOOST_ASSERT_MSG(mAMap.decl().decl_kind()==Z3_OP_AND," Expeceting a conjunction , failed.. SOme issue");
+        z3::context& ctx= mAMap.ctx();
+        z3::tactic t = z3::tactic(ctx,"tseitin-cnf");
+        z3::goal g(ctx);
+        SetAFAStatesPtr nextset;
+        BOOST_FOREACH(auto st, mTransitions){
+                        BOOST_FOREACH(auto st2, st.second) {
+                                        if(st2!=this) {
+                                            st2->PassHMap(); //After this call returns we are sure that HMap for that state has been computed.
+                                            nextset.insert(st2);
+                                        }
+                                    }
+                    }
+        //add HMap, by this time the returned state's must have proper HMap set as well..
+        z3::expr trueexp = ctx.bool_val(true);
+        BOOST_FOREACH(auto stp, nextset)
+                    {
+                        BOOST_ASSERT_MSG((*stp).mHMap!=NULL,"Some serious issue as by this time HMap of children must have been set");
+                        trueexp = trueexp && (*((*stp).mHMap));
+                    }
+        trueexp=HelperSimplifyExpr(trueexp);
+        mHMap = new z3::expr(trueexp);//delete it when removin the states.. i.e. in the destructor of this state..
+        return; //We are done as now this state has a valid HMap.
+    }
+    else if(mType==OR){
+        //by this time we are sure that mPhi of this state is of the form a or b or c
+        (mAMap.decl().decl_kind()==Z3_OP_OR," Expeceting a disjunction, failed.. SOme issue");
+        //extract a, b,c such clauses..
+        z3::context& ctx= mAMap.ctx();
+        z3::tactic t = z3::repeat(z3::tactic(ctx, "split-clause") | z3::tactic(ctx, "skip"));
+        SetAFAStatesPtr nextset;
+        BOOST_FOREACH(auto st, mTransitions){
+                        BOOST_FOREACH(auto st2, st.second) {
+                                        if(st2!=this) {
+                                            st2->PassHMap(); //After this call returns we are sure that HMap for that state has been computed.
+                                            nextset.insert(st2);
+                                        }
+                                    }
+                    }
+        //add HMap, by this time the returned state's must have proper HMap set as well..
+        //add HMap, by this time the returned state's must have proper HMap set as well..
+        z3::expr falseexp = ctx.bool_val(false);
+        BOOST_FOREACH(auto stp, nextset)
+                    {
+                        BOOST_ASSERT_MSG((*stp).mHMap!=NULL,"Some serious issue as by this time HMap of children must have been set");
+                        falseexp = falseexp || (*((*stp).mHMap));
+                    }
+        falseexp=HelperSimplifyExpr(falseexp);
+        mHMap = new z3::expr(falseexp);//delete it when removin the states.. i.e. in the destructor of this state..
+        return; //we are done now. HMap has been set for this state, return.
+    }
+    else if(mType==ORLit) {
+        SetAFAStatesPtr nextset;
+        BOOST_ASSERT_MSG(mTransitions.size() == 1, "Can not have more than one outgoing edges, some issue");
+        BOOST_FOREACH(auto st, mTransitions) {
+                        BOOST_ASSERT_MSG(st.second.size() == 1, "Can not  have size >1, some serious issue");
+                        BOOST_FOREACH(auto st2, st.second) {
+                                        if (st2 != this) {
+                                            st2->PassHMap(); //After this call returns we are sure that HMap for that state has been computed.
+                                            //This state's HMap will be now same as st2->mHMap. Set this and return.
+                                            mHMap = new z3::expr(*(st2->mHMap));
+                                            return;
+                                        }
+                                    }
+                    }
+    }
+    else
+        BOOST_ASSERT_MSG(false,"State should either be AND, OR or ORLit, some serious problem");
 
 }
 
@@ -189,7 +293,8 @@ void AFAState::PassOne(std::map<AFAStatePtr,AFAStatePtr,mapstatecomparator>& mAl
 				trueexp=HelperSimplifyExpr(trueexp);
 				mHMap = new z3::expr(trueexp);//delete it when removin the states.. i.e. in the destructor of this state..
 				mTransitions.insert(std::make_pair("0",nextset));
-	}else if(mType==OR){
+	}
+	else if(mType==OR){
 		//by this time we are sure that mPhi of this state is of the form a or b or c
 				(mAMap.decl().decl_kind()==Z3_OP_OR," Expeceting a disjunction, failed.. SOme issue");
 				//extract a, b,c such clauses..
@@ -223,7 +328,8 @@ void AFAState::PassOne(std::map<AFAStatePtr,AFAStatePtr,mapstatecomparator>& mAl
 				mHMap = new z3::expr(falseexp);//delete it when removin the states.. i.e. in the destructor of this state..
 				mTransitions.insert(std::make_pair("0",nextset));
 
-	}else if(mType==ORLit){
+	}
+	else if(mType==ORLit){
 		//if mRWrod becomes empty then add it to acceptance state..(even before doing anything else in this loop
 			if(mRWord.length()==0||mIsAccepted){
 				//add this to accepting state and return with empty set..
@@ -247,13 +353,16 @@ void AFAState::PassOne(std::map<AFAStatePtr,AFAStatePtr,mapstatecomparator>& mAl
 			int i=1;
 			bool notasingleall=true;
 
-		    for (std::string::reverse_iterator rit= mRWord.rbegin(); rit!=mRWord.rend(); ++rit,i++)
-		    {
-				bool notasingle=true;
-		   	    std::string rest(mRWord.begin(),mRWord.end()-i);
-				//for each character encountered..
-		    	char c = *rit;
-		    	std::string sym(1,c);
+            std::vector<std::string> tokens = Utils::GetTokens(mRWord); //getting all symbols of mRWord in vector
+
+            for(int i = tokens.size()-1; i >0; i--) {
+
+                bool notasingle=true;
+
+                std::string sym = tokens[i];  // last symbol
+
+                std::string rest = Utils::RestOfWord(tokens,i);   //rest of the word
+
 		    	if(AFAut::mProgram->mRWLHRHMap.find(sym)!=AFAut::mProgram->mRWLHRHMap.end()){
 		    		//means it is a read/write symbol
 		    		bool isPresent;
@@ -323,66 +432,80 @@ void AFAState::PassOne(std::map<AFAStatePtr,AFAStatePtr,mapstatecomparator>& mAl
 
 		    		z3::expr l1(mAMap);
 		    		z3::expr readarg(std::get<1>(AFAut::mProgram->mCASLHRHMap.find(sym)->second));
-		    		//BEWARE that even if no substituteion takes place in cas we still need to conjunct assume part
+                    z3::expr writearg(std::get<2>(AFAut::mProgram->mCASLHRHMap.find(sym)->second));
+                    z3::expr assignvar(std::get<3>(AFAut::mProgram->mCASLHRHMap.find(sym)->second)) ;
+		    		//BEWARE that even if no substitution takes place in cas we still need to conjunct assume part
 		    		//with the input state's mAMap.
+		    		// consider ret = cas ( ptr , old  , new )
+		    		// left is ptr , old is readarg  , new is writearg and ret is assignvar
+
 		    		notasingle=false;
 		    		notasingleall=false;
-		    		if(freevars.find(left)!=freevars.end()){
-		    			//means this symbol conflict with phi and hence must be used for processing..
-		    			z3::expr writearg(std::get<2>(AFAut::mProgram->mCASLHRHMap.find(sym)->second));
-#ifdef	DBGPRNT
-		    			std::cout<<"CAS:first arg of exp is "<<readarg<<std::endl;
-		    			std::cout<<"CAS:second arg of exp is "<<writearg<<std::endl;
-#endif
-		    			z3::expr_vector src(ctx),dest(ctx);
-		    			src.push_back(left);
-		    			dest.push_back(writearg);
-		    			z3::expr l3(mAMap.substitute(src,dest));
-		    			l1=l3;
-		    			l1=HelperSimplifyExpr(l1);
-		    			}
-		    			z3::expr l2(l1 && (left==readarg));
-		    			l2=HelperSimplifyExpr(l2);
-		    			bool isFalse=false;
-		    			bool istrue = false;
-		    			if(HelperIsUnsat(l2))
-		    			{
-		    				  l2=ctx.bool_val(false);
-		    				  isFalse = true;
-		    			}
-		    			if(HelperIsValid(l2)){
-		    				l2=ctx.bool_val(true);
-		    				istrue=true;
-		    			}
-		    			AFAStatePtr p = HelperAddStateIfAbsent(l2,rest,isPresent,mAllStates);
-		    			if(isFalse||(istrue&& rest.length()==0)){
-		    				//On set of all symbols add self loop to p itself
-#ifdef	DBGPRNT
-		    				std::cout<<"inside cas, setting accepted state with amap as "<<mAMap<<std::endl;
-#endif
-		    				p->mIsAccepted=true;
-		    				/*BOOST_FOREACH(auto t, AFAut::mProgram->mAllSyms){
-		    					HelperAddEdgeIfAbsent(p,p,t);
-		    				}*/
 
-		    			}
+                    z3::expr lc1(mAMap);
+                    z3::expr lc2(mAMap);
+                    // lc1 is for the case where cas instruction is successful and lc2 for when cas instruction in not successful.
 
-		    			if(!isPresent){
-		    				mAllStates.insert(std::make_pair(p,p));
-		    			    p->PassOne(mAllStates);
-		    			}
-		    			nextset.insert(p);
-						//add HMap, by this time the returned state's must have proper HMap set as well..
+                    if(freevars.find(left)!=freevars.end()) {
+                        z3::expr_vector s_(ctx), d_(ctx);
+                        s_.push_back(left);
+                        d_.push_back(writearg);
+                        lc1 = lc1.substitute(s_, d_) ;
+                    }    //  if phi was the original Amap then  lc1 is phi[ptr - > new]
+
+                    if(freevars.find(assignvar)!=freevars.end()){
+                        z3::expr_vector s(ctx),d(ctx);
+                        s.push_back(assignvar);
+                        d.push_back(ctx.int_val(0));
+                        lc2 = lc2.substitute(s,d)  ;
+
+                        z3::expr_vector s_(ctx), d_(ctx);
+                        s_.push_back(assignvar);
+                        d_.push_back(ctx.int_val(1));
+                        lc1 = lc1.substitute(s_, d_) ;
+
+                    }    // if phi was original Amap then lc2 is phi [ret -> 0]
+                        // if phi was original Amap then overall lc1 is phi[ret -> 1 , ptr -> new]
+
+                    lc1 = HelperSimplifyExpr(lc1 && (left == readarg));    // lc1 is now phi[ret -> 1 , ptr -> new] && (ptr == old)
+                    lc2 = HelperSimplifyExpr(lc2 && !(left == readarg)) ;  // lc2 is now phi [ret -> 0] && (ptr! =old)
+
+                    z3::expr lc (lc1||lc2);
+                    lc = HelperSimplifyExpr(lc);
+
+                    bool isFalse=false;
+                    bool istrue = false;
+                    if(HelperIsUnsat(lc))
+                    {
+                        lc=ctx.bool_val(false);
+                        isFalse = true;
+                    }
+                    if(HelperIsValid(lc)){
+                        lc=ctx.bool_val(true);
+                        istrue=true;
+                    }
+                    AFAStatePtr p = HelperAddStateIfAbsent(lc,rest,isPresent,mAllStates);
+                    if(isFalse||(istrue&& rest.length()==0)){
+                        p->mIsAccepted=true;
+                    }
+
+                    if(!isPresent){
+                        mAllStates.insert(std::make_pair(p,p));
+                        p->PassOne(mAllStates);
+                    }
+                    nextset.insert(p);
+
+  //add HMap, by this time the returned state's must have proper HMap set as well..
 						z3::context& ctx = mAMap.ctx();
-						z3::expr trueexp = ctx.bool_val(true);
-						BOOST_FOREACH(auto stp, nextset)
+						z3::expr falseexp = ctx.bool_val(false);
+						BOOST_FOREACH(auto stp, nextset)   // this loop is only executed once
 						{
 							BOOST_ASSERT_MSG((*stp).mHMap!=NULL,"Some serious issue as by this time HMap of children must have been set");
-							trueexp = trueexp && (*((*stp).mHMap));
+							falseexp = falseexp || (*((*stp).mHMap));
 						}
 
-						trueexp=HelperSimplifyExpr(trueexp);
-						mHMap = new z3::expr(trueexp);//delete it when removin the states.. i.e. in the destructor of this state..
+						falseexp=HelperSimplifyExpr(falseexp);
+						mHMap = new z3::expr(falseexp);//delete it when removin the states.. i.e. in the destructor of this state..
 
 		    			mTransitions.insert(std::make_pair(sym,nextset));
 		    			break;
@@ -445,13 +568,18 @@ void AFAState::PassOne(std::map<AFAStatePtr,AFAStatePtr,mapstatecomparator>& mAl
 		    					HelperAddEdgeIfAbsent(this,this,sym);
 		    			    }*/
 		    }//end for loop
+
+
+
+
 		    if(notasingleall)//if this is the case then make it accepting state as well.
 		    {
 		       	mHMap = new z3::expr(mAMap);
 		       	mIsAccepted=true;
 		    }
 
-	}else
+	}
+	else
 		BOOST_ASSERT_MSG(false,"State should either be AND, OR or ORLit, some serious problem");
 }
 

@@ -6,6 +6,7 @@
  * @author Yaduraj Rao
  */
 #include "Program.h"
+#include "Utils.h"
 
 #include <iostream>
 #include <fstream>
@@ -110,10 +111,15 @@ AdjacencyList<int> CreateAutGraph(std::vector<BasicBlockGraph> BB) {
   for (unsigned i = 0; i < aut_graph.size(); i++) {
     std::cout << "From State " << i << " :" << std::endl;
     for (unsigned j = 0; j < aut_graph[i].size(); j++) {
-      char temp = 'A';
-      if (aut_graph[i][j].second < 26) temp = 'A' + aut_graph[i][j].second;
-      else temp = 'a' + (aut_graph[i][j].second - 26);
+
+      //char temp = 'A';
+      //if (aut_graph[i][j].second < 26) temp = 'A' + aut_graph[i][j].second;
+      //else temp = 'a' + (aut_graph[i][j].second - 26);
+
+      std::string temp = Utils::GetLabel(aut_graph[i][j].second);
+      
       std::cout << aut_graph[i][j].first << ' ' << temp;
+
       std::cout << std::endl;
     }
     std::cout << std::endl;
@@ -152,16 +158,24 @@ bool InstructionComparator::operator()(
 std::ofstream z3_stream;
 
 void debug_writer(unsigned id, InstructionType inst) {
+  /*
   char sym;
   if (id < 26) sym = 'A' + id;
   else if (id < 52) sym = 'a' + (id - 26);
   else sym = '0' + (id - 52);
+  */
+
+  std::string sym = Utils::GetLabel(id);
+
   z3_stream << sym << ": ";
   if (std::get<0>(inst) == kAssign) {
     z3_stream << std::get<1>(inst) << ":=" << std::get<2>(inst) << std::endl;
-  } else {
+  } else if (std::get<0>(inst) == kAssume){
     z3_stream << "assume(" << std::get<2>(inst) << ")" << std::endl;
   }
+   else
+   //	z3_stream << "This is condition" << std::get<1>(inst) << ",this is assignment" << std::get<2>(inst)<< std::endl;
+   z3_stream << std::get<1>(inst).arg(0)<<" = "<<"cas("<<std::get<1>(inst).arg(1)<<","<<std::get<2>(inst).arg(0)<<","<<std::get<2>(inst).arg(1)<<")\n";
 }
 
 #endif
@@ -206,6 +220,8 @@ void Program::DotWrite(std::ofstream& os, const AdjacencyList<int>& adj_list) {
       if (label == -1) {
         os << "eps";
       } else {
+      
+      /*
         char symbol;
         if (label < 26) {
           symbol = 'A' + label;
@@ -213,7 +229,11 @@ void Program::DotWrite(std::ofstream& os, const AdjacencyList<int>& adj_list) {
         else {
           symbol = 'a' + (label - 26);
         }
-        os << symbol;
+     */
+
+        std::string symbol = Utils::GetLabel(label);
+
+      	os << symbol;
       }
       os << "\"];\n";
     }
@@ -298,6 +318,7 @@ void Program::ParseThread(Function& Func) {
     std::cout << " now" << std::endl;
 #endif
     for (Instruction& Inst : BB) {
+
       switch (Inst.getOpcode()) {
         case Instruction::Call: {
           bb_struct.is_accepting = true;
@@ -306,8 +327,146 @@ void Program::ParseThread(Function& Func) {
 #endif
           break;
         }
+ 		case Instruction::AtomicCmpXchg :{
+            std::string llval_operand = ValueToVariable(&Inst, thread_name);
+            z3::expr exp_ = context_.int_const(llval_operand.c_str());
+            variable_expr_map_.insert(std::make_pair(llval_operand, exp_));
+
+
+            AtomicCmpXchgInst *AI = dyn_cast<AtomicCmpXchgInst>(&Inst);
+            Value* ptr = AI->getPointerOperand();
+            Value *old_value  = AI->getCompareOperand();
+            Value *new_value = AI->getNewValOperand();
+            std::string lval_operand = ValueToVariable(ptr, thread_name);
+            AddVariable(lval_operand);
+            z3::expr ptr_expr = GetVariableExpr(lval_operand);
+            z3::expr old_expr = ValueToExpr(old_value, thread_name);
+            z3::expr new_expr = ValueToExpr(new_value, thread_name);
+            z3::expr condition_part = (exp_ ==ptr_expr );
+            z3::expr assignment_part = (old_expr == new_expr);  // these variable names are random , don't pay attention.
+            // we can only have 2 expression in instruction I just fit 4 expr in two . it is taken care of when we push it into cas map
+
+            InstructionType inst =
+                    std::make_tuple(
+                            cas,
+                            condition_part,
+                            assignment_part
+                    );
+            unsigned inst_num =
+                    FindInstruction(
+                            std::make_pair(
+                                    thread_name,
+                                    inst
+                            )
+                    );
+            bb_struct.inst.push_back(inst_num);
+            if (inst_num == inst_list_.size()) {
+                inst_list_.push_back(inst);
+                inst_map_.insert(
+                        std::make_pair(
+                                std::make_pair(
+                                        thread_name,
+                                        inst
+                                ),
+                                inst_num
+                        )
+                );
+            }
+
+#ifdef LOCAL_DEBUG
+            std::cout <<"cas caught";
+            debug_writer(inst_num, inst);
+#endif
+            break;
+
+        }
+        case Instruction::ExtractValue:{
+            // the output of cas should be {i32 ,i1 } pair where boolean(i1 integer 1 bit) true/false denotes whether cas was successful or not
+            // and i32(integer 32 bit) is the present value of ptr variable after  cas .
+            // we only have integer variables so true and false are 0 and 1 respectively.
+            // and we have to ignore the i32 part as well because we do not have support for pairs .
+            // extractValue here is only assigning values and nothing else.
+
+              ExtractValueInst *EV = dyn_cast<ExtractValueInst>(&Inst);
+              Value *Agg = EV->getAggregateOperand();
+              std::string lval_operand = ValueToVariable(&Inst, thread_name);
+              z3::expr exp = context_.int_const(lval_operand.c_str());
+              variable_expr_map_.insert(std::make_pair(lval_operand, exp));
+              z3::expr lval_expr = GetVariableExpr(lval_operand);
+              z3::expr rhs_expr = ValueToExpr(Agg,thread_name);
+              InstructionType inst =std::make_tuple(kAssign,lval_expr,rhs_expr);
+
+              unsigned inst_num =FindInstruction(std::make_pair(thread_name,inst) );
+
+              bb_struct.inst.push_back(inst_num);
+              if (inst_num == inst_list_.size()) {
+                  inst_list_.push_back(inst);
+                  inst_map_.insert(
+                          std::make_pair(
+                                  std::make_pair(
+                                          thread_name,
+                                          inst
+                                  ),
+                                  inst_num
+                          )
+                  );
+              }
+
+
+              #ifdef LOCAL_DEBUG
+              debug_writer(inst_num, inst);
+              std::cout<<"extract caught";
+#endif
+
+            break;
+        }
+        case Instruction::Xor:{
+            // xor can be further improved
+            // what is doing right now is "NOT" operation rather than Xor.
+            // reason for this is we don't have boolean variable so we can not implement xor anyway .
+
+            std::string lval_operand = ValueToVariable(&Inst, thread_name);
+            AddVariable(lval_operand);
+            z3::expr lval_expr = GetVariableExpr(lval_operand);
+            Value* op1 = Inst.getOperand(0);
+            z3::expr x = ValueToExpr(op1, thread_name);
+            z3::expr y = context_.bool_val(true);
+            z3::expr  rhs_expr = z3::ite(x==0,context_.int_val(1),context_.int_val(0));
+
+            InstructionType inst =
+                    std::make_tuple(
+                            kAssign,
+                            lval_expr,
+                            rhs_expr
+                    );
+            unsigned inst_num =
+                    FindInstruction(
+                            std::make_pair(
+                                    thread_name,
+                                    inst
+                            )
+                    );
+            bb_struct.inst.push_back(inst_num);
+            if (inst_num == inst_list_.size()) {
+                inst_list_.push_back(inst);
+                inst_map_.insert(
+                        std::make_pair(
+                                std::make_pair(
+                                        thread_name,
+                                        inst
+                                ),
+                                inst_num
+                        )
+                );
+#ifdef LOCAL_DEBUG
+                debug_writer(inst_num, inst);
+#endif
+
+        }
+        break;
+        }
         case Instruction::Ret: {
-          bb_struct.has_branch = true;
+            bb_struct.has_branch = true;
           z3::expr cond_expr = context_.bool_val(true);
           InstructionType inst =
           std::make_tuple(
@@ -322,12 +481,14 @@ void Program::ParseThread(Function& Func) {
               inst
             )
           );
+
           bb_struct.branch_map.insert(
             std::make_pair(
               inst_num,
               0
             )
           );
+
           if (inst_num == inst_list_.size()) {
             inst_list_.push_back(inst);
             inst_map_.insert(
@@ -915,12 +1076,17 @@ std::map<std::string, z3::expr>& Program::GetAssnMapForAllProcesses() {
 void Program::MakeOldInterface() {
   mVarExprMap = variable_expr_map_;
   // assert that we don't have more instructions than symbols available
-  assert(inst_list_.size() <= 52);
+  //assert(inst_list_.size() <= 52);
+  
   unsigned i = 0;
   for (i = 0; i < inst_list_.size(); i++) {
-    std::string sym;
-    if (i < 26) sym += ('A' + i);
-    else sym += ('a' + i - 26);
+  
+   // std::string sym;
+   //if (i < 26) sym += ('A' + i);
+   //else sym += ('a' + i - 26);
+
+   std::string sym = Utils::GetLabel(i);
+
     mAllSyms.push_back(sym);
     if (std::get<0>(inst_list_[i]) == kAssign) {
       std::tuple<z3::expr, z3::expr> inst =
@@ -949,12 +1115,26 @@ void Program::MakeOldInterface() {
         )
       );
     }
+    else if (std::get<0>(inst_list_[i]) == cas) {
+        z3::expr cond_expr = std::get<1>(inst_list_[i]);
+        z3::expr assign_expr = std::get<2>(inst_list_[i]);
+        mCASLHRHMap.insert(
+                std::make_pair(  sym, std::make_tuple(cond_expr.arg(1),assign_expr.arg(0),assign_expr.arg(1),cond_expr.arg(0)) )
+        );       //  for cas instruction ret = cas(ptr, old,new) the above stores  tuple <ptr, old , new , ret>
+    }
+
+    
   }
   for (unsigned j = 0; j < thread_graphs_.size(); j++) {
+  
     std::string sym;
     int sym_num = thread_graphs_[j][1][0].second;
-    if (sym_num < 26) sym += ('A' + sym_num);
-    else sym += ('a' + (sym_num - 26));
+    
+    //if (sym_num < 26) sym += ('A' + sym_num);
+    //else sym += ('a' + (sym_num - 26));
+
+    sym = Utils::GetLabel(sym_num);
+
     mAssnMap.insert(
       std::make_pair(
         sym,
