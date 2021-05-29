@@ -16,10 +16,10 @@
 
 bool mapstatecomparator::operator() (const AFAStatePtr& one, const AFAStatePtr& two) const
 	{
-    int id1 = (*one).mID;
+    /*int id1 = (*one).mID;
     int id2 = (*two).mID;
-    return id1<id2;
-		/*z3::expr onephi = (*one).mAMap;
+    return id1<id2;*/
+		z3::expr onephi = (*one).mAMap;
 		z3::expr twophi = (*two).mAMap;
 		std::string& onestr = (*one).mRWord;
 		std::string& twostr = (*two).mRWord;
@@ -27,7 +27,7 @@ bool mapstatecomparator::operator() (const AFAStatePtr& one, const AFAStatePtr& 
 		if(onephi.hash()==twophi.hash())
 			return onestr<twostr;
 		else
-			return (onephi.hash()<twophi.hash());*/
+			return (onephi.hash()<twophi.hash());
 
 	}
 
@@ -604,6 +604,7 @@ bool AFAState::HelperAddEdgeIfAbsent(AFAStatePtr src,AFAStatePtr dest,std::strin
 	src->mTransitions.insert(std::make_pair(sym,dstset));
 	return true;
 }
+
 
 
 AFAStatePtr AFAState::HelperAddStateIfAbsent(z3::expr& phi,std::string& mRWord,bool& isPresent, std::map<AFAStatePtr,AFAStatePtr,mapstatecomparator>& mAllStates){

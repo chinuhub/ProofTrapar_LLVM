@@ -111,7 +111,7 @@ public:
 	//Pass to Print DOT file
 	void PassThree(Graph& g, std::map<AFAStatePtr, vertex_t,mapstatecomparator>& indmap);
 
-	std::set<std::tuple<std::string,AFAStatePtr>>  PassFourPhaseOne(std::set<AFAStatePtr>& ANDORStates, std::set<AFAStatePtr>& ORLitStates,std::set<std::tuple<AFAStatePtr,std::string,AFAStatePtr>, tuplecomparator>& toANDLink,std::map<AFAStatePtr,std::set<std::tuple<std::string,AFAStatePtr>>>&, std::map<z3::expr, bool,mapexpcomparator>& );
+	void PassFourPhaseOne(std::set<AFAStatePtr>& ANDORStates, std::set<AFAStatePtr>& ORLitStates,std::set<std::tuple<AFAStatePtr,std::string,AFAStatePtr>, tuplecomparator>& toANDLink/*,std::map<AFAStatePtr,std::set<std::tuple<std::string,AFAStatePtr>>>&*/, std::map<z3::expr, bool,mapexpcomparator>& );
 	std::set<std::set<AFAStatePtr>> PassFourPhaseZero(std::map<AFAStatePtr,std::set<std::set<AFAStatePtr>>>&);
 
 	//struct fa* PassFour(AFAStatePtr init, std::map<AFAStatePtr,AFAStatePtr,mapstatecomparator>& allStates );
@@ -127,6 +127,8 @@ public:
 	z3::expr HelperSimplifyExpr(z3::expr exp);
 	bool HelperIsUnsat(z3::expr formula);
 	bool HelperIsValid(z3::expr formula);
+
+
 
 
 

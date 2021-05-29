@@ -127,17 +127,17 @@ bool tuplecomparator::operator() (const std::tuple<AFAStatePtr,std::string,AFASt
 
 //Following is an important function as it generates equivalence classes as well as put OR, ORlit states in some containers..
 //Also it keeps on filling a set to denote that an ORLit node has a path on sym to an ANDOR node.
-std::set<std::tuple<std::string,AFAStatePtr>>  AFAState::PassFourPhaseOne(std::set<AFAStatePtr>& ANDORStates, std::set<AFAStatePtr>& ORLitStates,std::set<std::tuple<AFAStatePtr,std::string,AFAStatePtr>, tuplecomparator>& toANDLink, std::map<AFAStatePtr,	std::set<std::tuple<std::string,AFAStatePtr>>>& assumeinfomap, std::map<z3::expr, bool,mapexpcomparator>& mUnsatMemoization)
+void AFAState::PassFourPhaseOne(std::set<AFAStatePtr>& ANDORStates, std::set<AFAStatePtr>& ORLitStates,std::set<std::tuple<AFAStatePtr,std::string,AFAStatePtr>, tuplecomparator>& toANDLink, /*std::map<AFAStatePtr,	std::set<std::tuple<std::string,AFAStatePtr>>>& assumeinfomap,*/ std::map<z3::expr, bool,mapexpcomparator>& mUnsatMemoization)
 {
 	std::set<std::tuple<std::string,AFAStatePtr>> assumeinfo;
 	if(this->mIsAccepted)
 		{
 		//keep it in bookkeepting structure
 				ORLitStates.insert(this);
-		return assumeinfo;
+		return;
 		}
-  if(assumeinfomap.find(this)!=assumeinfomap.end())
-      return assumeinfomap.find(this)->second;
+  /*if(assumeinfomap.find(this)!=assumeinfomap.end())
+      return assumeinfomap.find(this)->second;*/
 
 
 	if(this->mType==ORLit){
@@ -155,76 +155,26 @@ std::set<std::tuple<std::string,AFAStatePtr>>  AFAState::PassFourPhaseOne(std::s
 		}
 
 
-		std::set<std::tuple<std::string,AFAStatePtr>> retlink = nextone->PassFourPhaseOne(ANDORStates,ORLitStates,toANDLink,assumeinfomap,mUnsatMemoization);
-		//for every entry in retlink.. add thistate sym assumestate to toANDLink..
-		//ONly if mHMap of this node is unsat..
-		/////BOOST_ASSERT_MSG(mUnsatMemoization.find(*mHMap)!=mUnsatMemoization.end(),"Some issue, look into our invariant");
-		bool res;// = mUnsatMemoization.find(*mHMap)->second;
-        if(HelperIsUnsat(*mHMap)){
-            //mUnsatMemoization.insert(std::make_pair(*mHMap,true));
-            res= true;//true means it is unsat..
-        }
-        else{
-            //mUnsatMemoization.insert(std::make_pair(*mHMap,false));
-            res= false;
-        }
-		if(res)
-		{
-			BOOST_FOREACH(auto t, retlink){
-        //dont add if dest is going to lie in same eq class as this one..
-        AFAStatePtr des=std::get<1>(t);
-        if(this->mAMap.hash()==des->mAMap.hash() && this->mHMap->hash()==des->mHMap->hash())
-          continue;
-				toANDLink.insert(std::make_tuple(this,std::get<0>(t),std::get<1>(t)));
-					}
-
-//possible that the assume phi instruction resulted in an ORLit node.
-			//Moreover it can also come from lcas instruction.
-						if(AFAut::mProgram->mRevAssumeLHRHMap.find(mAMap)!=AFAut::mProgram->mRevAssumeLHRHMap.end()){
-							//assumeinfo.insert(std::make_tuple(AFAut::mProgram->mRevAssumeLHRHMap.find(mAMap)->second,this));
-							//this is also important..In fact we can comment out the above statmenet.
-							retlink.insert(std::make_tuple(AFAut::mProgram->mRevAssumeLHRHMap.find(mAMap)->second,this));
-						}
-		}
+		nextone->PassFourPhaseOne(ANDORStates,ORLitStates,toANDLink/*,assumeinfomap,*/,mUnsatMemoization);
 
 		//keep it in bookkeepting structure
 		ORLitStates.insert(this);
-    assumeinfomap.insert(std::make_pair(this,retlink));
 
-		return retlink;//pass it down further.
+		return;//pass it down further.
 	}else{
 		//means this is an AND/OR state..
 		BOOST_FOREACH(auto t, mTransitions){
 			BOOST_ASSERT_MSG(t.first=="0","Some serious error");
 			BOOST_FOREACH(auto child, t.second){
-				std::set<std::tuple<std::string,AFAStatePtr>> retlink = child->PassFourPhaseOne(ANDORStates,ORLitStates,toANDLink,assumeinfomap,mUnsatMemoization);
-				assumeinfo.insert(retlink.begin(),retlink.end());
+				child->PassFourPhaseOne(ANDORStates,ORLitStates,toANDLink/*,assumeinfomap*/,mUnsatMemoization);
+				//assumeinfo.insert(retlink.begin(),retlink.end());
 			}
 		}
-		//check if mAMAp of this corresponds to phi of some assume symbol or not..
-		//if yes then add that symbol and this to assumeinfo and return..only if hMap of this node is unsat..
-		//BOOST_ASSERT_MSG(mUnsatMemoization.find(*mHMap)!=mUnsatMemoization.end(),"Some issue, look into our invariant");
-		bool res;// = mUnsatMemoization.find(*mHMap)->second;
-        if(HelperIsUnsat(*mHMap)){
-            //mUnsatMemoization.insert(std::make_pair(*mHMap,true));
-            res= true;//true means it is unsat..
-        }
-        else{
-            //mUnsatMemoization.insert(std::make_pair(*mHMap,false));
-            res= false;
-        }
-		if(res)
-		{
-					if(AFAut::mProgram->mRevAssumeLHRHMap.find(mAMap)!=AFAut::mProgram->mRevAssumeLHRHMap.end())
-					{
-						assumeinfo.insert(std::make_tuple(AFAut::mProgram->mRevAssumeLHRHMap.find(mAMap)->second,this));
-					}
-		}
+
 
 		//also add this to ANDORState bookkeeping structure;
 		ANDORStates.insert(this);
-    assumeinfomap.insert(std::make_pair(this,assumeinfo));
-		return assumeinfo;
+		return;
 	}
 }
 

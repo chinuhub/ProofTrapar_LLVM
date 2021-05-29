@@ -78,7 +78,7 @@ bool test_bench(Module& M) {
 		//struct fa* prooffa = AFAut::MakeAFAutProof(exword,negphi,P,cases);
 		bool result=false;
 		faudes::Generator proofgens;
-		AFAut* proofafa = AFAut::MakeAFAutProof(exword,negphi,P,cases,result,proofgens);
+		AFAut::MakeAFAutProof(exword,negphi,P,cases,result,proofgens);
 		//what we got is already complemented version..
 		if(result==false)//return null if hmap of initial state is unsat.
 		{
@@ -95,17 +95,20 @@ bool test_bench(Module& M) {
     bool res= checkAccepting(original,prooffa);
     BOOST_ASSERT_MSG(res==false,"Some serious error as this word must not be accepted by this complemented FA");
 #endif
-    faudes::Generator intersectionres;
 #ifdef DBGPRNT
     std::cout<<"Original: States="<<generator.States().Size()<<" Transitions = "<<generator.TransRel().Size()<<std::endl;
 #endif
-    proofafa->Intersection(generator,intersectionres);
-    generator.Clear();
-    faudes::Deterministic(intersectionres,generator);
-    //generator.Assign(intersectionres);
-    intersectionres.Clear();
-    faudes::aStateMin(generator);
-    delete proofafa;
+    //We have the result of the AFA in DFA variable proofgens.
+    //We will first complement it and then intersect it with generator.
+    //The result will be stored again in variable generator.
+    //Check if proofgens has accepted states or not.
+      faudes::LanguageComplement(proofgens);
+      proofgens.DotWrite("Complemented.dot");
+      faudes::Generator res;
+      faudes::LanguageIntersection(generator,proofgens,res);
+
+      faudes::Deterministic(res,generator);
+       faudes::aStateMin(generator);
 #ifdef DBGPRNT
      std::cout<<"Intersection: States = "<<generator.States().Size()<<" Transitions = "<<generator.TransRel().Size()<<std::endl;
 #endif

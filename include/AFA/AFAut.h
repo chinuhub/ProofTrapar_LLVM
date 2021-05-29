@@ -35,7 +35,7 @@ public:
 	 */
 	//static AFAut* MakeAFAutFromFA(struct fa* nfa,Program* program,z3::context&);
 
-	static AFAut* MakeAFAutProof(std::string& word, z3::expr& mPhi,Program* p, int count, bool& bres, faudes::Generator& generator);
+	static void MakeAFAutProof(std::string& word, z3::expr& mPhi,Program* p, int count, bool& bres, faudes::Generator& generator);
 	struct fa* ConvertToNFA();
 	/**
 	 * Complement this AFA and changes init accordingly
@@ -59,18 +59,24 @@ public:
 	 */
 	std::string GetWord();
 
-	AFAut* PassFourNew(AFAStatePtr init, std::set<AFAStatePtr>& allStates , int, faudes::Generator&, std::map<z3::expr, bool,mapexpcomparator>&);
+	void PassFourNew(AFAStatePtr init, std::set<AFAStatePtr>& allStates , int, faudes::Generator&, std::map<z3::expr, bool,mapexpcomparator>&);
 
 	std::set<std::set<AFAStatePtr>> GetConjunctedTransitions(std::set<AFAStatePtr> stateset, std::string sym);
 	std::set<AFAStatePtr> GetDisjunctedTransitions(std::set<AFAStatePtr> stateset, std::string sym);
 
-
+    std::map<std::string, AFAStatePtr> getImplicitTransitions(AFAStatePtr state);
+    std::map<std::string, SetAFAStatesPtr> getExplicitTransitions(AFAStatePtr state);
 	/**
 	* Checks if the given word is accepted by this AFA or not
 	*/
 	bool IsAccepted(std::string word);
 
+	void createDFA( faudes::Generator& generator);
 	virtual ~AFAut();
+
+    void addSelfLoop(faudes::Generator &generator,
+                std::map<AFAStatePtr, std::map<std::string, AFAStatePtr>> &implicittransset,
+                const SetAFAStatesPtr &tmpNextStatesSet, faudes::Idx newstate_generator);
 };
 
 

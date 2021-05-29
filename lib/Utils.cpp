@@ -1,4 +1,5 @@
 #include "Utils.h"
+#include "AFA/AFAut.h"
 
 int global_i=0;
 std::vector<std::string> Utils::GetTokens(std::string word) {
@@ -51,3 +52,16 @@ std::string Utils::GetLabel(unsigned number){
     label= label + std::to_string(number+1);
     return label;
 }
+
+
+template<typename TV>
+std::set<std::string> extract_keys(std::map<std::string, TV>& input_map) {
+    std::set<std::string> retval;
+    for (auto const& element : input_map) {
+        retval.insert(element.first);
+    }
+    return retval;
+}
+
+template std::set<std::string> extract_keys<AFAStatePtr>(std::map<std::string, AFAStatePtr>& input_map);
+template std::set<std::string> extract_keys<SetAFAStatesPtr>(std::map<std::string, SetAFAStatesPtr>& input_map);

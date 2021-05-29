@@ -6,9 +6,11 @@
  */
 
 #include "AFA/AFAut.h"
+#include "Utils.h"
 #include <iterator>
 #include <map>
 #include<set>
+
 template <class Name>
 
 class myEdgeWriter {
@@ -139,7 +141,7 @@ Program* AFAut::mProgram;
 /**
  * Function to construct and AFA corresponding to word w and neg phi as phi
  */
-AFAut* AFAut::MakeAFAutProof(std::string& word, z3::expr& mPhi,Program* p, int count, bool& bres, faudes::Generator& generator){
+void AFAut::MakeAFAutProof(std::string& word, z3::expr& mPhi,Program* p, int count, bool& bres, faudes::Generator& generator){
 	mProgram= p;
     std::map<z3::expr, bool,mapexpcomparator> mUnsatMemoization;
 
@@ -205,12 +207,11 @@ AFAut* AFAut::MakeAFAutProof(std::string& word, z3::expr& mPhi,Program* p, int c
 			 */
 
 			//afa->mInit->PassHMap();
-
 			afa->PrintToDot("Pass1.dot");
 			if(!afa->mInit->HelperIsUnsat(*(afa->mInit->mHMap)))
 			{
 				bres=false;
-				return NULL;//to denote that this trace is erroneous
+				return;//to denote that this trace is erroneous
 			}
 			bres=true;
 
@@ -253,15 +254,15 @@ AFAut* AFAut::MakeAFAutProof(std::string& word, z3::expr& mPhi,Program* p, int c
 	 	   //struct fa* complementedaut=afa->mInit->PassFour(afa->mInit,passtwoallstates);
 //	 	   struct fa* complementedaut=
 	 	    std::set<AFAStatePtr> allStatesDel;
-	 	    AFAut* proofafa = afa->PassFourNew(afa->mInit,allStatesDel,count,generator,mUnsatMemoization);
+	 	    afa->PassFourNew(afa->mInit,allStatesDel,count,generator,mUnsatMemoization);
 	 	   //delete alls tates in passtwoallstates;-- Do it later;;
-	 	  BOOST_FOREACH(auto t, allStatesDel){
+	 	  /*BOOST_FOREACH(auto t, allStatesDel){
 	 	  		delete(t);
-	 	  	}
+	 	  	}*/
 	 	  afa->mInit=NULL;
 	 	  delete afa;//no longer in use..
 	 	  std::cout<<"Proofafa done"<<std::endl;
-	 	  return proofafa;
+	 	  return;
 }
 /**
  * Complement this AFA and changes init accordingly==
@@ -395,6 +396,318 @@ void AFAut::RecComplement(AFAStatePtr state, std::map<AFAStatePtr,bool>& mapseen
 			}
 		}
 	}
+}
+/*
+ * This method returns explicit transitions coming out from this state. An explicit transition is the one that is explicitly presnet in this state.
+ */
+std::map<std::string, SetAFAStatesPtr > AFAut::getExplicitTransitions(AFAStatePtr state) {
+    std::map<std::string, SetAFAStatesPtr > res;
+    BOOST_FOREACH(auto trans, state->mTransitions) {
+                    //get the symbol name on which this transition takes place.
+                    std::string symname = trans.first;
+                    //get the destination state/states. add them to a SetAFAStatePtr and at the end insert the entry (symname, setafastatptr) into res.
+                    SetAFAStatesPtr deststates;
+                    BOOST_FOREACH( auto deststate, trans.second){
+                                    //add symname,deststate into map result.
+                                    deststates.insert(deststate);
+                                }
+                    //INVARIANT: if more than one destination states on a transition then this state must be of AND type.
+                    if(deststates.size()>1)
+                        BOOST_ASSERT_MSG(state->mType==AND || state->mType==OR,"Only an AND/OR state can have more than 2 next transitions on same symbol at this point. We found an OR/ORLit with two next transitions on the same symbol");
+
+                    //add this information in res variable to be returned later.
+                    res.insert(std::make_pair(symname,deststates));
+                }
+    return res;
+
+}
+/*
+ * This method returns a set of implicit transitions coming out of this state. An implicit transition is not explicitly present in the transitions data
+ * structure of this state but is computed as following;
+ * For a symbol S, there is an explicit transition from this state on S to the same state iff
+ * 1. HMap(this) is false and S is of type assume symbol. This follows from the monotonicity of the WP.
+ * 2. S is an assignment and the free variables of AMap(this) and the to-be-modified variables in assignment do not intersect. This follows from
+ * the fact that in WP a formula changes only for assignment operations.
+ * 3. If S is LCAS then it causes AMap to be conjuncted as well as something to be modified. It is important to decide what will we do in this case. @TODO
+ */
+std::map<std::string, AFAStatePtr > AFAut::getImplicitTransitions(AFAStatePtr state) {
+    std::map<std::string, AFAStatePtr > res;
+    BOOST_FOREACH(auto sym, this->mProgram->mAllSyms){
+        //get AMap of this state
+        z3::expr lAMap(state->mAMap);
+        //get HMap of this state
+        z3::expr lHMap(*state->mHMap);
+        //get FreeVar of AMap
+        std::set<z3::expr,mapexpcomparator> freevars=state->HelperGetFreeVars(lAMap);
+        //Check if HMap is unsat or not.
+        bool isHMapFalse = false;
+        if(state->HelperIsUnsat(lHMap)){
+            isHMapFalse=true;
+        }
+        if(isHMapFalse && AFAut::mProgram->mAssumeLHRHMap.find(sym)!=AFAut::mProgram->mAssumeLHRHMap.end()) {
+            //Adding transitions for case 1 above (in the comment)
+            //HMap is false and this is an assume symbol. So following the monotonicity rule it is safe to add a self loop here on this symbol.
+            res.insert(std::make_pair(sym,state));
+        }else if(AFAut::mProgram->mRWLHRHMap.find(sym)!=AFAut::mProgram->mRWLHRHMap.end()) {
+            //Addition transitions for case 2 above (in the comment)
+            //means it is a read/write symbol
+            //get left side of the assignment
+            z3::expr left(std::get<0>((AFAut::mProgram->mRWLHRHMap.find(sym)->second)));
+            if(freevars.find(left)==freevars.end()) {
+                //means this lhs var of assignment doesn't conflict with the free variables in amap and hence can cause a self loop to appear on this state
+                //on this symbol because WP will not be changed for this set of post condition (AMap) and sym.
+                res.insert(std::make_pair(sym, state));
+            }
+        }else if(AFAut::mProgram->mCASLHRHMap.find(sym)!=AFAut::mProgram->mCASLHRHMap.end()){
+            //means it is a cas symbol
+            //get left side, old value, new value and result assignment var part from this symbol.
+            z3::expr left(std::get<0>(AFAut::mProgram->mCASLHRHMap.find(sym)->second));
+            z3::expr readarg(std::get<1>(AFAut::mProgram->mCASLHRHMap.find(sym)->second));
+            z3::expr writearg(std::get<2>(AFAut::mProgram->mCASLHRHMap.find(sym)->second));
+            z3::expr assignvar(std::get<3>(AFAut::mProgram->mCASLHRHMap.find(sym)->second)) ;
+
+            bool safesubstitution = true;//variable to hold if any substitution in AMap of this state will happen due to CAS instruction or not.
+            //Following is for the part when cas is successful
+            if(freevars.find(left)!=freevars.end()) {
+                //means free vars of AMap  contain left side of the cas so substitution will not be safe
+                safesubstitution = safesubstitution && false;
+            }
+
+            //Following is for the part when cas is unsuccessful
+            if(freevars.find(assignvar)!=freevars.end()){
+                //means free vars of AMap contain the assignment variable of cas, so substitution will not be safe
+                safesubstitution = safesubstitution && false;
+            }
+            //After substitution the only thin remaining is conjunction. We know that conjunction will be safe if HMap of this state is false (Following case 1 above)
+
+            if(safesubstitution && isHMapFalse){
+                //create a self loop on this cas symbol to the same state.
+                res.insert(std::make_pair(sym,state));
+            }
+        }
+
+    }
+
+    return res;
+
+}
+
+/*
+ * This method converts this AFA to a DFA. The resultant DFA is represented by generator. The resultant DFA is also presented by new AFAut data structure.
+ * We reuse the same type to represent DFA as well because it captures the AMap present in each state as well.
+ */
+
+void AFAut::createDFA( faudes::Generator& generator){
+    AFAStatePtr init = this->mInit;
+
+    std::map<SetAFAStatesPtr, faudes::Idx> seenset;
+    std::set<SetAFAStatesPtr> todoset;
+    std::map<AFAStatePtr, std::map<std::string, SetAFAStatesPtr>> explicittransset;
+    std::map<AFAStatePtr, std::map<std::string, AFAStatePtr>> implicittransset;
+    //Put initial state into todoset as well as in seenset along with the state added to generator as well
+    {
+        //create an initial state in the generator and set it as initial.
+        std::string initstate = std::to_string(init->mID);
+        faudes::Idx idx = generator.InsState(initstate);
+        generator.SetInitState(initstate);
+        //prepare stuff to put into seenset and todoset
+        SetAFAStatesPtr setst;
+        setst.insert(init);
+        seenset.insert(std::make_pair(setst,idx));
+        todoset.insert(setst);
+        //add self loop on generator state (idx) if possible.
+        addSelfLoop(generator, implicittransset, setst, idx);
+    }
+
+    //Iterate over todoset until it be
+    // comes empty
+    auto setiter = todoset.begin();
+
+    while(setiter!=todoset.end()){
+        SetAFAStatesPtr states = *setiter;
+
+        //get the generator's state index from seenset corresponding to this states.
+        BOOST_ASSERT_MSG(seenset.find(states)!=seenset.end()," Invariant: If something is in todoset then it must be in the seenset as well - violated");
+        faudes::Idx srcst = seenset.find(states)->second;
+        //For all states in this AFAStatesSet get explicit transition symbols.
+       std::set<std::string> allexplicitsyms;
+        bool allaccepting = true; //make srcst as accepting state if all the states in states variable are accepting.
+        BOOST_FOREACH(AFAStatePtr state, states){
+            allaccepting = allaccepting && state->mIsAccepted;
+
+            if(implicittransset.find(state)==implicittransset.end()){
+                std::map<std::string, AFAStatePtr > tmpImplicit = getImplicitTransitions(state);
+                    implicittransset.insert(std::make_pair(state, tmpImplicit));
+            }
+            if(explicittransset.find(state)==explicittransset.end()){
+                std::map<std::string, SetAFAStatesPtr> tmpExplicit = getExplicitTransitions(state);
+                explicittransset.insert(std::make_pair(state, tmpExplicit));
+            }
+            std::set<std::string> syms;
+            BOOST_FOREACH(auto key, explicittransset.find(state)->second){
+                syms.insert(key.first);
+            }
+            allexplicitsyms.insert(syms.begin(),syms.end());
+        }
+        if(allaccepting)
+            generator.SetMarkedState(srcst);
+        //At this point we have all explicit transitions from any state in states set in allexplicitsyms set. Now itereate over this set.
+        BOOST_FOREACH(std::string sym, allexplicitsyms){        //for every explicit transition in allexplicitsyms set
+                        bool ifNextPossibleOnSym = true;
+                        SetAFAStatesPtr tmpNextStatesSet;
+                        BOOST_FOREACH(AFAStatePtr state, states){         // for every state in states
+                                        // check if state has an explicit or implicit transition on that symbol.
+                                        bool ifExplicitPresent = (explicittransset.find(state)==explicittransset.end())?false:(explicittransset.find(state)->second.find(sym)!=explicittransset.find(state)->second.end());
+                                        bool ifImplicitPresent = (implicittransset.find(state)==implicittransset.end())?false:(implicittransset.find(state)->second.find(sym)!=implicittransset.find(state)->second.end());
+                                        //INV: Either both will be false or only one will be true. Both can't be true[Does not hold]
+                                        //BOOST_ASS(ifExplicitPresent && ifImplicitPresent == false, " A state can't have an implicit and an explicit transition on the same symbol. Please check.");
+                                        //If sym is present in implicit as well in explicit then remove from implict and keep only in explicit. (@CHOICE)
+                                        if(ifExplicitPresent && ifImplicitPresent){
+                                            implicittransset.find(state)->second.erase(sym);
+                                            ifImplicitPresent=false;
+                                        }
+                                        //If none then break from the iteration of states and continue with next symbol - breakvar=true;
+                                        if(!ifExplicitPresent && !ifImplicitPresent){
+                                            ifNextPossibleOnSym = false;
+                                            break;
+                                        }
+                                        //else keep on adding destination state/states in a set
+                                        if(ifImplicitPresent){
+                                            //get destination state on sym from implicit trans set and add to tmpSetAFAStatePtr
+                                            AFAStatePtr tmp = implicittransset.find(state)->second.find(sym)->second;
+                                            tmpNextStatesSet.insert(tmp);
+
+                                        }
+
+                                        if(ifExplicitPresent){
+                                            //get destination states on sym from explicit trans set and add to tmpSetAFAStatesPtr
+                                            SetAFAStatesPtr tmp = explicittransset.find(state)->second.find(sym)->second;
+                                            //Note that here tmp is a set so add all elements of this set to tmpNextStatesSet
+                                            tmpNextStatesSet.insert(tmp.begin(),tmp.end());
+                                        }
+                                    }
+                        //after iteration over all states is done (without any break) - if breakvar!=true //means the inner loop was not break in between.
+                        if(ifNextPossibleOnSym){
+                            faudes::Idx newstate_generator;
+                            //check if the resultant dest state set is already seen or not.
+                            if(seenset.find(tmpNextStatesSet)==seenset.end()){ //if not, add that to todoset and seenset and create a state in the generator.
+                                todoset.insert(tmpNextStatesSet);
+                                //create a new state in the generator
+
+                                std::string stname="";
+                                BOOST_FOREACH(auto state, tmpNextStatesSet){
+                                    std::stringstream stream;
+                                    stream<<state;
+                                    stname = stname + stream.str()+",";
+                                }
+                                newstate_generator = generator.InsState(stname);
+                                seenset.insert(std::make_pair(tmpNextStatesSet,newstate_generator));
+                            }else{
+                                //else get the generator state from the seenset
+                                newstate_generator = seenset.find(tmpNextStatesSet)->second;
+                            }
+                            //-- create a transition from srcst to this state in the generator on this explicit symbol.
+                            faudes::Idx evnt = generator.InsEvent(sym);
+                            generator.SetTransition(srcst,evnt, newstate_generator);
+                            //IMP: If there is a self transition on srcst on the same symbol then remove that self-transition.
+                            //INV: From srcst there should not be two outgoing transitions on evnt symbol to two different states.
+                            //IMP: If there are two transitions on evnt symbol then one must be the self loop and that should be removed.
+                            faudes::TransSet::Iterator start = generator.TransRelBegin(srcst,evnt);
+                            faudes::TransSet::Iterator end = generator.TransRelEnd(srcst,evnt);
+                            bool removeSelfLoop=false;
+                            while(start!=end){
+                                faudes::Idx dest = start->X2;
+                                BOOST_ASSERT_MSG(dest==srcst || dest == newstate_generator," Outgoing transition on one symbol to two distinct states not possible. Check");
+                                if(dest==srcst){
+                                    //remove this self loop.
+                                    removeSelfLoop=true; //We can't remove transition here as we are already iterating over it. Do it after the loop ends.
+                                }
+                                start++;
+                            }
+                            if(removeSelfLoop){
+                                generator.ClrTransition(srcst, evnt, srcst);
+                            }
+                            //when to make this state as an accepting state??
+                            //Make it an accepting state only if all the states in tmpNextStatesSet are accepting.
+                            if(allaccepting){
+                                generator.SetMarkedState(newstate_generator);
+                            }
+                            //also when should we add self loops on these states for implicit transitions??
+                            //Add a self loop on this state for a symbol sym, if sym is in the implicit set of all the states in this set.
+                            //except when there is already an explicit transition out on that symbol from that state.
+                            addSelfLoop(generator, implicittransset, tmpNextStatesSet,
+                                                           newstate_generator);
+                            //Now we are done processing this state.
+                        }
+                        //else continue with the next symbol.
+                    }
+
+        todoset.erase(states);
+        setiter = todoset.begin();
+
+    }
+    //Now iterate over all states (already in the seenset) and if there are no transition on a symbol sym from state s, then add a transition from s to error
+    //state on symbol sym. This will make the automaton complete.
+    /*std::set<std::string> allsyms;
+    faudes::Idx errorstate = generator.InsState("Error");
+    allsyms.insert(mProgram->mAllSyms.begin(),mProgram->mAllSyms.end());
+    auto stbegin = generator.States().Begin();
+
+    while(stbegin!=generator.States().End()){
+        auto state=*stbegin;
+        stbegin++;
+        faudes::TransSet::Iterator beg = generator.TransRelBegin(state);
+        std::set<std::string> symevents;
+        while(beg!=generator.TransRelEnd(state)){
+            symevents.insert(generator.EventName((*beg).Ev));
+            beg++;
+        }
+        //Now check which all syms are in allSyms but not in symevents. Add a transition on those symbols from this state to error state.
+        std::vector<std::string> res;
+        std::set_intersection(allsyms.begin(), allsyms.end(), symevents.begin(), symevents.end(),  std::back_inserter(res));
+        //For every symbol in res insert a transition from this state to error state on sym.
+        BOOST_FOREACH(auto sym, res ){
+            faudes::Idx ev = generator.InsEvent(sym);
+            generator.SetTransition(state, ev, errorstate);
+        }
+    }*/
+
+
+}
+
+/*
+ * This method adds a self loop on newstate_generator state of generator. The AFAstates corresponding to newstate_generator are in tmpNextStatesSet
+ * variable. implicitTranSet map stores the implicit transitions.
+ */
+void AFAut::addSelfLoop(faudes::Generator &generator,
+                                    std::map<AFAStatePtr, std::map<std::string, AFAStatePtr>> &implicittransset,
+                                    const SetAFAStatesPtr &tmpNextStatesSet,
+                                    faudes::Idx newstate_generator) {
+    //Add a self loop on this state for a symbol sym, if sym is in the implicit set of all the states in this set.
+    std::set<std::string> commonImplicitSyms(mProgram->mAllSyms.begin(),mProgram->mAllSyms.end());
+    BOOST_FOREACH(AFAStatePtr state, tmpNextStatesSet) {
+        //get implicit transition symbols on state and intersect them with commonImplicitSyms. Whatever syms remain in this set
+        //at the end are the ones on which all states in tmpNextStatesSet have a transition so add self loop on those symbols.
+        if (implicittransset.find(state) == implicittransset.end()) {
+            std::map<std::string, AFAStatePtr> tmpImplicit = getImplicitTransitions(state);
+            implicittransset.insert(std::make_pair(state, tmpImplicit));
+        }
+        std::set<std::string> implicitTrans;
+        BOOST_FOREACH(auto key, implicittransset.find(state)->second){
+                        implicitTrans.insert(key.first);
+        }
+        std::vector<std::string> res;
+        std::set_intersection(commonImplicitSyms.begin(), commonImplicitSyms.end(), implicitTrans.begin(), implicitTrans.end(),  std::back_inserter(res));
+        //now clear commonImplictSysm set and copy the content of res set to this.
+        commonImplicitSyms.clear();
+        commonImplicitSyms.insert(res.begin(),res.end());
+    }
+    //Whatever syms remain in commonImplicitSyms at the end, add a self loop on newstate_generator (newly create state) on these syms.
+    BOOST_FOREACH(std::string sym, commonImplicitSyms) {
+        faudes::Idx ev = generator.InsEvent(sym);
+        generator.SetTransition(newstate_generator,ev, newstate_generator);
+    }
+    return;
 }
 
 /**
