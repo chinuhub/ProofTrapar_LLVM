@@ -229,7 +229,7 @@ void AFAut::MakeAFAutProof(std::string& word, z3::expr& mPhi,Program* p, int cou
 			std::cout<<"Pass two ended"<<std::endl;
 			afa->PrintToDot("Pass2.dot");
 #endif
-			afa->PrintToDot("Pass2.dot");
+			//afa->PrintToDot("Pass2.dot");
 			//when this call is returned, passtwoallstates contain only those states which survived extinction.. So we can delete all other
 			//states as thy become unreachable as well.
 			// std::set<AFAStatePtr,mapstatecomparator> unreachable;

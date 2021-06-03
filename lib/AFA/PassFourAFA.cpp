@@ -38,8 +38,8 @@ void AFAut::PassFourNew(AFAStatePtr init, std::set<AFAStatePtr>& tobedeleted, in
 	//std::cin>>i;
 #endif
 
-	tm->PrintToDot("Pass4Phase1.dot");
-		std::cout<<"Pass 1 over"<<std::endl;
+	//tm->PrintToDot("Pass4Phase1.dot");
+	//	std::cout<<"Pass 1 over"<<std::endl;
 	//Pass0: propoage 0's on OR/AND states so that after this every 0's transition from OR/AND goest to ORLit state only.
 	//we can use the fact that by this time we have a nice tree like structure of FA
   std::map<AFAStatePtr,std::set<std::set<AFAStatePtr>>> donemap;
@@ -137,9 +137,10 @@ void AFAut::PassFourNew(AFAStatePtr init, std::set<AFAStatePtr>& tobedeleted, in
 	std::cout<<"Phase eqclass over"<<std::endl;
 	tm->PrintToDot(std::string("Pass4PhaseEqClass.dot"));
 #endif
-    tm->PrintToDot(std::string("Pass4PhaseEqClass.dot"));
+    tm->PrintToDot(std::string("Pass4EpsilonClosure.dot"));
 
 //std::cin>>i;
+
 
 
 

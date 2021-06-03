@@ -16,10 +16,10 @@
 
 bool mapstatecomparator::operator() (const AFAStatePtr& one, const AFAStatePtr& two) const
 	{
-    /*int id1 = (*one).mID;
+    int id1 = (*one).mID;
     int id2 = (*two).mID;
-    return id1<id2;*/
-		z3::expr onephi = (*one).mAMap;
+    return id1<id2;
+		/*z3::expr onephi = (*one).mAMap;
 		z3::expr twophi = (*two).mAMap;
 		std::string& onestr = (*one).mRWord;
 		std::string& twostr = (*two).mRWord;
@@ -27,7 +27,7 @@ bool mapstatecomparator::operator() (const AFAStatePtr& one, const AFAStatePtr& 
 		if(onephi.hash()==twophi.hash())
 			return onestr<twostr;
 		else
-			return (onephi.hash()<twophi.hash());
+			return (onephi.hash()<twophi.hash());*/
 
 	}
 
@@ -254,7 +254,10 @@ void AFAState::PassOne(std::map<AFAStatePtr,AFAStatePtr,mapstatecomparator>& mAl
 #ifdef	DBGPRNT
 	std::cout<<"Inside Pass one with phi ="<<mAMap<<" and type is "<<mType<<std::endl;
 #endif
-	if(mType==AND){
+    std::stringstream streams;
+    streams << mAMap;
+    std::string thismAMap(streams.str());
+        if(mType==AND){
 			//by this time we are sure that mPhi of this state is of the form a and b and c
 			//extract a, b,c such clauses..
 #ifdef	DBGPRNT
@@ -277,8 +280,12 @@ void AFAState::PassOne(std::map<AFAStatePtr,AFAStatePtr,mapstatecomparator>& mAl
 					for(int p=0; p<l; p++){
 						bool isPresent=false;
 						z3::expr pass= rexp.arg(p);
-						AFAStatePtr st = HelperAddStateIfAbsent(pass,mRWord,isPresent,mAllStates);//add to SeenSet if not.. else return the pointer..
-						nextset.insert(st);
+                        std::stringstream stream;
+                        AFAStatePtr st = HelperAddStateIfAbsent(pass,mRWord,isPresent,mAllStates);//add to SeenSet if not.. else return the pointer..
+                     /*   stream << "mAMap along a branch of "<<st<<" is "<<pass;
+                        std::cout<<"mAMap along one branch is = "<<stream.str()<<std::endl;*/
+
+                        nextset.insert(st);
 						if(!isPresent){
 							mAllStates.insert(std::make_pair(st,st));
 							st->PassOne(mAllStates);
@@ -414,7 +421,7 @@ void AFAState::PassOne(std::map<AFAStatePtr,AFAStatePtr,mapstatecomparator>& mAl
 						z3::expr trueexp = ctx.bool_val(true);
 						BOOST_FOREACH(auto stp, nextset)
 						{
-							BOOST_ASSERT_MSG((*stp).mHMap!=NULL,"Some serious issue as by this time HMap of children must have been set");
+						    BOOST_ASSERT_MSG((*stp).mHMap!=NULL,"Some serious issue as by this time HMap of children must have been set");
 							trueexp = trueexp && (*((*stp).mHMap));
 						}
 						trueexp=HelperSimplifyExpr(trueexp);
@@ -422,7 +429,8 @@ void AFAState::PassOne(std::map<AFAStatePtr,AFAStatePtr,mapstatecomparator>& mAl
 		    			mTransitions.insert(std::make_pair(sym,nextset));
 		    			break;
 		    		}
-		    	}else if(AFAut::mProgram->mCASLHRHMap.find(sym)!=AFAut::mProgram->mCASLHRHMap.end()){
+		    	}
+		    	else if(AFAut::mProgram->mCASLHRHMap.find(sym)!=AFAut::mProgram->mCASLHRHMap.end()){
 		    		//means it is a cas symbol
 		    		bool isPresent=false;
 #ifdef	DBGPRNT
@@ -513,7 +521,8 @@ void AFAState::PassOne(std::map<AFAStatePtr,AFAStatePtr,mapstatecomparator>& mAl
 		    			mTransitions.insert(std::make_pair(sym,nextset));
 		    			break;
 
-		    	}else if(AFAut::mProgram->mAssumeLHRHMap.find(sym)!=AFAut::mProgram->mAssumeLHRHMap.end()){
+		    	}
+		    	else if(AFAut::mProgram->mAssumeLHRHMap.find(sym)!=AFAut::mProgram->mAssumeLHRHMap.end()){
 		    		//means it is an assume symbol
 		    		//get the second argument..
 		    		notasingle=false;
@@ -531,6 +540,12 @@ void AFAState::PassOne(std::map<AFAStatePtr,AFAStatePtr,mapstatecomparator>& mAl
 		    		if(HelperIsValid(combined)){
 		    			combined=ctx.bool_val(true);
 		    			istrue=true;
+		    		}
+		    		//if combined is equivalent to mAMap then no change by this symbol, so continue to process this state with the next symbol in the trace.
+		    		if(HelperIsValid(assumepsi)){ //NOTE: One simpler check here is to check if assumepsi is valid. If yes then the conjunction with mAMap will remain same hence no need to create a new state.
+                        notasingle=true; //because we haven't added this symbol yet, so set it back to true and wait for the subsequent syms to add an edge
+                        notasingleall=true;
+		    		    continue;
 		    		}
 		    		AFAStatePtr p = HelperAddStateIfAbsent(combined,rest,isPresent,mAllStates);
 		    		if(isFalse||(istrue&& rest.length()==0)){
