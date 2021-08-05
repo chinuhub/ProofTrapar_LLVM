@@ -97,6 +97,7 @@ bool AFAState::PassTwo(std::map<AFAStatePtr,AFAStatePtr,mapstatecomparator>& mAl
 
 			if(solv.check(assumptions.size(),&assumptions[0])==z3::check_result::unsat){
 				unchanged=false;
+				//It means we found one unsatcore...
 				z3::expr_vector core = solv.unsat_core();
 				for (unsigned i = 0; i < core.size(); i++) {
 					z3::expr nm = core[i];
@@ -105,24 +106,37 @@ bool AFAState::PassTwo(std::map<AFAStatePtr,AFAStatePtr,mapstatecomparator>& mAl
 #endif
 					newset.insert(labstatemapping.find(nm)->second);
 			    	}
-				temptransitions.insert(std::make_pair("0",newset));
-
+                //Create a new AFAState(AND Type) for this one. With transitions on 0 to newset (the states corresponding to which unsat was found)
+                AFAStatePtr st = new AFAState(AND,this->mRWord,this->mAMap);
+				st->mHMap= new z3::expr(*(this->mHMap));
+                st->mTransitions.insert(std::make_pair("0",newset));
+				//Add 0, this state in another temp transition This will eventually get added to the transition relation of the original state.(after clearing all)
+                SetAFAStatesPtr newstateset;
+                newstateset.insert(st);
+                temptransitions.insert(std::make_pair("0",newstateset));
 			}
 			//break;
 		}//end of loop
 		bool res;
+
+		//Now we are ready to modify the transition relation of this node. Before that store the original relation, so that we don't get stuck in
+		//recursively evaluating the same node again and again.
+        std::multimap<std::string,SetAFAStatesPtr> new_temptransitions;
+        new_temptransitions.insert(mTransitions.begin(),mTransitions.end());
 		if(temptransitions.size()!=0){
 			//means it is unsat..
 			res=true;
 			mUnsatMemoization.insert(std::make_pair(*mHMap,true));
 			mTransitions.clear();
 			std::copy(temptransitions.begin(),temptransitions.end(),std::inserter(mTransitions,mTransitions.begin()));
+			//We changed the transition relation by breaking into multiple parts. Also, convert this state to ORType.
+			mType=OR;
 		}else
 		{
 			res=false;
 			mUnsatMemoization.insert(std::make_pair(*mHMap,false));
 		}
-		BOOST_FOREACH(auto st, mTransitions){
+		BOOST_FOREACH(auto st, new_temptransitions){
 					BOOST_FOREACH(auto st2, st.second)
 							st2->PassTwo(mAllStates,mUnsatMemoization);
 				}

@@ -77,6 +77,10 @@ public:
     void addSelfLoop(faudes::Generator &generator,
                 std::map<AFAStatePtr, std::map<std::string, AFAStatePtr>> &implicittransset,
                 const SetAFAStatesPtr &tmpNextStatesSet, faudes::Idx newstate_generator);
+
+    std::pair<StateType, std::set<SetAFAStatesPtr>> EpsilonClosure(AFAStatePtr state);
+
+    void ConvertToEpsilonConsecutiveSameAMap(AFAStatePtr state);
 };
 
 

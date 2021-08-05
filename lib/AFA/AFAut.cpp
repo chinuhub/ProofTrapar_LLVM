@@ -255,6 +255,7 @@ void AFAut::MakeAFAutProof(std::string& word, z3::expr& mPhi,Program* p, int cou
 //	 	   struct fa* complementedaut=
 	 	    std::set<AFAStatePtr> allStatesDel;
 	 	    afa->PassFourNew(afa->mInit,allStatesDel,count,generator,mUnsatMemoization);
+
 	 	   //delete alls tates in passtwoallstates;-- Do it later;;
 	 	  /*BOOST_FOREACH(auto t, allStatesDel){
 	 	  		delete(t);

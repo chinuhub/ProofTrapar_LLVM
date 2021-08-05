@@ -8,9 +8,158 @@
 
 #include "AFA/AFAut.h"
 
+SetAFAStatesPtr flatten_set(std::set<SetAFAStatesPtr> setOfSets){
+    SetAFAStatesPtr setStates;
+    BOOST_FOREACH(auto stState, setOfSets){
+        BOOST_FOREACH(auto state, stState){
+            setStates.insert(state);
+        }
+    }
+    return setStates;
+}
+/**
+ * This function traverses the autoamaton starting from state (input) and returns a graph/AFA that does not contain epsilon starting from input node.
+ * It returns the set of starting states of the modified AFA (because the graph can be broken into set of disjoint graphs as well due to epsilon removal
+ */
+std::pair<StateType,std::set<SetAFAStatesPtr>> AFAut::EpsilonClosure(AFAStatePtr state) {
+    //Base case: If state is accepting state then return state.
+    std::set<SetAFAStatesPtr> setResultSet;
+    bool thisNotAddedYet=true;
+    std::multimap<std::string,SetAFAStatesPtr> tmpTransRel;
+    if (state->mIsAccepted) {
+        SetAFAStatesPtr stmp;
+        stmp.insert(state);
+        setResultSet.insert(stmp);
+        return std::make_pair(state->mType, setResultSet);
+    } else {
+        //Else for every sym, stateset in transition of state.
+        BOOST_FOREACH(auto t, state->mTransitions) {
+                //If the transition is on 0 symbol
+                if(t.first.compare("0")==0) {
+                    //Iterate over all next state of this transition, get their SetSetAFAStatesPtr, flatten them, add to a single SetAFAStatesPtr
+                    //At the end of iteration put this SetAFAStatesPtr in the setResultSet.
+                    SetAFAStatesPtr resset;
+                    BOOST_FOREACH(auto st, t.second) {
+                        std::pair<StateType,std::set<SetAFAStatesPtr>> tmp = EpsilonClosure(st);
+                        //If t.second is singleton then it means there is only one entry for this symbol and that is OR.
+                        //Therefore it is fine even if tmp.second returns more than one set of states [e.g. {{a,b},{c,d,e}} (individual ones are in AND and outside onese are in OR)
+                        //In this case we will simply create entries for 0-> {a,b} and 0->{c,d,e}
+                        //If that is not the case (i.e. t.second is not singleton) then tmp.second should be singleton [e.g. {{a,b}}]
+                        // It can have multiple states inside it though. In that case we create 0->{a,b}
+                        if(t.second.size()==1){
+                            BOOST_FOREACH(auto setst, tmp.second){
+                                setResultSet.insert(setst);
+                            }
+                        }else{
+                            BOOST_ASSERT_MSG(tmp.second.size()==1,"ERR: For now we don't allow OR's inside AND.!!");
+                            SetAFAStatesPtr  tmps = flatten_set(tmp.second);
+                            resset.insert(tmps.begin(),tmps.end());
+                        }
+
+                    }
+                    //Once we are done add tmps to setResultSet.
+                    if(resset.size()>0)
+                        setResultSet.insert(resset);
+
+                }
+                else {//If the transition is on non-zero symbol
+                    //Iterate over all next state of this transition (there can be more than one as well),
+                    // get their SetSetAFAStatesPtr.
+                    //For every single state in SetSetAFAStatesPtr add (sym, that single SetAFAStatesPtr) in a temporary transition map
+                    //At the end of the iteration put this state in SetAFAStatesPtr in the setResultSet.(if not already present)
+                    std::string sym(t.first);
+                    SetAFAStatesPtr resset;
+                    BOOST_FOREACH(auto st, t.second) {
+                                    std::pair<StateType,std::set<SetAFAStatesPtr>> tmp = EpsilonClosure(st);
+                                    //If t.second is singleton then it means there is only one entry for this symbol and that is OR.
+                                    //Therefore it is fine even if tmp.second returns more than one set of states [e.g. {{a,b},{c,d,e}} (individual ones are in AND and outside onese are in OR)
+                                    //In this case we will simply create entries for 0-> {a,b} and 0->{c,d,e}
+                                    //If that is not the case (i.e. t.second is not singleton) then tmp.second should be singleton [e.g. {{a,b}}]
+                                    // It can have multiple states inside it though. In that case we create 0->{a,b}
+                                    if(t.second.size()==1){
+                                        BOOST_FOREACH(auto setst, tmp.second){
+                                                        //add (sym,setst) to tmptransrelation.
+                                                        tmpTransRel.insert(std::make_pair(sym,setst));
+                                                    }
+                                    }else{
+                                        BOOST_ASSERT_MSG(tmp.second.size()==1,"ERR: For now we don't allow OR's inside AND.!!");
+                                        SetAFAStatesPtr  tmps = flatten_set(tmp.second);
+                                        resset.insert(tmps.begin(),tmps.end());
+                                    }
+
+                                }
+                    //Once we are done add (sym,resset) to tmptransrelation.
+                    if(resset.size()>0)
+                        tmpTransRel.insert(std::make_pair(sym,resset));
+                    //Add this state to setResultSet (if not already present)
+                    if(thisNotAddedYet) {
+                        thisNotAddedYet=false;
+                        SetAFAStatesPtr tmpst;
+                        tmpst.insert(state);
+                        setResultSet.insert(tmpst);
+                    }
+                }
+
+        }
+        //Clear this state's transition map and set temporary transition map as the transition map. (if temporary transition map is not-empty)
+        if(tmpTransRel.size()>0) {
+            state->mTransitions.clear();
+            state->mTransitions.insert(tmpTransRel.begin(), tmpTransRel.end());
+        }
+        //Return this state's statetype and setResultSet to the caller.
+        return std::make_pair(state->mType,setResultSet);
+    }
+}
+
+
+/**
+ * This function takes the state and look at it's successors if the following three conditions hold.
+ * If these conditions hold then the symbol gets converted to epsilon.
+ * Nothing gets returned only the AFA gets modified directly.
+ * @param state
+ */
+void AFAut::ConvertToEpsilonConsecutiveSameAMap(AFAStatePtr state) {
+
+    if (state->mIsAccepted)
+        return;
+    else {
+        std::multimap<std::string,SetAFAStatesPtr> tmpTrans;
+        //For every successor of state, sym. Check if
+        //1. State has one successor (We relax it now to say that it has one successor per symbol).
+        //2. AMap of state is same as that of successor
+        //3. HMap(A) and HMap(B) is false.
+        //If all three conditions are true then change sym to 0. and call this functiona recursively on the successor state.
+        //Else for every sym, stateset in transition of state.
+        BOOST_FOREACH(auto trans, state->mTransitions) {
+                        if (trans.second.size() == 1) {
+                            std::string sym(trans.first);
+                            AFAStatePtr nextst = *trans.second.begin();
+                            //If AMap of this state and the next state are same and the HMap of nextstate is false (Do we need to check about the HMap of this state as well?)
+                            if (state->mAMap.hash() == nextst->mAMap.hash() && state->HelperIsUnsat(*(nextst->mHMap))) {
+                                tmpTrans.insert(std::make_pair("0",trans.second));
+                            }else{
+                                tmpTrans.insert(std::make_pair(sym,trans.second));
+                            }
+                            //Now call this function recursively on nextst.
+                            ConvertToEpsilonConsecutiveSameAMap(nextst);
+                        } else {
+                            //call this function recursively for every next state.
+                            BOOST_FOREACH(auto st, trans.second) {
+                                            ConvertToEpsilonConsecutiveSameAMap(state);
+                                        }
+                            tmpTrans.insert(std::make_pair(trans.first,trans.second));
+                        }
+                    }
+        state->mTransitions.clear(); //Don't remove all?? What if
+        state->mTransitions.insert(tmpTrans.begin(),tmpTrans.end());
+    }
+
+}
+
+
 
 void AFAut::PassFourNew(AFAStatePtr init, std::set<AFAStatePtr>& tobedeleted, int cases,faudes::Generator& lGenerator, std::map<z3::expr, bool,mapexpcomparator>& mUnsatMemoization)
-{
+{/*
 	int i;
 	//keep all values present in statemap to be deleted after next loop.
 	//Pass 1:
@@ -22,13 +171,13 @@ void AFAut::PassFourNew(AFAStatePtr init, std::set<AFAStatePtr>& tobedeleted, in
 	std::cout<<"About to construct phase1 pass4"<<std::endl;
 #endif
 
-	init->PassFourPhaseOne(ANDORStates,ORLitStates,toANDLink/*,assumeinfomap*/,mUnsatMemoization);
+	init->PassFourPhaseOne(ANDORStates,ORLitStates,toANDLink*//*,assumeinfomap*//*,mUnsatMemoization);
 	//when done in seenmap we have Eq classes for every distinct amap.
 	//delete all states present in the set allstates.., No we cant as we are currently in a state only..
 	//so its better to return it..
-	/*BOOST_FOREACH(auto t, allStates){
+	*//*BOOST_FOREACH(auto t, allStates){
 		delete(t.first);
-	}*/
+	}*//*
 	//NO change in graph by this pass.. only collecting information to be used in phase 2
 	AFAut* tm=new AFAut();
 	tm->mInit=init;
@@ -122,7 +271,7 @@ void AFAut::PassFourNew(AFAStatePtr init, std::set<AFAStatePtr>& tobedeleted, in
 		}
 	//	src->mTransitions.insert(transsetthisone.begin(),transsetthisone.end());
 	}
-
+*/
 
 #ifdef DBGPRNT
 		std::cout<<"Pass 2 over"<<std::endl;
@@ -131,13 +280,30 @@ void AFAut::PassFourNew(AFAStatePtr init, std::set<AFAStatePtr>& tobedeleted, in
 #endif
 		//	std::cin>>i;
 
+		//Epsilon closure removal from AFA.
+		std::pair<StateType,std::set<SetAFAStatesPtr>> res = this->EpsilonClosure(this->mInit);
 
+		SetAFAStatesPtr tmp = flatten_set(res.second);
+		BOOST_ASSERT_MSG(tmp.size()==1,"ERR: There can only be one initial state of AFA.");
+		this->mInit = *(tmp.begin());
+    this->PrintToDot(std::string("Pass4EpsilonClosure.dot"));
+
+    //Conversion of some symbol to epsilon if a few conditions are met.
+        this->ConvertToEpsilonConsecutiveSameAMap(this->mInit);
+    this->PrintToDot(std::string("Pass4ConversionEpsilon.dot"));
+
+    //Again call method to remove epsilon if the above method added some epsilons.
+    //Epsilon closure removal from AFA.
+    res = this->EpsilonClosure(this->mInit);
+    tmp = flatten_set(res.second);
+    BOOST_ASSERT_MSG(tmp.size()==1,"ERR: There can only be one initial state of AFA.");
+    this->mInit = *(tmp.begin());
+    this->PrintToDot(std::string("Pass4EpsilonClosure2.dot"));
 
 #ifdef DBGPRNT
 	std::cout<<"Phase eqclass over"<<std::endl;
 	tm->PrintToDot(std::string("Pass4PhaseEqClass.dot"));
 #endif
-    tm->PrintToDot(std::string("Pass4EpsilonClosure.dot"));
 
 //std::cin>>i;
 
@@ -145,7 +311,7 @@ void AFAut::PassFourNew(AFAStatePtr init, std::set<AFAStatePtr>& tobedeleted, in
 
 
 //Now convert this AFA to DFA
-tm->createDFA(lGenerator);
+this->createDFA(lGenerator);
 
 
 std::cout<<"Marked states size = "<<lGenerator.MarkedStatesSize()<<","<<lGenerator.MarkedStatesToString()<<std::endl;
@@ -154,7 +320,7 @@ std::cout<<"Marked states size = "<<lGenerator.MarkedStatesSize()<<","<<lGenerat
 	tm->PrintToDot(std::string("Pass4PhaseComplement.dot"));
 #endif
 	lGenerator.DotWrite("DFAConverted.dot");
-	delete tm;
+	//delete tm;
 
 
 return;
