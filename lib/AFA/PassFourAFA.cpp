@@ -157,6 +157,159 @@ void AFAut::ConvertToEpsilonConsecutiveSameAMap(AFAStatePtr state) {
 }
 
 
+void AFAut::CollectSameAMapInfo(AFAStatePtr state, std::map<unsigned int, std::set<AFAStatePtr>> &redundancyMap){
+
+        if(state->HelperIsUnsat(*(state->mHMap))){
+
+            auto it = redundancyMap.find(state->mAMap.hash());
+            if(it != redundancyMap.end())
+                it->second.insert(state);
+            else {
+                std::set<AFAStatePtr> temp;
+                temp.insert(state);
+                redundancyMap.insert(std::make_pair(state->mAMap.hash(), temp));
+            }
+        }
+
+        if(state->mIsAccepted)
+            return;
+
+        BOOST_FOREACH(auto trans, state->mTransitions) {
+            BOOST_FOREACH(auto adj, trans.second) {
+                            CollectSameAMapInfo(adj, redundancyMap);
+            }
+        }
+}
+
+void AFAut::ConvertToEpsilonAllSameAMap(AFAStatePtr state) {
+
+    std::map<unsigned int, std::set<AFAStatePtr>> redundancyMap;
+
+    CollectSameAMapInfo(state, redundancyMap);
+
+    BOOST_FOREACH(auto temp, redundancyMap) {
+
+            for(auto it1 = temp.second.begin(); it1 !=temp.second.end(); it1++){
+
+                auto t = it1;
+                t++;
+                for(auto it2 = t; it2!=temp.second.end(); it2++){
+
+                    std::set<AFAStatePtr,mapstatecomparator> s1,s2;
+                    s2.insert(*it2);
+                    s1.insert(*it1);
+
+                    (*it1)->mTransitions.insert(std::make_pair("0",s2));
+                    (*it2)->mTransitions.insert(std::make_pair("0",s1));
+
+                    s1.clear();
+                    s2.clear();
+
+                }
+            }
+    }
+
+}
+
+void AFAut::GetEpsilonClosure(AFAStatePtr state, std::map<AFAStatePtr , std::set<AFAStatePtr>> &closureMap){
+
+    std::set<AFAStatePtr> temp;
+    std::queue<AFAStatePtr> todo;
+
+    temp.insert(state);
+    todo.push(state);
+
+    while(!todo.empty()){
+
+        AFAStatePtr t = todo.front();
+        todo.pop();
+
+        BOOST_FOREACH(auto trans, t->mTransitions) {
+
+                    std::string sym(trans.first);
+
+                    if (sym == "0") {
+                        AFAStatePtr adj = *trans.second.begin();
+                        if (temp.find(adj) == temp.end()) {
+                            temp.insert(adj);
+                            todo.push(adj);
+                        }
+                    }
+        }
+    }
+
+    closureMap.insert(std::make_pair(state, temp));
+
+    BOOST_FOREACH(auto trans, state->mTransitions) {
+                    BOOST_FOREACH(auto adj, trans.second) {
+
+                                    if (closureMap.find(adj) == closureMap.end())
+                                        GetEpsilonClosure(adj, closureMap);
+                    }
+    }
+}
+
+
+void AFAut::NewEpsilonClosure(AFAStatePtr state){
+
+    std::map<AFAStatePtr, std::set<AFAStatePtr>> closureMap;
+
+    GetEpsilonClosure(state, closureMap);
+
+    //Till now, for all states in AFA, we have computed their epsilon closure
+
+    // Now creating states for new AFA
+
+    std::map<std::set<AFAStatePtr>, AFAStatePtr> newStatesMap;
+
+    BOOST_FOREACH(auto temp, closureMap) {
+
+        if(newStatesMap.find(temp.second)==newStatesMap.end()){
+
+            AFAStatePtr st = new AFAState(temp.first->mType, temp.first->mAMap);
+            newStatesMap.insert(std::make_pair(temp.second, st));
+        }
+    }
+
+
+    //states of new AFA are created, now add edges between the new states
+
+    BOOST_FOREACH(auto t, newStatesMap) {
+
+        std::set<AFAStatePtr> statesSet = t.first;
+        AFAStatePtr st = t.second;
+
+        BOOST_FOREACH(auto s, statesSet) {
+
+            if(s->mIsAccepted)
+                st->mIsAccepted= true;
+
+            st->mHMap = s->mHMap;
+
+            BOOST_FOREACH(auto trans, s->mTransitions) {
+
+                        std::string sym(trans.first);
+
+                        if (sym != "0") {
+
+                                std::set<AFAStatePtr,mapstatecomparator> temp;
+
+                                BOOST_FOREACH(auto u, trans.second){
+
+                                        temp.insert(newStatesMap[closureMap[u]]);
+                                }
+
+                                st->mTransitions.insert(std::make_pair(sym, temp));
+                        }
+            }
+        }
+
+    }
+
+    this->mInit = newStatesMap[closureMap[state]];
+
+}
+
 
 void AFAut::PassFourNew(AFAStatePtr init, std::set<AFAStatePtr>& tobedeleted, int cases,faudes::Generator& lGenerator, std::map<z3::expr, bool,mapexpcomparator>& mUnsatMemoization)
 {/*
@@ -289,8 +442,13 @@ void AFAut::PassFourNew(AFAStatePtr init, std::set<AFAStatePtr>& tobedeleted, in
     this->PrintToDot(std::string("Pass4EpsilonClosure.dot"));
 
     //Conversion of some symbol to epsilon if a few conditions are met.
-        this->ConvertToEpsilonConsecutiveSameAMap(this->mInit);
+        //this->ConvertToEpsilonConsecutiveSameAMap(this->mInit);
+        this->ConvertToEpsilonAllSameAMap(this->mInit);
     this->PrintToDot(std::string("Pass4ConversionEpsilon.dot"));
+
+    this->NewEpsilonClosure(this->mInit);
+    this->PrintToDot(std::string("DebugNewMethod.dot"));
+
 
     //Again call method to remove epsilon if the above method added some epsilons.
     //Epsilon closure removal from AFA.

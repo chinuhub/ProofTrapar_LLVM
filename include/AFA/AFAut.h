@@ -11,6 +11,7 @@
 #include "Program.h"
 #include <string>
 #include <set>
+#include <queue>
 #include <boost/assert.hpp>
 #include <algorithm>
 /*extern "C"
@@ -81,6 +82,17 @@ public:
     std::pair<StateType, std::set<SetAFAStatesPtr>> EpsilonClosure(AFAStatePtr state);
 
     void ConvertToEpsilonConsecutiveSameAMap(AFAStatePtr state);
+
+    void ConvertToEpsilonAllSameAMap(AFAStatePtr state);
+
+    void CollectSameAMapInfo(AFAStatePtr state, std::map<unsigned int, std::set<AFAStatePtr>> &redundancyMap);
+
+    void NewEpsilonClosure(AFAStatePtr state);
+
+    void GetEpsilonClosure(AFAStatePtr state, std::map<AFAStatePtr , std::set<AFAStatePtr>> &closureMap);
+
+
+
 };
 
 

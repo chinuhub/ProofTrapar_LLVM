@@ -63,6 +63,7 @@
 
   typedef std::map<struct autstate*, std::tuple<std::string,std::string,std::map<std::string,std::set<struct autstate*>>>> autstateinfotype;
 enum StateType {AND,OR,ORLit};
+
 class AFAState {
 
 
