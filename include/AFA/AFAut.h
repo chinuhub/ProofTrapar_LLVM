@@ -81,6 +81,8 @@ public:
     std::pair<StateType, std::set<SetAFAStatesPtr>> EpsilonClosure(AFAStatePtr state);
 
     void ConvertToEpsilonConsecutiveSameAMap(AFAStatePtr state);
+
+    static AFAut* MakeAFAutFromDot(std::string filename);
 };
 
 

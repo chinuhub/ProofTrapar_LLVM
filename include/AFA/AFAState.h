@@ -129,8 +129,7 @@ public:
 	bool HelperIsValid(z3::expr formula);
 
 
-
-
+    static AFAStatePtr ConstructAFA(const Graph &graph,std::map<vertex_t,AFAStatePtr>& mAllStates, vertex_t vertex);
 
 	std::set<std::string> getTransitionKeys();
 
