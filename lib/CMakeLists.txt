@@ -22,6 +22,40 @@ target_link_libraries(SafetyVerificationPass
 		faudes
 		)
 
+set(SOURCES AFA/AFAut.cpp
+#		SafetyVerificationPass.cpp
+#		Program.cpp
+		AFA/AFAState.cpp
+		AFA/PassTwo.cpp
+		AFA/PassThree.cpp
+		AFA/PassFourWeak.cpp
+		AFA/PassFourAFA.cpp
+#		SCTransSystem.cpp
+		Utils.cpp
+		OnTheFly.cpp
+		MetaState.cpp
+		)
+
+add_executable("OnTheFly" ${SOURCES})
+
+target_include_directories("OnTheFly" PUBLIC
+		"../include/"
+		)
+
+#find_package(Boost 1.65 COMPONENTS program_options REQUIRED)
+#include_directories("DotToAFA" ${Boost_INCLUDE_DIR})
+#link_directories("DotToAFA" ${Boost_LIBRARIES})
+
+target_link_libraries("OnTheFly"
+		boost_chrono
+		boost_graph
+		faudes
+		LLVMSupport
+
+		)
+
+message("successful ")
+
 #add_library(Program STATIC Program.cpp)
 
 #target_include_directories(Program PUBLIC

@@ -442,12 +442,12 @@ void AFAut::PassFourNew(AFAStatePtr init, std::set<AFAStatePtr>& tobedeleted, in
     this->PrintToDot(std::string("Pass4EpsilonClosure.dot"));
 
     //Conversion of some symbol to epsilon if a few conditions are met.
-        //this->ConvertToEpsilonConsecutiveSameAMap(this->mInit);
-        this->ConvertToEpsilonAllSameAMap(this->mInit);
+        this->ConvertToEpsilonConsecutiveSameAMap(this->mInit);
+        //this->ConvertToEpsilonAllSameAMap(this->mInit);
     this->PrintToDot(std::string("Pass4ConversionEpsilon.dot"));
 
-    this->NewEpsilonClosure(this->mInit);
-    this->PrintToDot(std::string("DebugNewMethod.dot"));
+    //this->NewEpsilonClosure(this->mInit);
+    //this->PrintToDot(std::string("DebugNewMethod.dot"));
 
 
     //Again call method to remove epsilon if the above method added some epsilons.
