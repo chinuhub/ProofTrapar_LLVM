@@ -9,6 +9,7 @@ add_library(SafetyVerificationPass SHARED
 		AFA/PassThree.cpp
 		AFA/PassFourWeak.cpp
 		AFA/PassFourAFA.cpp
+		AFA/DotToAFA.cpp
 		SCTransSystem.cpp
 		Utils.cpp
 		)
@@ -56,6 +57,54 @@ target_link_libraries("OnTheFly"
 
 message("successful ")
 
+
+#set(SOURCES AFA/DotToAFA.cpp SafetyVerificationPass.cpp
+#		Program.cpp
+#		AFA/AFAut.cpp
+#		AFA/AFAState.cpp
+#		AFA/PassTwo.cpp
+#		AFA/PassThree.cpp
+#		AFA/PassFourWeak.cpp
+#		AFA/PassFourAFA.cpp
+#		SCTransSystem.cpp
+#		Utils.cpp
+#		)
+
+set(SOURCES AFA/DotToAFA.cpp
+		AFA/AFAut.cpp
+		AFA/AFAState.cpp
+		AFA/PassTwo.cpp
+		AFA/PassThree.cpp
+		AFA/PassFourWeak.cpp
+		AFA/PassFourAFA.cpp
+		Utils.cpp
+		)
+
+add_executable("DotToAFA" ${SOURCES})
+
+#add_executable("DotToAFA" "AFA/DotToAFA.cpp")
+
+target_include_directories("DotToAFA" PUBLIC
+		"../include/"
+		)
+
+#find_package(Boost 1.65 COMPONENTS program_options REQUIRED)
+#include_directories("DotToAFA" ${Boost_INCLUDE_DIR})
+#link_directories("DotToAFA" ${Boost_LIBRARIES})
+
+target_link_libraries("DotToAFA"
+		#	boost_chrono
+		boost_graph
+		faudes
+		LLVMSupport
+		m
+		dl
+		)
+
+set(GCC_COVERAGE_COMPILE_FLAGS "-pedantic -g -lboost_graph -lboost_system")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${GCC_COVERAGE_COMPILE_FLAGS}" )
+
+message("Yup, works!!")
 #add_library(Program STATIC Program.cpp)
 
 #target_include_directories(Program PUBLIC

@@ -93,6 +93,8 @@ public:
 
 
 
+
+    static AFAut* MakeAFAutFromDot(std::string filename);
 };
 
 
