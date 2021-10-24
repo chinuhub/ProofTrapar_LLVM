@@ -133,6 +133,70 @@ AFAut* AFAut::MakeAFAutFromDot(std::string filename){
 }
 
 
+faudes::Generator MakePAFromDot(const std::string &filename) {
+
+    std::ifstream inf(filename);
+
+    if(inf.is_open()) std::cout<<"dotfile opened"<<std::endl;
+    else std::cout<<"dotfile not opened"<<std::endl;
+
+    boost::adjacency_list<boost::listS,boost::vecS,boost::directedS,VertexProp,EdgeProp> graph;
+    boost::dynamic_properties dp(boost::ignore_other_properties);
+
+    dp.property("vertlabel",boost::get(&VertexProp::vertlabel,graph));
+    dp.property("label",boost::get(&VertexProp::xlabel,graph));
+    dp.property("shape",boost::get(&VertexProp::shape,graph));
+    dp.property("color",boost::get(&VertexProp::color,graph));
+    dp.property("label",boost::get(&EdgeProp::label,graph));
+
+    const std::string node_id = "vertlabel";
+    bool read_graphviz_status = boost::read_graphviz(inf,graph,dp,node_id);
+
+    if(read_graphviz_status) std::cout<<"read_graphviz successful"<<std::endl;
+    else std::cout<<"read_graphviz unsuccessful"<<std::endl;
+
+
+    faudes::Generator generator;
+
+    // Finding Initial State
+    std::pair<vertex_iterator,vertex_iterator> vit = boost::vertices(graph);
+
+//    for(vit.first;vit.first!=vit.second;vit.first++) { VertexProp vv = graph[*vit.first]; std::cout<<vv.vertlabel<<" "<<vv.xlabel<<" "<<vv.shape<<" "<<vv.color<<std::endl;}
+
+    for (vit.first; vit.first != vit.second; ++vit.first){
+        VertexProp vv = graph[*vit.first];
+        if(vv.shape=="none") {
+            VertexProp vinit = graph[boost::target(*(boost::out_edges(*vit.first,graph).first),graph)];
+//            generator.InsState(vinit.vertlabel);
+            generator.SetInitState(vinit.vertlabel);
+        }
+        else generator.InsState(vv.vertlabel);
+        if(vv.shape=="doublecircle") generator.SetMarkedState(vv.vertlabel);
+    }
+//
+//    for(auto it = generator.StatesBegin();it!=generator.StatesEnd();it++){
+//        std::cout<<it<<endl;
+//    }
+    vit = boost::vertices(graph);
+
+    for (vit.first; vit.first != vit.second; ++vit.first) {
+        VertexProp vv = graph[*vit.first];
+        std::pair<out_edge_iterator,out_edge_iterator> edges = boost::out_edges(*vit.first,graph);
+        for (;edges.first!=edges.second;edges.first++){
+            EdgeProp ee = graph[*edges.first];
+            std::string symstr = ee.label;
+            if(symstr=="") continue;
+//            std::cout<<symstr<<std::endl;
+            generator.InsEvent(symstr);
+            //States corresponding to source and destination have already been added in the generator by previous loop.
+            // so just insert an edge between those states.
+            generator.SetTransition(vv.vertlabel, symstr, graph[boost::target(*edges.first,graph)].vertlabel);
+        }
+    }
+    return generator;
+}
+
+
 
 void PassThree(AFAStatePtr afa, Graph& g, std::map<AFAStatePtr, vertex_t>& indmap){//imp not to have mapstatecomparator here just compare raw pointers
     if(indmap.find(afa)!=indmap.end())
@@ -140,7 +204,8 @@ void PassThree(AFAStatePtr afa, Graph& g, std::map<AFAStatePtr, vertex_t>& indma
 
     vertex_t vthis = boost::add_vertex(g);
     indmap.insert(std::make_pair(afa,vthis));
-
+    int vertlabel = 0;
+    int xlabel =0;
 //    std::cout<<afa->mAssumeSym<<std::endl;
 
     if(afa->mType==AND){
@@ -148,11 +213,15 @@ void PassThree(AFAStatePtr afa, Graph& g, std::map<AFAStatePtr, vertex_t>& indma
         //create a new vertes for this state..
         VertexProp vp;
         int i=0;
-        for(; i<afa->mAssumeSym.size();i++){
-            if(afa->mAssumeSym[i]=='_') break;
-        }
-        vp.xlabel = afa->mAssumeSym.substr(0,i);
-        vp.vertlabel = afa->mAssumeSym.substr(i+1);
+//        for(; i<afa->mAssumeSym.size();i++){
+//            if(afa->mAssumeSym[i]=='_') break;
+//        }
+//        vp.xlabel = afa->mAssumeSym.substr(0,i);
+//        vp.vertlabel = afa->mAssumeSym.substr(i+1);
+
+        vp.vertlabel = std::to_string(vertlabel++);
+        vp.xlabel = std::to_string(xlabel++);
+
 //        std::cout<<vp.vertlabel<<" "<<vp.xlabel<<std::endl;
         vp.shape="rectangle";
         vp.color="yellow";
@@ -191,11 +260,15 @@ void PassThree(AFAStatePtr afa, Graph& g, std::map<AFAStatePtr, vertex_t>& indma
 
         VertexProp vp;
         int i=0;
-        for(; i<afa->mAssumeSym.size();i++){
-            if(afa->mAssumeSym[i]=='_') break;
-        }
-        vp.xlabel = afa->mAssumeSym.substr(0,i);
-        vp.vertlabel = afa->mAssumeSym.substr(i+1);
+//        for(; i<afa->mAssumeSym.size();i++){
+//            if(afa->mAssumeSym[i]=='_') break;
+//        }
+//        vp.xlabel = afa->mAssumeSym.substr(0,i);
+//        vp.vertlabel = afa->mAssumeSym.substr(i+1);
+
+        vp.vertlabel = std::to_string(vertlabel++);
+        vp.xlabel = std::to_string(xlabel++);
+
 //        std::cout<<vp.vertlabel<<" "<<vp.xlabel<<std::endl;
 
         vp.shape="rectangle";
@@ -238,12 +311,15 @@ void PassThree(AFAStatePtr afa, Graph& g, std::map<AFAStatePtr, vertex_t>& indma
 
         VertexProp vp;
         int i=0;
-        for(; i<afa->mAssumeSym.size();i++){
-            if(afa->mAssumeSym[i]=='_') break;
-        }
-        vp.xlabel = afa->mAssumeSym.substr(0,i);
-        vp.vertlabel = afa->mAssumeSym.substr(i+1);
+//        for(; i<afa->mAssumeSym.size();i++){
+//            if(afa->mAssumeSym[i]=='_') break;
+//        }
+//        vp.xlabel = afa->mAssumeSym.substr(0,i);
+//        vp.vertlabel = afa->mAssumeSym.substr(i+1);
 //        std::cout<<vp.vertlabel<<" "<<vp.xlabel<<std::endl;
+
+        vp.vertlabel = std::to_string(vertlabel++);
+        vp.xlabel = std::to_string(xlabel++);
 
         if(afa->mIsAccepted){
             vp.shape="doubleoctagon";
@@ -339,6 +415,12 @@ int main(){
     std::string file4 = "test4";
     AFAut* afa = AFAut::MakeAFAutFromDot(file3+".dot");
     PrintToDot(afa->mInit,file3+"_out.dot");
+
+    std::string pa1 = "pa1";
+    std::string pa2 = "pa2";
+    std::string pa3 = "auto1";
+    faudes::Generator gen = MakePAFromDot(pa3+".dot");
+    gen.DotWrite(pa3+"_out.dot");
     return 0;
 }
 
