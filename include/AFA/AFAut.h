@@ -83,6 +83,7 @@ public:
     void ConvertToEpsilonConsecutiveSameAMap(AFAStatePtr state);
 
     static AFAut* MakeAFAutFromDot(std::string filename);
+    void DotWrite(std::string filename);
 };
 
 

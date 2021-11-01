@@ -8,7 +8,7 @@
 #include "AFA/AFAState.h"
 #include "AFA/AFAut.h"
 #include <map>
-#include <stdlib.h>
+#include <SCTransSystem.h>
 
 typedef boost::graph_traits<Graph>::vertex_iterator vertex_iterator;
 typedef boost::graph_traits<Graph>::edge_iterator edge_iterator;
@@ -42,7 +42,6 @@ AFAStatePtr AFAState::ConstructAFA(const Graph &graph,std::map<vertex_t,AFAState
     VertexProp vertex_properties = graph[vertex];
     z3::context c;
     z3::expr exp = c.bool_val(true);
-
    AFAStatePtr node = new AFAState(ORLit,exp);
 
 //   std::cout<<vertex_properties.xlabel<<std::endl;
@@ -133,7 +132,7 @@ AFAut* AFAut::MakeAFAutFromDot(std::string filename){
 }
 
 
-faudes::Generator MakePAFromDot(const std::string &filename) {
+faudes::Generator SCTransSystem::MakePAFromDot(const std::string &filename) {
 
     std::ifstream inf(filename);
 
@@ -389,11 +388,10 @@ private:
     Name name;
 };
 
-void PrintToDot(AFAStatePtr afa, std::string filename){
+void AFAut::DotWrite( std::string filename){
     Graph graph;
     std::map<AFAStatePtr,vertex_t> mapindex;
-    PassThree(afa,graph,mapindex);//fill the graph object
-
+    PassThree( this->mInit,graph,mapindex);//fill the graph object
     myEdgeWriter<Graph> ew(graph);
     myVertWriter<Graph> vw(graph);
     //IMPO we need to put writers after graph is filled.
@@ -414,13 +412,19 @@ int main(){
     std::string file3 = "Pass4ConversionEpsilon";
     std::string file4 = "test4";
     AFAut* afa = AFAut::MakeAFAutFromDot(file3+".dot");
-    PrintToDot(afa->mInit,file3+"_out.dot");
+    afa->DotWrite(file3+"_out.dot");
 
     std::string pa1 = "pa1";
     std::string pa2 = "pa2";
     std::string pa3 = "auto1";
-    faudes::Generator gen = MakePAFromDot(pa3+".dot");
+    faudes::Generator gen = SCTransSystem::MakePAFromDot(pa3+".dot");
     gen.DotWrite(pa3+"_out.dot");
+
+//    z3::context c;
+//    const char* temp = "And(x == y, Not(x == y))";
+//    const char* temp2 = "(not (= |thr2::2| 1)),(not (= flag1 1))";
+//    z3::expr_vector ex = c.parse_string(temp);
+//    z3::expr temp_final = ex[0];
     return 0;
 }
 
