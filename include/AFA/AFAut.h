@@ -95,6 +95,7 @@ public:
 
 
     static AFAut* MakeAFAutFromDot(std::string filename);
+    void DotWrite(std::string filename);
 };
 
 

@@ -10,6 +10,7 @@
 #include <map>
 #include <stdlib.h>
 #include "MetaState.h"
+#include <SCTransSystem.h>
 
 typedef boost::graph_traits<Graph>::vertex_iterator vertex_iterator;
 typedef boost::graph_traits<Graph>::edge_iterator edge_iterator;
@@ -134,7 +135,7 @@ AFAut* AFAut::MakeAFAutFromDot(std::string filename){
 }
 
 
-faudes::Generator MakePAFromDot(const std::string &filename) {
+faudes::Generator SCTransSystem::MakePAFromDot(const std::string &filename) {
 
     std::ifstream inf(filename);
 
@@ -205,10 +206,8 @@ void PassThree(AFAStatePtr afa, Graph& g, std::map<AFAStatePtr, vertex_t>& indma
 
     vertex_t vthis = boost::add_vertex(g);
     indmap.insert(std::make_pair(afa,vthis));
-
-    int x=0;
-    int y=0;
-
+    int vertlabel = 0;
+    int xlabel =0;
 //    std::cout<<afa->mAssumeSym<<std::endl;
 
     if(afa->mType==AND){
@@ -222,10 +221,6 @@ void PassThree(AFAStatePtr afa, Graph& g, std::map<AFAStatePtr, vertex_t>& indma
 //        vp.xlabel = afa->mAssumeSym.substr(0,i);
 //        vp.vertlabel = afa->mAssumeSym.substr(i+1);
 //        std::cout<<vp.vertlabel<<" "<<vp.xlabel<<std::endl;
-
-       vp.vertlabel = std::to_string(x++);
-        vp.xlabel = std::to_string(y++);
-
         vp.shape="rectangle";
         vp.color="yellow";
         g[vthis]=vp;
@@ -270,9 +265,8 @@ void PassThree(AFAStatePtr afa, Graph& g, std::map<AFAStatePtr, vertex_t>& indma
 //        vp.vertlabel = afa->mAssumeSym.substr(i+1);
 //        std::cout<<vp.vertlabel<<" "<<vp.xlabel<<std::endl;
 
-        vp.vertlabel = std::to_string(x++);
-        vp.xlabel = std::to_string(y++);
-
+        vp.vertlabel = std::to_string(vertlabel++);
+        vp.xlabel = std::to_string(xlabel++);
 
         vp.shape="rectangle";
         if(afa->mIsAccepted){
@@ -321,9 +315,8 @@ void PassThree(AFAStatePtr afa, Graph& g, std::map<AFAStatePtr, vertex_t>& indma
 //        vp.vertlabel = afa->mAssumeSym.substr(i+1);
 //        std::cout<<vp.vertlabel<<" "<<vp.xlabel<<std::endl;
 
-            vp.vertlabel = std::to_string(x++);
-            vp.xlabel = std::to_string(y++);
-
+        vp.vertlabel = std::to_string(vertlabel++);
+        vp.xlabel = std::to_string(xlabel++);
 
         if(afa->mIsAccepted){
             vp.shape="doubleoctagon";
@@ -393,11 +386,10 @@ private:
     Name name;
 };
 
-void PrintToDot(AFAStatePtr afa, std::string filename){
+void AFAut::DotWrite( std::string filename){
     Graph graph;
     std::map<AFAStatePtr,vertex_t> mapindex;
-    PassThree(afa,graph,mapindex);//fill the graph object
-
+    PassThree( this->mInit,graph,mapindex);//fill the graph object
     myEdgeWriter<Graph> ew(graph);
     myVertWriter<Graph> vw(graph);
     //IMPO we need to put writers after graph is filled.
@@ -449,12 +441,29 @@ int main(){
 
 
 
+    std::string file1 = "Pass1_t";
+    std::string file2 = "Pass2AfterDeletion";
+    std::string file3 = "Pass4ConversionEpsilon";
+    std::string file4 = "test4";
+    AFAut* afa = AFAut::MakeAFAutFromDot(file3+".dot");
+    afa->DotWrite(file3+"_out.dot");
     //PA created for on the fly testing
     std::string pa = "pa1";
     faudes::Generator gen = MakePAFromDot(pa+".dot");
     MetaState::generator = gen;
     //MetaState::generator.DotWrite("test_pa_out.dot");
 
+    std::string pa1 = "pa1";
+    std::string pa2 = "pa2";
+    std::string pa3 = "auto1";
+    faudes::Generator gen = SCTransSystem::MakePAFromDot(pa3+".dot");
+    gen.DotWrite(pa3+"_out.dot");
+
+//    z3::context c;
+//    const char* temp = "And(x == y, Not(x == y))";
+//    const char* temp2 = "(not (= |thr2::2| 1)),(not (= flag1 1))";
+//    z3::expr_vector ex = c.parse_string(temp);
+//    z3::expr temp_final = ex[0];
 
     //AFAs created for on the fly testing
     std::vector<AFAStatePtr> afaRoots;

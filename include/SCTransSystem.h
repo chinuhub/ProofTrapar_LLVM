@@ -46,6 +46,8 @@ public:
     void ReverseGenerator(faudes::Generator &original, faudes::Generator &rev);
 
     std::string GetWord(faudes::Generator generator);
+
+    static faudes::Generator MakePAFromDot(const std::string &filename);
 };
 
 #endif /* SCTRANSSYSTEM_SCTRANSSYSTEM_H_ */
