@@ -159,21 +159,30 @@ void AFAut::ConvertToEpsilonConsecutiveSameAMap(AFAStatePtr state) {
 
 void AFAut::CollectSameAMapInfo(AFAStatePtr state, std::map<unsigned int, std::set<AFAStatePtr>> &redundancyMap){
 
+    // redundancyMap contains <hash of AMap(a1), set of states having AMap=a1 and HMap = false> as <key,value> pair
+
         if(state->HelperIsUnsat(*(state->mHMap))){
+                // if HMap is false
 
             auto it = redundancyMap.find(state->mAMap.hash());
-            if(it != redundancyMap.end())
+
+            if(it != redundancyMap.end()){
+                //add state to existing entry in redundancyMap
                 it->second.insert(state);
+            }
             else {
+                //create a new entry in redundancyMap
                 std::set<AFAStatePtr> temp;
                 temp.insert(state);
                 redundancyMap.insert(std::make_pair(state->mAMap.hash(), temp));
             }
         }
 
+        //base case
         if(state->mIsAccepted)
             return;
 
+        //recursive call to traverse complete AFA
         BOOST_FOREACH(auto trans, state->mTransitions) {
             BOOST_FOREACH(auto adj, trans.second) {
                             CollectSameAMapInfo(adj, redundancyMap);
@@ -183,11 +192,22 @@ void AFAut::CollectSameAMapInfo(AFAStatePtr state, std::map<unsigned int, std::s
 
 void AFAut::ConvertToEpsilonAllSameAMap(AFAStatePtr state) {
 
+    //This method adds epsilon edges between all states(including non-consecutive) containing same AMap and HMap as false
+
+    // This method is upgrade to ConvertToEpsilonConsecutiveSameAMap() because it not only add epsilon edges
+    // between consecutive states satisfying the criteria(mentioned in ConvertToEpsilonConsecutiveSameAMap())
+    // but also add epsilon edges between  non-consecutive states
+
     std::map<unsigned int, std::set<AFAStatePtr>> redundancyMap;
 
+    //This method finds all states which have same AMap  and HMap = false in the complete AFA
     CollectSameAMapInfo(state, redundancyMap);
 
+    //all states which satisfies criteria are put in groups
+
     BOOST_FOREACH(auto temp, redundancyMap) {
+
+        // add epsilon edges between all states within a group
 
             for(auto it1 = temp.second.begin(); it1 !=temp.second.end(); it1++){
 
@@ -199,6 +219,7 @@ void AFAut::ConvertToEpsilonAllSameAMap(AFAStatePtr state) {
                     s2.insert(*it2);
                     s1.insert(*it1);
 
+                    //adding epsilon edge between both states
                     (*it1)->mTransitions.insert(std::make_pair("0",s2));
                     (*it2)->mTransitions.insert(std::make_pair("0",s1));
 
@@ -213,8 +234,14 @@ void AFAut::ConvertToEpsilonAllSameAMap(AFAStatePtr state) {
 
 void AFAut::GetEpsilonClosure(AFAStatePtr state, std::map<AFAStatePtr , std::set<AFAStatePtr>> &closureMap){
 
+    // This method is a helper method for NewEpsilonClosure() method
+    // This method finds epsilon closure of all states
+
     std::set<AFAStatePtr> temp;
+    //temp set stores epsilon closure of current state
+
     std::queue<AFAStatePtr> todo;
+    //for standard traversal by taking only epsilon edges
 
     temp.insert(state);
     todo.push(state);
@@ -224,13 +251,17 @@ void AFAut::GetEpsilonClosure(AFAStatePtr state, std::map<AFAStatePtr , std::set
         AFAStatePtr t = todo.front();
         todo.pop();
 
+        //checking all transitions of state t
         BOOST_FOREACH(auto trans, t->mTransitions) {
 
                     std::string sym(trans.first);
 
                     if (sym == "0") {
+                        // work for only epsilon transitions
+
                         AFAStatePtr adj = *trans.second.begin();
                         if (temp.find(adj) == temp.end()) {
+                            //if not already added in temp set
                             temp.insert(adj);
                             todo.push(adj);
                         }
@@ -238,11 +269,16 @@ void AFAut::GetEpsilonClosure(AFAStatePtr state, std::map<AFAStatePtr , std::set
         }
     }
 
+    //epsilon closure of state computed and is stored in temp set
+    //make entry in closureMap
     closureMap.insert(std::make_pair(state, temp));
 
+    //seeing all transitions of state
     BOOST_FOREACH(auto trans, state->mTransitions) {
                     BOOST_FOREACH(auto adj, trans.second) {
 
+                                    //if no entry for adj in closureMap then recursive call
+                                    // to compute it's epsilon closure
                                     if (closureMap.find(adj) == closureMap.end())
                                         GetEpsilonClosure(adj, closureMap);
                     }
@@ -252,13 +288,16 @@ void AFAut::GetEpsilonClosure(AFAStatePtr state, std::map<AFAStatePtr , std::set
 
 void AFAut::NewEpsilonClosure(AFAStatePtr state){
 
+    //This method removes epsilon edges(cyclic epsilon edges) from AFA which are created by
+    // ConvertToEpsilonAllSameAMap() for removing false dependencies from AFA
+
     std::map<AFAStatePtr, std::set<AFAStatePtr>> closureMap;
 
+    //Find epsilon closure of all states
     GetEpsilonClosure(state, closureMap);
 
-    //Till now, for all states in AFA, we have computed their epsilon closure
-
-    // Now creating states for new AFA
+    //Till now, for all states in AFA, we have computed their epsilon closures
+    // Now creating states for new AFA, each new state is a representing state
 
     std::map<std::set<AFAStatePtr>, AFAStatePtr> newStatesMap;
 
@@ -266,7 +305,13 @@ void AFAut::NewEpsilonClosure(AFAStatePtr state){
 
         if(newStatesMap.find(temp.second)==newStatesMap.end()){
 
-            AFAStatePtr st = new AFAState(temp.first->mType, temp.first->mAMap);
+            z3::context c;
+            z3::expr exp = c.bool_val(true);
+
+            //new AFA state created
+            AFAStatePtr st = new AFAState(ORLit,exp);
+
+            //AFAStatePtr st = new AFAState(temp.first->mType, temp.first->mAMap);
             newStatesMap.insert(std::make_pair(temp.second, st));
         }
     }
@@ -277,9 +322,13 @@ void AFAut::NewEpsilonClosure(AFAStatePtr state){
     BOOST_FOREACH(auto t, newStatesMap) {
 
         std::set<AFAStatePtr> statesSet = t.first;
+        //stateSet is representing set of states
+
         AFAStatePtr st = t.second;
+        //st is state of new AFA
 
         BOOST_FOREACH(auto s, statesSet) {
+            //each state in stateSet will contribute to add edges from the new state
 
             if(s->mIsAccepted)
                 st->mIsAccepted= true;
@@ -287,25 +336,29 @@ void AFAut::NewEpsilonClosure(AFAStatePtr state){
             st->mHMap = s->mHMap;
 
             BOOST_FOREACH(auto trans, s->mTransitions) {
+                    //covering all edges from each state in stateSet
 
                         std::string sym(trans.first);
 
                         if (sym != "0") {
+                                //work only for non-epsilon edges
 
                                 std::set<AFAStatePtr,mapstatecomparator> temp;
 
                                 BOOST_FOREACH(auto u, trans.second){
 
+                                        //get new state corresponding to representing state of state u
                                         temp.insert(newStatesMap[closureMap[u]]);
                                 }
 
                                 st->mTransitions.insert(std::make_pair(sym, temp));
+                                    //added transition entry for new state
                         }
             }
         }
 
     }
-
+    //initial state of new AFA
     this->mInit = newStatesMap[closureMap[state]];
 
 }
@@ -442,7 +495,7 @@ void AFAut::PassFourNew(AFAStatePtr init, std::set<AFAStatePtr>& tobedeleted, in
     this->PrintToDot(std::string("Pass4EpsilonClosure.dot"));
 
     //Conversion of some symbol to epsilon if a few conditions are met.
-        this->ConvertToEpsilonConsecutiveSameAMap(this->mInit);
+        //this->ConvertToEpsilonConsecutiveSameAMap(this->mInit);
         //this->ConvertToEpsilonAllSameAMap(this->mInit);
     this->PrintToDot(std::string("Pass4ConversionEpsilon.dot"));
 

@@ -9,6 +9,7 @@
 #include "AFA/AFAut.h"
 #include <map>
 #include <stdlib.h>
+#include "MetaState.h"
 
 typedef boost::graph_traits<Graph>::vertex_iterator vertex_iterator;
 typedef boost::graph_traits<Graph>::edge_iterator edge_iterator;
@@ -204,8 +205,10 @@ void PassThree(AFAStatePtr afa, Graph& g, std::map<AFAStatePtr, vertex_t>& indma
 
     vertex_t vthis = boost::add_vertex(g);
     indmap.insert(std::make_pair(afa,vthis));
-    int vertlabel = 0;
-    int xlabel =0;
+
+    int x=0;
+    int y=0;
+
 //    std::cout<<afa->mAssumeSym<<std::endl;
 
     if(afa->mType==AND){
@@ -218,11 +221,11 @@ void PassThree(AFAStatePtr afa, Graph& g, std::map<AFAStatePtr, vertex_t>& indma
 //        }
 //        vp.xlabel = afa->mAssumeSym.substr(0,i);
 //        vp.vertlabel = afa->mAssumeSym.substr(i+1);
-
-        vp.vertlabel = std::to_string(vertlabel++);
-        vp.xlabel = std::to_string(xlabel++);
-
 //        std::cout<<vp.vertlabel<<" "<<vp.xlabel<<std::endl;
+
+       vp.vertlabel = std::to_string(x++);
+        vp.xlabel = std::to_string(y++);
+
         vp.shape="rectangle";
         vp.color="yellow";
         g[vthis]=vp;
@@ -259,17 +262,17 @@ void PassThree(AFAStatePtr afa, Graph& g, std::map<AFAStatePtr, vertex_t>& indma
         //create a new vertes for this state..
 
         VertexProp vp;
-        int i=0;
+//        int i=0;
 //        for(; i<afa->mAssumeSym.size();i++){
 //            if(afa->mAssumeSym[i]=='_') break;
 //        }
 //        vp.xlabel = afa->mAssumeSym.substr(0,i);
 //        vp.vertlabel = afa->mAssumeSym.substr(i+1);
-
-        vp.vertlabel = std::to_string(vertlabel++);
-        vp.xlabel = std::to_string(xlabel++);
-
 //        std::cout<<vp.vertlabel<<" "<<vp.xlabel<<std::endl;
+
+        vp.vertlabel = std::to_string(x++);
+        vp.xlabel = std::to_string(y++);
+
 
         vp.shape="rectangle";
         if(afa->mIsAccepted){
@@ -310,7 +313,7 @@ void PassThree(AFAStatePtr afa, Graph& g, std::map<AFAStatePtr, vertex_t>& indma
         //create a new vertes for this state..
 
         VertexProp vp;
-        int i=0;
+//        int i=0;
 //        for(; i<afa->mAssumeSym.size();i++){
 //            if(afa->mAssumeSym[i]=='_') break;
 //        }
@@ -318,8 +321,9 @@ void PassThree(AFAStatePtr afa, Graph& g, std::map<AFAStatePtr, vertex_t>& indma
 //        vp.vertlabel = afa->mAssumeSym.substr(i+1);
 //        std::cout<<vp.vertlabel<<" "<<vp.xlabel<<std::endl;
 
-        vp.vertlabel = std::to_string(vertlabel++);
-        vp.xlabel = std::to_string(xlabel++);
+            vp.vertlabel = std::to_string(x++);
+            vp.xlabel = std::to_string(y++);
+
 
         if(afa->mIsAccepted){
             vp.shape="doubleoctagon";
@@ -405,22 +409,73 @@ void PrintToDot(AFAStatePtr afa, std::string filename){
 
 }
 
+
 int main(){
 
 //    std::ifstream dotfile("../../Pass1.dot");
+ //  std::string file2 = "Pass2AfterDeletion";
 
-    std::string file1 = "Pass1_t";
-    std::string file2 = "Pass2AfterDeletion";
-    std::string file3 = "Pass4ConversionEpsilon";
-    std::string file4 = "test4";
-    AFAut* afa = AFAut::MakeAFAutFromDot(file3+".dot");
-    PrintToDot(afa->mInit,file3+"_out.dot");
+//
+//    std::string input = "ec4";
+//
+//    AFAut* afa = AFAut::MakeAFAutFromDot(input+".dot");
+//
+//    afa->NewEpsilonClosure(afa->mInit);
+//
+//    std::cout<<"Correct working"<<std::endl;
+//
+//    //afa->PrintToDot(input+"_out.dot");
+//
+//    PrintToDot(afa->mInit,input+"_out.dot");
+//
 
-    std::string pa1 = "pa1";
-    std::string pa2 = "pa2";
-    std::string pa3 = "auto1";
-    faudes::Generator gen = MakePAFromDot(pa3+".dot");
-    gen.DotWrite(pa3+"_out.dot");
+
+
+//    std::string pa1 = "pa1";
+//    std::string pa2 = "pa2";
+//    std::string pa3 = "auto1";
+
+//    std::string pa = "pa1";
+//
+//    faudes::Generator gen = MakePAFromDot(pa+".dot");
+//    //gen.DotWrite(pa+"_out.dot");
+//
+//    MetaState::generator = gen;
+//
+//    std::string ans = MetaState::Verify(MetaState::generator);
+//
+//    std::cout<<"Accepted word is : "<<ans<<std::endl;
+//        std::cout<<"Done";
+
+
+
+    //PA created for on the fly testing
+    std::string pa = "pa1";
+    faudes::Generator gen = MakePAFromDot(pa+".dot");
+    MetaState::generator = gen;
+    //MetaState::generator.DotWrite("test_pa_out.dot");
+
+
+    //AFAs created for on the fly testing
+    std::vector<AFAStatePtr> afaRoots;
+    std::vector<std::string> inputs = {"afa1"};
+    //std::vector<std::string> inputs = {"afa21", "afa22"};
+
+    for(auto inp : inputs){
+
+        AFAut* afa = AFAut::MakeAFAutFromDot(inp+".dot");
+        //PrintToDot(afa->mInit,inp+"_out.dot");
+        afaRoots.push_back(afa->mInit);
+    }
+
+
+    std::cout<<"\nOn the fly algo starts"<<std::endl;
+
+    std::string trace = MetaState::getUncoveredTrace(MetaState::generator, afaRoots);
+
+    std::cout<<"Done"<<std::endl;
+    std::cout<<"Uncovered Trace: "<<trace;
+
     return 0;
 }
 

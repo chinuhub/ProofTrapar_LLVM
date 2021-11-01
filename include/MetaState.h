@@ -12,10 +12,13 @@ class MetaState {
 public:
 
     static faudes::Generator generator;
+        //product automaton for our algorithm
 
     std::string word;
     faudes::Idx Pnode;
     std::set<std::set<AFAStatePtr>> cnfList;
+        //inner set makes into disjunction and outer set makes into conjunction
+        //so overall CNF form
 
     MetaState(){}
 
@@ -29,6 +32,8 @@ public:
     static std::set<std::set<AFAStatePtr>> make_CNF(std::vector<std::set<AFAStatePtr,mapstatecomparator>> temp);
 
     static void testing();
+
+    static std::string Verify(faudes::Generator generator);
 
 };
 

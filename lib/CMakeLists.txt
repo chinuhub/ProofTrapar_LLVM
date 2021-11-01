@@ -9,10 +9,8 @@ add_library(SafetyVerificationPass SHARED
 		AFA/PassThree.cpp
 		AFA/PassFourWeak.cpp
 		AFA/PassFourAFA.cpp
-		AFA/DotToAFA.cpp
 		SCTransSystem.cpp
-		Utils.cpp
-		)
+		Utils.cpp)
 
 target_include_directories(SafetyVerificationPass PUBLIC
 		"../include/"
@@ -33,21 +31,39 @@ set(SOURCES AFA/AFAut.cpp
 		AFA/PassFourAFA.cpp
 #		SCTransSystem.cpp
 		Utils.cpp
+#		AFA/DotToAFA.cpp
 		OnTheFly.cpp
 		MetaState.cpp
+#		Epsilon_test.cpp
 		)
 
 add_executable("OnTheFly" ${SOURCES})
 
+add_executable("Epsilon_test" ${SOURCES})
+
 target_include_directories("OnTheFly" PUBLIC
 		"../include/"
 		)
+
+target_include_directories("Epsilon_test" PUBLIC
+		"../include/"
+		)
+
+
 
 #find_package(Boost 1.65 COMPONENTS program_options REQUIRED)
 #include_directories("DotToAFA" ${Boost_INCLUDE_DIR})
 #link_directories("DotToAFA" ${Boost_LIBRARIES})
 
 target_link_libraries("OnTheFly"
+		boost_chrono
+		boost_graph
+		faudes
+		LLVMSupport
+
+		)
+
+target_link_libraries("Epsilon_test"
 		boost_chrono
 		boost_graph
 		faudes
@@ -78,6 +94,7 @@ set(SOURCES AFA/DotToAFA.cpp
 		AFA/PassFourWeak.cpp
 		AFA/PassFourAFA.cpp
 		Utils.cpp
+		MetaState.cpp
 		)
 
 add_executable("DotToAFA" ${SOURCES})
