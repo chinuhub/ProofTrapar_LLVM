@@ -401,92 +401,75 @@ void AFAut::DotWrite( std::string filename){
 
 }
 
-
-int main(){
-
-//    std::ifstream dotfile("../../Pass1.dot");
- //  std::string file2 = "Pass2AfterDeletion";
-
 //
-//    std::string input = "ec4";
+//int main(){
 //
-//    AFAut* afa = AFAut::MakeAFAutFromDot(input+".dot");
+////    std::ifstream dotfile("../../Pass1.dot");
+// //  std::string file2 = "Pass2AfterDeletion";
 //
-//    afa->NewEpsilonClosure(afa->mInit);
 //
-//    std::cout<<"Correct working"<<std::endl;
+////    std::string input = "ec4";
+////
+////    AFAut* afa = AFAut::MakeAFAutFromDot(input+".dot");
+////
+////    //afa->NewEpsilonClosure(afa->mInit);
+////
+////    std::cout<<"Correct working"<<std::endl;
+////
+////    //PrintToDot(afa->mInit,input+"_out.dot"); (old way of calling)
+////    afa->DotWrite(input+"_out.dot");
 //
-//    //afa->PrintToDot(input+"_out.dot");
 //
-//    PrintToDot(afa->mInit,input+"_out.dot");
+////
+////    std::string pa1 = "pa1";
+////    std::string pa2 = "pa2";
+////    std::string pa3 = "auto1";
+////
+////    std::string pa = "pa1";
+////
+////    faudes::Generator gen = SCTransSystem::MakePAFromDot(pa+".dot");
+////    gen.DotWrite(pa+"_out.dot");
+////
+////    MetaState::generator = gen;
+////
+////    std::string ans = MetaState::Verify(MetaState::generator);
+////
+////    std::cout<<"Accepted word is : "<<ans<<std::endl;
+////    std::cout<<"Done";
 //
-
-
-
-//    std::string pa1 = "pa1";
-//    std::string pa2 = "pa2";
-//    std::string pa3 = "auto1";
-
+//
+//
+//
+//
+//
+//    //PA created for on the fly testing
 //    std::string pa = "pa1";
-//
-//    faudes::Generator gen = MakePAFromDot(pa+".dot");
+//    faudes::Generator gen = SCTransSystem::MakePAFromDot(pa+".dot");
 //    //gen.DotWrite(pa+"_out.dot");
-//
 //    MetaState::generator = gen;
 //
-//    std::string ans = MetaState::Verify(MetaState::generator);
 //
-//    std::cout<<"Accepted word is : "<<ans<<std::endl;
-//        std::cout<<"Done";
-
-
-
-    std::string file1 = "Pass1_t";
-    std::string file2 = "Pass2AfterDeletion";
-    std::string file3 = "Pass4ConversionEpsilon";
-    std::string file4 = "test4";
-    AFAut* afa = AFAut::MakeAFAutFromDot(file3+".dot");
-    afa->DotWrite(file3+"_out.dot");
-    //PA created for on the fly testing
-    std::string pa = "pa1";
-    faudes::Generator gen = MakePAFromDot(pa+".dot");
-    MetaState::generator = gen;
-    //MetaState::generator.DotWrite("test_pa_out.dot");
-
-    std::string pa1 = "pa1";
-    std::string pa2 = "pa2";
-    std::string pa3 = "auto1";
-    faudes::Generator gen = SCTransSystem::MakePAFromDot(pa3+".dot");
-    gen.DotWrite(pa3+"_out.dot");
-
-//    z3::context c;
-//    const char* temp = "And(x == y, Not(x == y))";
-//    const char* temp2 = "(not (= |thr2::2| 1)),(not (= flag1 1))";
-//    z3::expr_vector ex = c.parse_string(temp);
-//    z3::expr temp_final = ex[0];
-
-    //AFAs created for on the fly testing
-    std::vector<AFAStatePtr> afaRoots;
-    std::vector<std::string> inputs = {"afa1"};
-    //std::vector<std::string> inputs = {"afa21", "afa22"};
-
-    for(auto inp : inputs){
-
-        AFAut* afa = AFAut::MakeAFAutFromDot(inp+".dot");
-        //PrintToDot(afa->mInit,inp+"_out.dot");
-        afaRoots.push_back(afa->mInit);
-    }
-
-
-    std::cout<<"\nOn the fly algo starts"<<std::endl;
-
-    std::string trace = MetaState::getUncoveredTrace(MetaState::generator, afaRoots);
-
-    std::cout<<"Done"<<std::endl;
-    std::cout<<"Uncovered Trace: "<<trace;
-
-    return 0;
-}
+//    //AFAs created for on the fly testing
+//    std::vector<AFAStatePtr> afaRoots;
+//    std::vector<std::string> inputs = {"afa1"};
+//    //std::vector<std::string> inputs = {"afa21", "afa22"};
+//
+//    for(auto inp : inputs){
+//
+//        AFAut* afa = AFAut::MakeAFAutFromDot(inp+".dot");
+//        //afa->DotWrite(inp+"_out.dot");
+//        afaRoots.push_back(afa->mInit);
+//    }
+//
+//    std::cout<<"\nOn the fly algo starts"<<std::endl;
+//
+//    std::string trace = MetaState::getUncoveredTrace(MetaState::generator, afaRoots);
+//
+//    std::cout<<"Done"<<std::endl;
+//    std::cout<<"Uncovered Trace: "<<trace;
+//
+//    return 0;
+//}
 
 
 

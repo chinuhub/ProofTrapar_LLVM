@@ -8,6 +8,7 @@ void MetaState::testing(){
 }
 
 faudes::Generator MetaState::generator;
+std::vector<AFAStatePtr> MetaState::afaRoots;
 
 
 std::string MetaState::getUncoveredTrace(faudes::Generator &pAutomaton, std::vector<AFAStatePtr> &afaRoots){
@@ -160,6 +161,7 @@ std::vector<MetaStatePtr> MetaState::getChildren(MetaStatePtr curr_meta) {
 
                     //Add the obtained cnf form in the cnflist of new meta state
                 for (auto c: cnf) {
+
                     if(c.size()!=0)
                         m->cnfList.insert(c);
                 }

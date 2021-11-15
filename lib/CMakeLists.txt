@@ -31,21 +31,14 @@ set(SOURCES AFA/AFAut.cpp
 		AFA/PassFourAFA.cpp
 #		SCTransSystem.cpp
 		Utils.cpp
-#		AFA/DotToAFA.cpp
+		AFA/DotToAFA.cpp
 		OnTheFly.cpp
 		MetaState.cpp
-#		Epsilon_test.cpp
 		)
 
 add_executable("OnTheFly" ${SOURCES})
 
-add_executable("Epsilon_test" ${SOURCES})
-
 target_include_directories("OnTheFly" PUBLIC
-		"../include/"
-		)
-
-target_include_directories("Epsilon_test" PUBLIC
 		"../include/"
 		)
 
@@ -56,14 +49,6 @@ target_include_directories("Epsilon_test" PUBLIC
 #link_directories("DotToAFA" ${Boost_LIBRARIES})
 
 target_link_libraries("OnTheFly"
-		boost_chrono
-		boost_graph
-		faudes
-		LLVMSupport
-
-		)
-
-target_link_libraries("Epsilon_test"
 		boost_chrono
 		boost_graph
 		faudes

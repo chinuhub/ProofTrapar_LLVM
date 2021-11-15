@@ -14,6 +14,9 @@ public:
     static faudes::Generator generator;
         //product automaton for our algorithm
 
+    static std::vector<AFAStatePtr> afaRoots;
+        //set of afa roots for our algorihtm
+
     std::string word;
     faudes::Idx Pnode;
     std::set<std::set<AFAStatePtr>> cnfList;
