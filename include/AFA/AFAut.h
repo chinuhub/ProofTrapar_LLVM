@@ -36,7 +36,7 @@ public:
 	 */
 	//static AFAut* MakeAFAutFromFA(struct fa* nfa,Program* program,z3::context&);
 
-	static void MakeAFAutProof(std::string& word, z3::expr& mPhi,Program* p, int count, bool& bres, faudes::Generator& generator);
+	static AFAut* MakeAFAutProof(std::string& word, z3::expr& mPhi,Program* p, int count, bool& bres, faudes::Generator& generator);
 	struct fa* ConvertToNFA();
 	/**
 	 * Complement this AFA and changes init accordingly

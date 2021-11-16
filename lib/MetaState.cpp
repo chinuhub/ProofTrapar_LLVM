@@ -80,6 +80,7 @@ std::string MetaState::getUncoveredTrace(faudes::Generator &pAutomaton, std::vec
             }
         }
     }
+    return "None";
 }
 
 

@@ -484,32 +484,24 @@ void AFAut::PassFourNew(AFAStatePtr init, std::set<AFAStatePtr>& tobedeleted, in
 		tm->PrintToDot("Pass4Phase2.dot");
 		std::cin>>i;
 #endif
-		//	std::cin>>i;
 
-		//Epsilon closure removal from AFA.
-		std::pair<StateType,std::set<SetAFAStatesPtr>> res = this->EpsilonClosure(this->mInit);
-
-		SetAFAStatesPtr tmp = flatten_set(res.second);
-		BOOST_ASSERT_MSG(tmp.size()==1,"ERR: There can only be one initial state of AFA.");
-		this->mInit = *(tmp.begin());
-    this->PrintToDot(std::string("Pass4EpsilonClosure.dot"));
-
-    //Conversion of some symbol to epsilon if a few conditions are met.
-        this->ConvertToEpsilonConsecutiveSameAMap(this->mInit);
-        //this->ConvertToEpsilonAllSameAMap(this->mInit);
-    this->PrintToDot(std::string("Pass4ConversionEpsilon.dot"));
-
-    //this->NewEpsilonClosure(this->mInit);
-    //this->PrintToDot(std::string("DebugNewMethod.dot"));
-
-
-    //Again call method to remove epsilon if the above method added some epsilons.
-    //Epsilon closure removal from AFA.
-    res = this->EpsilonClosure(this->mInit);
-    tmp = flatten_set(res.second);
+    std::pair<StateType,std::set<SetAFAStatesPtr>> res = this->EpsilonClosure(this->mInit);
+    SetAFAStatesPtr tmp = flatten_set(res.second);
     BOOST_ASSERT_MSG(tmp.size()==1,"ERR: There can only be one initial state of AFA.");
     this->mInit = *(tmp.begin());
-    this->PrintToDot(std::string("Pass4EpsilonClosure2.dot"));
+    this->PrintToDot(std::string("Pass4Phase1EpsilonClosure.dot"));
+
+    //Step 1 Add epsilon edges by connecting states having same AMap.
+    this->ConvertToEpsilonAllSameAMap(this->mInit);
+    std::cout<<"Phase 4- Adding Epsilon Edges over"<<std::endl;
+
+    this->PrintToDot(std::string("Pass4WithEpsilonEdges.dot"));
+
+    //Step 2- Create epsilon closure by removing epsilon edges from AFA.
+        this->NewEpsilonClosure(this->mInit);
+    std::cout<<"Phase 4- Removing Epsilon Edges over"<<std::endl;
+
+    this->PrintToDot(std::string("Pass4EpsilonClosed.dot"));
 
 #ifdef DBGPRNT
 	std::cout<<"Phase eqclass over"<<std::endl;

@@ -19,6 +19,7 @@
 #include "AFA/AFAut.h"
 #include "SCTransSystem.h"
 #include "Program.h"
+#include "MetaState.h"
 
 #include <vector>
 #include <sstream>
@@ -46,31 +47,29 @@ bool test_bench(Module& M) {
   std::cout<<"Determinization done "<<std::endl;
   generator.StateNamesEnabled(false);
   faudes::aStateMin(generator);
+  //Storing PA Generator in MetaState for onthefly construction.
+  MetaState::generator = generator;
 #ifdef DBGPRNT
   std::cout<<"Minimization done "<<std::endl;
 #endif
-	char* word;
 	size_t length;
 	//fa_example(revmerged,&word,&length);
 	//std::string revword(word,length);
   int i;
   int cases=0;
-  while(!faudes::IsEmptyLanguage(generator))
+  std::string trace = MetaState::getUncoveredTrace(MetaState::generator, MetaState::afaRoots);
+  while( trace.compare("None")!=0) //Keep on iterating until no uncovered trace is found.
   {
-    std::string revword(T->GetWord(generator));
-    std::string original(revword);//for some debugging purposes
 #ifdef DBGPRNT
     std::cout<<"Original is "<<original<<std::endl;
 #endif
-
-    std::string rev= Utils::ReverseWord(revword); //reverse the word to get it back.
 
 #ifdef DBGPRNT
     std::cout<<"Getting accepted state for "<<rev<<std::endl;
 #endif
 
-    z3::expr wordphi= T->GetEndStateAssertionFromWord(rev);
-    std::string exword = rev;
+    z3::expr wordphi= T->GetEndStateAssertionFromWord(trace);
+    std::string exword = trace;
 
     std::cout<<"Checking word "<<exword<<" with postcondition phi = "<<wordphi<<std::endl;
 
@@ -78,8 +77,7 @@ bool test_bench(Module& M) {
 		//struct fa* prooffa = AFAut::MakeAFAutProof(exword,negphi,P,cases);
 		bool result=false;
 		faudes::Generator proofgens;
-		AFAut::MakeAFAutProof(exword,negphi,P,cases,result,proofgens);
-		//what we got is already complemented version..
+		AFAut* afa = AFAut::MakeAFAutProof(exword,negphi,P,cases,result,proofgens);
 		if(result==false)//return null if hmap of initial state is unsat.
 		{
 			std::cout<<"An errorneous trace "<<std::endl;
@@ -89,7 +87,7 @@ bool test_bench(Module& M) {
 			std::cout << "Time spent = "<<elapsed << "seconds "<<'\n';
 			std::exit(-1);
 		}
-
+        MetaState::afaRoots.push_back(afa->mInit);
 #ifdef SANITYCHKASSN
     std::cout<<"AFA construction over-complement.. dumping to complemented.dot file.Press any int to continue"<<std::endl;
     bool res= checkAccepting(original,prooffa);
@@ -98,26 +96,12 @@ bool test_bench(Module& M) {
 #ifdef DBGPRNT
     std::cout<<"Original: States="<<generator.States().Size()<<" Transitions = "<<generator.TransRel().Size()<<std::endl;
 #endif
-    //We have the result of the AFA in DFA variable proofgens.
-    //We will first complement it and then intersect it with generator.
-    //The result will be stored again in variable generator.
-    //Check if proofgens has accepted states or not.
-      faudes::LanguageComplement(proofgens);
-      proofgens.DotWrite("Complemented.dot");
-      faudes::Generator res;
-      faudes::LanguageIntersection(generator,proofgens,res);
-
-      faudes::Deterministic(res,generator);
-       faudes::aStateMin(generator);
-#ifdef DBGPRNT
-     std::cout<<"Intersection: States = "<<generator.States().Size()<<" Transitions = "<<generator.TransRel().Size()<<std::endl;
-#endif
-    //generator.Assign(intersectionres);
- 		cases++;
+      trace = MetaState::getUncoveredTrace(MetaState::generator, MetaState::afaRoots);
+      cases++;
 	}
 	std::cout<<"Total cases = "<<cases<<std::endl;
  	//delete P;
- 	delete T;
+ 	//delete T;
  	auto end = boost::chrono::system_clock::now();
  	auto   elapsed = boost::chrono::duration_cast<boost::chrono::duration<double> >(end- start).count();
  	std::cout << "Time spent = "<<elapsed << "seconds "<<'\n';

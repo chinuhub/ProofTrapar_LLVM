@@ -141,7 +141,7 @@ Program* AFAut::mProgram;
 /**
  * Function to construct and AFA corresponding to word w and neg phi as phi
  */
-void AFAut::MakeAFAutProof(std::string& word, z3::expr& mPhi,Program* p, int count, bool& bres, faudes::Generator& generator){
+AFAut* AFAut::MakeAFAutProof(std::string& word, z3::expr& mPhi,Program* p, int count, bool& bres, faudes::Generator& generator){
 	mProgram= p;
     std::map<z3::expr, bool,mapexpcomparator> mUnsatMemoization;
 
@@ -211,7 +211,7 @@ void AFAut::MakeAFAutProof(std::string& word, z3::expr& mPhi,Program* p, int cou
 			if(!afa->mInit->HelperIsUnsat(*(afa->mInit->mHMap)))
 			{
 				bres=false;
-				return;//to denote that this trace is erroneous
+				return afa;//to denote that this trace is erroneous
 			}
 			bres=true;
 
@@ -255,15 +255,7 @@ void AFAut::MakeAFAutProof(std::string& word, z3::expr& mPhi,Program* p, int cou
 //	 	   struct fa* complementedaut=
 	 	    std::set<AFAStatePtr> allStatesDel;
 	 	    afa->PassFourNew(afa->mInit,allStatesDel,count,generator,mUnsatMemoization);
-
-	 	   //delete alls tates in passtwoallstates;-- Do it later;;
-	 	  /*BOOST_FOREACH(auto t, allStatesDel){
-	 	  		delete(t);
-	 	  	}*/
-	 	  afa->mInit=NULL;
-	 	  delete afa;//no longer in use..
-	 	  std::cout<<"Proofafa done"<<std::endl;
-	 	  return;
+            return afa;
 }
 /**
  * Complement this AFA and changes init accordingly==
