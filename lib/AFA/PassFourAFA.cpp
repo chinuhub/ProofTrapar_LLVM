@@ -310,6 +310,9 @@ void AFAut::NewEpsilonClosure(AFAStatePtr state){
 
             //new AFA state created
             AFAStatePtr st = new AFAState(ORLit,exp);
+            st->mAMap = temp.first->mAMap;
+            st->mHMap = temp.first->mHMap;
+
 
             //AFAStatePtr st = new AFAState(temp.first->mType, temp.first->mAMap);
             newStatesMap.insert(std::make_pair(temp.second, st));
@@ -497,7 +500,7 @@ void AFAut::PassFourNew(AFAStatePtr init, std::set<AFAStatePtr>& tobedeleted, in
 
     this->PrintToDot(std::string("Pass4WithEpsilonEdges.dot"));
 
-    //Step 2- Create epsilon closure by removing epsilon edges from AFA.
+    //Step 2- Create epsilon closure by removing epsilon edges from AFA.f
         this->NewEpsilonClosure(this->mInit);
     std::cout<<"Phase 4- Removing Epsilon Edges over"<<std::endl;
 
@@ -514,7 +517,7 @@ void AFAut::PassFourNew(AFAStatePtr init, std::set<AFAStatePtr>& tobedeleted, in
 
 
 //Now convert this AFA to DFA
-this->createDFA(lGenerator);
+//this->createDFA(lGenerator);
 
 
 std::cout<<"Marked states size = "<<lGenerator.MarkedStatesSize()<<","<<lGenerator.MarkedStatesToString()<<std::endl;

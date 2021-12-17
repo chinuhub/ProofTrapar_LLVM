@@ -57,7 +57,9 @@ bool test_bench(Module& M) {
 	//std::string revword(word,length);
   int i;
   int cases=0;
-  std::string trace = MetaState::getUncoveredTrace(MetaState::generator, MetaState::afaRoots);
+  std::string rev = MetaState::getUncoveredTrace(MetaState::generator, MetaState::afaRoots);
+  std::string trace = Utils::ReverseWord(rev);
+
   while( trace.compare("None")!=0) //Keep on iterating until no uncovered trace is found.
   {
 #ifdef DBGPRNT
@@ -96,7 +98,9 @@ bool test_bench(Module& M) {
 #ifdef DBGPRNT
     std::cout<<"Original: States="<<generator.States().Size()<<" Transitions = "<<generator.TransRel().Size()<<std::endl;
 #endif
-      trace = MetaState::getUncoveredTrace(MetaState::generator, MetaState::afaRoots);
+
+      rev = MetaState::getUncoveredTrace(MetaState::generator, MetaState::afaRoots);
+      trace = Utils::ReverseWord(rev);
       cases++;
 	}
 	std::cout<<"Total cases = "<<cases<<std::endl;
