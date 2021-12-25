@@ -139,7 +139,7 @@ Program* AFAut::mProgram;
 
 
 /**
- * Function to construct and AFA corresponding to word w and neg phi as phi
+ * Function to construct an AFA corresponding to word w and neg phi as phi
  */
 AFAut* AFAut::MakeAFAutProof(std::string& word, z3::expr& mPhi,Program* p, int count, bool& bres, faudes::Generator& generator){
 	mProgram= p;
@@ -490,6 +490,58 @@ std::map<std::string, AFAStatePtr > AFAut::getImplicitTransitions(AFAStatePtr st
  * We reuse the same type to represent DFA as well because it captures the AMap present in each state as well.
  */
 
+
+//////////////////////// my work begings //////////////////////
+///////////
+////////////
+///////////
+////////////
+////////////
+///////////
+/////////
+//////////
+
+
+
+void AFAut::myselfloop(AFAStatePtr state, std::set<AFAStatePtr> &seen){
+
+    seen.insert(state);
+
+    std::map<std::string, AFAStatePtr > tmpImplicit = getImplicitTransitions(state);
+
+    std::set<AFAStatePtr,mapstatecomparator> s;
+    s.insert(state);
+
+    for(auto temp: tmpImplicit){
+
+        state->mTransitions.insert(std::make_pair(temp.first,s));
+
+    }
+
+
+    //seeing all transitions of state
+    BOOST_FOREACH(auto trans, state->mTransitions) {
+                    BOOST_FOREACH(auto adj, trans.second) {
+
+                                    if (seen.find(adj) == seen.end())
+                                        myselfloop(adj, seen);
+                    }
+    }
+
+}
+
+
+
+
+
+///////////////////// my work ends /////////////////
+///////////////
+/////////////////
+////////////
+/////////////////
+/////////////////
+//////////////
+
 void AFAut::createDFA( faudes::Generator& generator){
     AFAStatePtr init = this->mInit;
 
@@ -522,6 +574,7 @@ void AFAut::createDFA( faudes::Generator& generator){
         //get the generator's state index from seenset corresponding to this states.
         BOOST_ASSERT_MSG(seenset.find(states)!=seenset.end()," Invariant: If something is in todoset then it must be in the seenset as well - violated");
         faudes::Idx srcst = seenset.find(states)->second;
+
         //For all states in this AFAStatesSet get explicit transition symbols.
        std::set<std::string> allexplicitsyms;
         bool allaccepting = true; //make srcst as accepting state if all the states in states variable are accepting.
@@ -542,8 +595,10 @@ void AFAut::createDFA( faudes::Generator& generator){
             }
             allexplicitsyms.insert(syms.begin(),syms.end());
         }
+
         if(allaccepting)
             generator.SetMarkedState(srcst);
+
         //At this point we have all explicit transitions from any state in states set in allexplicitsyms set. Now itereate over this set.
         BOOST_FOREACH(std::string sym, allexplicitsyms){        //for every explicit transition in allexplicitsyms set
                         bool ifNextPossibleOnSym = true;

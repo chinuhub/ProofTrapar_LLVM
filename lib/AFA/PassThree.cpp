@@ -45,7 +45,7 @@ void AFAState::PassThree(Graph& g, std::map<AFAStatePtr, vertex_t,mapstatecompar
 			nextset=t.second;
 			std::string sym = t.first;
 			EdgeProp edgep;
-			edgep.label=sym.append((std::to_string(count)).c_str());
+			edgep.label=sym.append(("_"+std::to_string(count)).c_str());
 			BOOST_FOREACH(auto st, nextset)
 			{
 				st->PassThree(g,indmap);
@@ -88,7 +88,7 @@ void AFAState::PassThree(Graph& g, std::map<AFAStatePtr, vertex_t,mapstatecompar
 				nextset=t.second;
 				std::string sym = t.first;
 				EdgeProp edgep;
-				edgep.label=sym+std::to_string(count);
+				edgep.label=sym+"_"+std::to_string(count);
 				BOOST_FOREACH(auto st, nextset)
 				{
 //					std::cout<<"Transition to "<<st<<" from "<<this<<" on sym"<<std::endl;
@@ -137,7 +137,7 @@ void AFAState::PassThree(Graph& g, std::map<AFAStatePtr, vertex_t,mapstatecompar
 				nextset=t.second;
 				std::string sym = t.first;
 				EdgeProp edgep;
-				edgep.label=sym+std::to_string(count);
+				edgep.label=sym+"_"+std::to_string(count);
 				BOOST_FOREACH(auto st, nextset)
 				{
 					st->PassThree(g,indmap);

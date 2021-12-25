@@ -49,6 +49,7 @@ bool test_bench(Module& M) {
   faudes::aStateMin(generator);
   //Storing PA Generator in MetaState for onthefly construction.
   MetaState::generator = generator;
+  generator.DotWrite("myPA.dot");
 #ifdef DBGPRNT
   std::cout<<"Minimization done "<<std::endl;
 #endif
@@ -58,9 +59,9 @@ bool test_bench(Module& M) {
   int i;
   int cases=0;
   std::string rev = MetaState::getUncoveredTrace(MetaState::generator, MetaState::afaRoots);
-  std::string trace = Utils::ReverseWord(rev);
+  std::string trace;
 
-  while( trace.compare("None")!=0) //Keep on iterating until no uncovered trace is found.
+  while( rev.compare("None")!=0) //Keep on iterating until no uncovered trace is found.
   {
 #ifdef DBGPRNT
     std::cout<<"Original is "<<original<<std::endl;
@@ -69,6 +70,8 @@ bool test_bench(Module& M) {
 #ifdef DBGPRNT
     std::cout<<"Getting accepted state for "<<rev<<std::endl;
 #endif
+
+    trace = Utils::ReverseWord(rev);
 
     z3::expr wordphi= T->GetEndStateAssertionFromWord(trace);
     std::string exword = trace;
@@ -100,7 +103,6 @@ bool test_bench(Module& M) {
 #endif
 
       rev = MetaState::getUncoveredTrace(MetaState::generator, MetaState::afaRoots);
-      trace = Utils::ReverseWord(rev);
       cases++;
 	}
 	std::cout<<"Total cases = "<<cases<<std::endl;
@@ -109,7 +111,7 @@ bool test_bench(Module& M) {
  	auto end = boost::chrono::system_clock::now();
  	auto   elapsed = boost::chrono::duration_cast<boost::chrono::duration<double> >(end- start).count();
  	std::cout << "Time spent = "<<elapsed << "seconds "<<'\n';
- 	std::cout << "Cas instruction has been successfully implemented";
+ 	//std::cout << "Cas instruction has been successfully implemented";
   return false;
 }
 

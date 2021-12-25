@@ -40,4 +40,13 @@ public:
 
 };
 
+struct metaState_comparator {
+    bool operator()(const MetaStatePtr a, const MetaStatePtr b) const {
+
+        return (a->Pnode < b->Pnode) || (a->Pnode == b->Pnode && a->cnfList < b->cnfList);
+    }
+};
+
+
+
 #endif //LLVM_VERIFY_PASS_METASTATE_H

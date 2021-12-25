@@ -34,9 +34,12 @@ std::string MetaState::getUncoveredTrace(faudes::Generator &pAutomaton, std::vec
         //all afa roots are in disjunction with each other
 
     std::queue<MetaStatePtr> todo;		//to-do queue
-    std::set<MetaStatePtr> seen;		//seen set
+ //   std::set<MetaStatePtr> seen;		//seen set
 
-        //initial meta state inserted in queue
+    std::set<MetaStatePtr, metaState_comparator> seen;		//seen set
+
+
+    //initial meta state inserted in queue
     todo.push(m);
     seen.insert(m);
 

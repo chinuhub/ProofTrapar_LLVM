@@ -91,7 +91,7 @@ public:
 
     void GetEpsilonClosure(AFAStatePtr state, std::map<AFAStatePtr , std::set<AFAStatePtr>> &closureMap);
 
-
+    void myselfloop(AFAStatePtr state, std::set<AFAStatePtr> &seen);
 
 
     static AFAut* MakeAFAutFromDot(std::string filename);

@@ -506,6 +506,14 @@ void AFAut::PassFourNew(AFAStatePtr init, std::set<AFAStatePtr>& tobedeleted, in
 
     this->PrintToDot(std::string("Pass4EpsilonClosed.dot"));
 
+
+
+    std::set<AFAStatePtr> seen;
+    this->myselfloop(this->mInit, seen);
+
+    this->PrintToDot(std::string("myselfloop.dot"));
+
+
 #ifdef DBGPRNT
 	std::cout<<"Phase eqclass over"<<std::endl;
 	tm->PrintToDot(std::string("Pass4PhaseEqClass.dot"));
@@ -525,7 +533,7 @@ std::cout<<"Marked states size = "<<lGenerator.MarkedStatesSize()<<","<<lGenerat
 	std::cout<<"Complement done "<<std::endl;
 	tm->PrintToDot(std::string("Pass4PhaseComplement.dot"));
 #endif
-	lGenerator.DotWrite("DFAConverted.dot");
+	//lGenerator.DotWrite("DFAConverted.dot");
 	//delete tm;
 
 
