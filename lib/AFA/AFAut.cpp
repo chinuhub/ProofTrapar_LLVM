@@ -518,7 +518,6 @@ void AFAut::myselfloop(AFAStatePtr state, std::set<AFAStatePtr> &seen){
 
     }
 
-
     //seeing all transitions of state
     BOOST_FOREACH(auto trans, state->mTransitions) {
                     BOOST_FOREACH(auto adj, trans.second) {

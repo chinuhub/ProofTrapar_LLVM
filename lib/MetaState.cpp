@@ -16,6 +16,8 @@ std::string MetaState::getUncoveredTrace(faudes::Generator &pAutomaton, std::vec
     generator = pAutomaton;
         //input product automaton
 
+    //generator.DotWrite("myPA_now.dot");
+
     faudes::StateSet::Iterator sit;
     sit = generator.InitStatesBegin();
         //initial state of product automaton
@@ -90,7 +92,7 @@ std::string MetaState::getUncoveredTrace(faudes::Generator &pAutomaton, std::vec
 
 std::vector<MetaStatePtr> MetaState::getChildren(MetaStatePtr curr_meta) {
         //This is a helper method to getUncoveredTrace() method. It will take one meta state as
-        //input and will return the successors meta states generated from input meta state
+        //input and will return the successors meta states generated from given meta state
 
     std::vector<MetaStatePtr> successors;
         //This will store the successor meta states
@@ -121,14 +123,14 @@ std::vector<MetaStatePtr> MetaState::getChildren(MetaStatePtr curr_meta) {
         m->word = curr_meta->word + s;
         m->Pnode = nxt;
 
-            //create cnflist for new meta state from cnflist of input meta state simulating PA transition
+            //create cnflist for new meta state from cnflist of given meta state simulating the PA transition
             //cnf_list: [{1,2,3},{5,6,7}]
             // { }: in OR
             // [ ]: in AND
 
         //NOTE: We have current cnflist as AND of ORs i.e. [{ }, { }]. So, to create new cnflist
         //we will pick one disjunction term at a time and generate appropriate cnf form from it
-        //We will add this cnf form into new state cnflist and will repeat same procedure for all disjunction terms
+        //We will add this cnf form into new metastate cnflist and will repeat same procedure for all disjunction terms
         //We will append results of each disjunction term one by one
         //and finally combined cnflist will also be in CNF form.
 
@@ -148,8 +150,8 @@ std::vector<MetaStatePtr> MetaState::getChildren(MetaStatePtr curr_meta) {
                 // now add next AFA states from state y in temp(maintaining AND/OR relation )
 
                 auto itr = y->mTransitions.equal_range(s);
-                    //looking for transitions from AFAState 'y' on symbol 's'
-                    //it returns pair of iterators
+                //looking for transitions from AFAState 'y' on symbol 's'
+                //it returns pair of iterators
 
                 for (auto it = itr.first; it != itr.second; it++) {
                     //add all map entries on 's' in temp
@@ -158,6 +160,7 @@ std::vector<MetaStatePtr> MetaState::getChildren(MetaStatePtr curr_meta) {
 
                     temp.push_back(it->second);
                 }
+            }
 
                     //Convert the AND/OR relation of AFA states into CNF form
                     //make_CNF() method will do this for us
@@ -169,7 +172,7 @@ std::vector<MetaStatePtr> MetaState::getChildren(MetaStatePtr curr_meta) {
                     if(c.size()!=0)
                         m->cnfList.insert(c);
                 }
-            }
+
         }
 
         //we get one new meta state for one transition of PA and added in successors

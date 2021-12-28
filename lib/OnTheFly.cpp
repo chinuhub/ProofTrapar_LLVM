@@ -10,7 +10,8 @@ int main(){
 
 
     //PA created for on the fly testing
-    std::string pa = "pa1";
+    //std::string pa = "myPA_now";
+    std::string pa = "pa1 ";
     faudes::Generator gen = SCTransSystem::MakePAFromDot(pa+".dot");
     //gen.DotWrite(pa+"_out.dot");
     MetaState::generator = gen;
@@ -19,6 +20,7 @@ int main(){
     //AFAs created for on the fly testing
     //std::vector<AFAStatePtr> afaRoots;
     std::vector<std::string> inputs = {"afa1"};
+    //std::vector<std::string> inputs = {"check_afa"};
     //std::vector<std::string> inputs = {"afa21", "afa22"};
 
     for(auto inp : inputs){
