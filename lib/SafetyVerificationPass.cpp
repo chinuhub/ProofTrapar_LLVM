@@ -50,6 +50,16 @@ bool test_bench(Module& M) {
   //Storing PA Generator in MetaState for onthefly construction.
   MetaState::generator = generator;
   generator.DotWrite("myPA.dot");
+
+  //store accepting states of PA in markedStatesSet and use markedStatesSet in on-the-fly algorithm
+  faudes::StateSet::Iterator lit;
+
+  for(lit = MetaState::generator.MarkedStatesBegin(); lit != MetaState::generator.MarkedStatesEnd(); ++lit) {
+
+      MetaState::markedStatesSet.insert(*lit);          //accepting states of PA inserted into markedStatesSet set
+  }
+
+
 #ifdef DBGPRNT
   std::cout<<"Minimization done "<<std::endl;
 #endif
@@ -104,6 +114,7 @@ bool test_bench(Module& M) {
 
       rev = MetaState::getUncoveredTrace(MetaState::generator, MetaState::afaRoots);
       cases++;
+      std::cout<<cases<<std::endl;
 	}
 	std::cout<<"Total cases = "<<cases<<std::endl;
  	//delete P;

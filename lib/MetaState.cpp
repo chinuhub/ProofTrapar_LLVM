@@ -9,14 +9,13 @@ void MetaState::testing(){
 
 faudes::Generator MetaState::generator;
 std::vector<AFAStatePtr> MetaState::afaRoots;
+std::set<faudes::Idx> MetaState::markedStatesSet;
 
 
 std::string MetaState::getUncoveredTrace(faudes::Generator &pAutomaton, std::vector<AFAStatePtr> &afaRoots){
 
     generator = pAutomaton;
         //input product automaton
-
-    //generator.DotWrite("myPA_now.dot");
 
     faudes::StateSet::Iterator sit;
     sit = generator.InitStatesBegin();
@@ -48,8 +47,45 @@ std::string MetaState::getUncoveredTrace(faudes::Generator &pAutomaton, std::vec
     while(!todo.empty()){
 
         MetaStatePtr curr_meta = todo.front();
-        todo.pop();
-            //meta state popped from queue
+        todo.pop();             //meta state popped from queue
+
+
+         /*
+          * This check is required to solve the issue of "Simulation Possible but No Acceptance by AFAs"
+          *
+          * if PA node of current meta state is accepting state then evaluate the cnfList of AFAs
+          * if cnfList evaluates to false then return the trace stored by current meta state as uncovered trace
+          * otherwise keep on running the algorithm
+         */
+        if(markedStatesSet.find(curr_meta->Pnode)!=markedStatesSet.end()){
+                        // PA node of current meta state is an accepting state
+
+            bool cnf_result=true;           //initially true in cnf_result
+
+            for(auto x: curr_meta->cnfList){
+                    // x is a disjunction of AFAs
+
+                bool temp1 = false;     //to evaluate boolean expression for each disjunction term
+
+                for(auto y: x){
+                        // y is AFAStatePtr
+
+                    temp1 = temp1 || y->mIsAccepted;
+                        //if AFA state is an accepting state then true otherwise false
+                }
+
+                cnf_result = cnf_result && temp1;
+                        //update cnf_result with individual disjunct term results
+
+                //if in between, the cnf_result is false then return the trace stored
+                //in current meta state as uncovered trace
+                if(cnf_result == false)
+                    return curr_meta->word;
+            }
+
+        }
+        //otherwise continue the algorithm
+
 
         faudes::TransSet::Iterator tit;
         faudes::TransSet::Iterator tit_end;
@@ -85,7 +121,8 @@ std::string MetaState::getUncoveredTrace(faudes::Generator &pAutomaton, std::vec
             }
         }
     }
-    return "None";
+
+    return "None";              //if all traces in PA are covered by the AFAs
 }
 
 

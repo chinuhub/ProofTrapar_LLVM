@@ -1,0 +1,3 @@
+opt-11 -disable-output -load-pass-plugin build/lib/libSafetyVerificationPass.so -passes="verify-module-safety" peterson.ll
+
+

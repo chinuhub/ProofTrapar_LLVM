@@ -485,45 +485,36 @@ std::map<std::string, AFAStatePtr > AFAut::getImplicitTransitions(AFAStatePtr st
 
 }
 
+
 /*
- * This method converts this AFA to a DFA. The resultant DFA is represented by generator. The resultant DFA is also presented by new AFAut data structure.
- * We reuse the same type to represent DFA as well because it captures the AMap present in each state as well.
+ * This method add self loops in the AFA.
  */
 
-
-//////////////////////// my work begings //////////////////////
-///////////
-////////////
-///////////
-////////////
-////////////
-///////////
-/////////
-//////////
-
-
-
-void AFAut::myselfloop(AFAStatePtr state, std::set<AFAStatePtr> &seen){
+void AFAut::AFASelfLoop(AFAStatePtr state, std::set<AFAStatePtr> &seen){
 
     seen.insert(state);
+        //work on distinct states of AFA so insert into seen set
 
     std::map<std::string, AFAStatePtr > tmpImplicit = getImplicitTransitions(state);
+        //getImplicitTransitions() method returns the symbols on which self loop will be created on current AFA state
 
     std::set<AFAStatePtr,mapstatecomparator> s;
     s.insert(state);
+        //current state stored in a set so that it can be inserted into mTransitions
 
     for(auto temp: tmpImplicit){
-
+            //self loop created on current state
         state->mTransitions.insert(std::make_pair(temp.first,s));
 
     }
 
-    //seeing all transitions of state
+    //seeing all transitions of current AFA state
     BOOST_FOREACH(auto trans, state->mTransitions) {
                     BOOST_FOREACH(auto adj, trans.second) {
 
                                     if (seen.find(adj) == seen.end())
-                                        myselfloop(adj, seen);
+                                        AFASelfLoop(adj, seen);
+                                            //recursive call to add self loops on new AFA state
                     }
     }
 
@@ -531,15 +522,10 @@ void AFAut::myselfloop(AFAStatePtr state, std::set<AFAStatePtr> &seen){
 
 
 
-
-
-///////////////////// my work ends /////////////////
-///////////////
-/////////////////
-////////////
-/////////////////
-/////////////////
-//////////////
+/*
+ * This method converts this AFA to a DFA. The resultant DFA is represented by generator. The resultant DFA is also presented by new AFAut data structure.
+ * We reuse the same type to represent DFA as well because it captures the AMap present in each state as well.
+ */
 
 void AFAut::createDFA( faudes::Generator& generator){
     AFAStatePtr init = this->mInit;

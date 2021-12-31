@@ -494,7 +494,7 @@ void AFAut::PassFourNew(AFAStatePtr init, std::set<AFAStatePtr>& tobedeleted, in
     this->mInit = *(tmp.begin());
     this->PrintToDot(std::string("Pass4Phase1EpsilonClosure.dot"));
 
-    //Step 1 Add epsilon edges by connecting states having same AMap.
+    //Step 1- Add epsilon edges by connecting states having same AMap.
     this->ConvertToEpsilonAllSameAMap(this->mInit);
     std::cout<<"Phase 4- Adding Epsilon Edges over"<<std::endl;
 
@@ -507,11 +507,11 @@ void AFAut::PassFourNew(AFAStatePtr init, std::set<AFAStatePtr>& tobedeleted, in
     this->PrintToDot(std::string("Pass4EpsilonClosed.dot"));
 
 
-
+    //Step 3- Introduce self loops in the AFA
     std::set<AFAStatePtr> seen;
-    this->myselfloop(this->mInit, seen);
+    this->AFASelfLoop(this->mInit, seen);
 
-    this->PrintToDot(std::string("myselfloop.dot"));
+    this->PrintToDot(std::string("Pass4SelfLooped.dot"));
 
 
 #ifdef DBGPRNT

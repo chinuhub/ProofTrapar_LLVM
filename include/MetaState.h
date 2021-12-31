@@ -15,7 +15,10 @@ public:
         //product automaton for our algorithm
 
     static std::vector<AFAStatePtr> afaRoots;
-        //set of afa roots for our algorihtm
+        //set of afa roots for our algorithm
+
+    static std::set<faudes::Idx> markedStatesSet;
+    //to store accepting states of PA
 
     std::string word;
     faudes::Idx Pnode;
