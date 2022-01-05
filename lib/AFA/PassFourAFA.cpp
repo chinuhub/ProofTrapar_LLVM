@@ -493,6 +493,7 @@ void AFAut::PassFourNew(AFAStatePtr init, std::set<AFAStatePtr>& tobedeleted, in
     BOOST_ASSERT_MSG(tmp.size()==1,"ERR: There can only be one initial state of AFA.");
     this->mInit = *(tmp.begin());
     this->PrintToDot(std::string("Pass4Phase1EpsilonClosure.dot"));
+    this->PrintToDot(std::string("AFA_1.dot"));
 
     //Step 1- Add epsilon edges by connecting states having same AMap.
     this->ConvertToEpsilonAllSameAMap(this->mInit);
@@ -512,6 +513,7 @@ void AFAut::PassFourNew(AFAStatePtr init, std::set<AFAStatePtr>& tobedeleted, in
     this->AFASelfLoop(this->mInit, seen);
 
     this->PrintToDot(std::string("Pass4SelfLooped.dot"));
+    this->PrintToDot(std::string("AFA_2.dot"));
 
 
 #ifdef DBGPRNT

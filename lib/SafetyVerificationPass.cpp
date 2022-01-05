@@ -113,6 +113,7 @@ bool test_bench(Module& M) {
 #endif
 
       rev = MetaState::getUncoveredTrace(MetaState::generator, MetaState::afaRoots);
+      std::cout<<"Trace ==== "<<rev<<std::endl;
       cases++;
       std::cout<<cases<<std::endl;
 	}
