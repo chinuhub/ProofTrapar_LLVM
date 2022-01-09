@@ -1,0 +1,29 @@
+digraph G {
+0[label="(not false),false,0x8ffc570", color=green,shape=octagon];
+1[label="(= |thr2::12| 0),false,0xa1470f0", color=green,shape=octagon];
+2[label="(not (>= |thr2::11| 1)),false,0xa251380", color=green,shape=octagon];
+3[label="(not (>= x 1)),false,0xa21fa80", color=green,shape=octagon];
+4[label="true,false,0xa0d47b0", color=green,shape=octagon];
+5[label="(= |thr1::8| 0),false,0xa0f8c30", color=green,shape=octagon];
+6[label="true,false,0xa1c1ba0", color=green,shape=octagon];
+7[label="(= |thr2::8| 0),false,0x9fc74a0", color=green,shape=octagon];
+8[label="(= |thr2::8| 0),false,0x8b023f0", color=green,shape=octagon];
+9[label="(= |thr2::6| 0),false,0xa0cb310", color=green,shape=octagon];
+10[label="(not (= |thr2::5| 0)),false,0x9ffc6a0", color=green,shape=octagon];
+11[label="(not (= turn 0)),false,0x9fe6930", color=green,shape=octagon];
+12[label="(not (= turn 0)),false,0x9fd2850", color=green,shape=octagon];
+13[label="false,false,0xa247a80", color=green,shape=doubleoctagon];
+0->1 [label="L38_0"];
+1->2 [label="L36_0"];
+2->3 [label="L35_0"];
+3->4 [label="L14_0"];
+4->5 [label="L13_0"];
+5->6 [label="L10_0"];
+6->7 [label="L33_0"];
+7->8 [label="L7_0"];
+8->9 [label="L31_0"];
+9->10 [label="L29_0"];
+10->11 [label="L28_0"];
+11->12 [label="L26_0"];
+12->13 [label="L22_0"];
+}

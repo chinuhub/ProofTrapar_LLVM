@@ -1,0 +1,52 @@
+Here are global variables: 
+L53: flag1:=0
+L54: flag2:=0
+L55: turn:=0
+L56: x:=0
+
+thr1: 
+L1: flag1:=1
+L2: turn:=1
+L3: assume(true)
+L4: |thr1::2|:=flag2
+L5: |thr1::3|:=(ite (= |thr1::2| 1) 1 0)
+L6: assume((distinct |thr1::3| 0))
+L7: assume((= (distinct |thr1::3| 0) false))
+L8: |thr1::5|:=turn
+L9: |thr1::6|:=(ite (= |thr1::5| 1) 1 0)
+L10: |thr1::8|:=0
+L11: |thr1::8|:=|thr1::6|
+L12: assume((distinct |thr1::8| 0))
+L13: assume((= (distinct |thr1::8| 0) false))
+L14: x:=0
+L15: |thr1::11|:=x
+L16: |thr1::12|:=(ite (<= |thr1::11| 0) 1 0)
+L17: assume((distinct |thr1::12| 0))
+L18: assume((= (distinct |thr1::12| 0) false))
+L19: flag1:=0
+L20: assume(true)
+
+thr2: 
+L21: flag2:=1
+L22: turn:=0
+L23: assume(true)
+L24: |thr2::2|:=flag1
+L25: |thr2::3|:=(ite (= |thr2::2| 1) 1 0)
+L26: assume((distinct |thr2::3| 0))
+L27: assume((= (distinct |thr2::3| 0) false))
+L28: |thr2::5|:=turn
+L29: |thr2::6|:=(ite (= |thr2::5| 0) 1 0)
+L30: |thr2::8|:=0
+L31: |thr2::8|:=|thr2::6|
+L32: assume((distinct |thr2::8| 0))
+L33: assume((= (distinct |thr2::8| 0) false))
+L34: x:=1
+L35: |thr2::11|:=x
+L36: |thr2::12|:=(ite (>= |thr2::11| 1) 1 0)
+L37: assume((distinct |thr2::12| 0))
+L38: assume((= (distinct |thr2::12| 0) false))
+L39: flag2:=0
+L40: assume(true)
+
+AMap: L20: assume(false)
+AMap: L40: assume(false)

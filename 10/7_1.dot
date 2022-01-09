@@ -1,0 +1,21 @@
+digraph G {
+0[label="(not false),false,0xeac6c0", color=green,shape=octagon];
+1[label="(= |thr1::8| 0),false,0x1a0d340", color=green,shape=octagon];
+2[label="true,false,0x1a9bec0", color=green,shape=octagon];
+3[label="(= |thr2::8| 0),false,0x1a28f70", color=green,shape=octagon];
+4[label="(= |thr2::8| 0),false,0x1d84700", color=green,shape=octagon];
+5[label="(= |thr2::6| 0),false,0x1a28990", color=green,shape=octagon];
+6[label="(not (= |thr2::5| 0)),false,0x1c7acf0", color=green,shape=octagon];
+7[label="(not (= turn 0)),false,0x1c95070", color=green,shape=octagon];
+8[label="(not (= turn 0)),false,0xa78740", color=green,shape=octagon];
+9[label="false,false,0x1574c80", color=green,shape=doubleoctagon];
+0->1 [label="L13_0"];
+1->2 [label="L10_0"];
+2->3 [label="L28_0"];
+3->4 [label="L7_0"];
+4->5 [label="L26_0"];
+5->6 [label="L24_0"];
+6->7 [label="L23_0"];
+7->8 [label="L21_0"];
+8->9 [label="L17_0"];
+}
