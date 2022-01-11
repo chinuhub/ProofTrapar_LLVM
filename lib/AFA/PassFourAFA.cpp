@@ -507,8 +507,12 @@ void AFAut::PassFourNew(AFAStatePtr init, std::set<AFAStatePtr>& tobedeleted, in
 
     this->PrintToDot(std::string("Pass4EpsilonClosed.dot"));
 
+    //Step 3
+    this->AFAmoreTrans(this->mInit);
+    this->PrintToDot(std::string("Checker.dot"));
 
-    //Step 3- Introduce self loops in the AFA
+
+    //Step 4- Introduce self loops in the AFA
     std::set<AFAStatePtr> seen;
     this->AFASelfLoop(this->mInit, seen);
 

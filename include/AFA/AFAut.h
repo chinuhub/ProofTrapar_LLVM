@@ -93,6 +93,13 @@ public:
 
     void AFASelfLoop(AFAStatePtr state, std::set<AFAStatePtr> &seen);
 
+    void helper(AFAStatePtr state, std::set<AFAStatePtr> &seen, std::map<AFAStatePtr, std::string> &AMapAsLabel);
+
+    void AddInCurrentState(AFAStatePtr state, std::set<AFAStatePtr> &seen, std::map<AFAStatePtr, std::string> &AMapAsLabel);
+
+    void AFAmoreTrans(AFAStatePtr state);
+
+
 
     static AFAut* MakeAFAutFromDot(std::string filename);
     void DotWrite(std::string filename);

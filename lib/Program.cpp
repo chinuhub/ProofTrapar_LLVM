@@ -1065,9 +1065,21 @@ std::vector<AdjacencyList<int> > Program::GetAutomata() {
 //==============================================================================
 // Methods to transform to old interface
 //==============================================================================
-bool z3comparator::operator()(const z3::expr& lhs, const z3::expr& rhs) const {
-  return (lhs.hash() < rhs.hash());
+
+//bool z3comparator::operator()(const z3::expr& lhs, const z3::expr& rhs) const {
+//  return (lhs.hash() < rhs.hash());
+//}
+
+
+bool z3comparator::operator()(const z3::expr& lhs, const z3::expr& rhs) const{
+
+        z3::context c;
+        z3::expr exp = c.bool_val(true);
+        AFAStatePtr node = new AFAState(ORLit,exp);
+
+        return (node->HelperSimplifyExpr(lhs).hash() < node->HelperSimplifyExpr(rhs).hash());
 }
+
 
 std::map<std::string, z3::expr>& Program::GetAssnMapForAllProcesses() {
   return mAssnMap;

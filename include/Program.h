@@ -13,6 +13,7 @@
 
 #include "llvm/IR/Module.h"
 #include "z3++.h"
+#include "AFA/AFAState.h"
 
 /// An enum type for Instruction types. Instruction fall into either assign or
 /// assume types.
@@ -35,6 +36,7 @@ struct InstructionComparator {
 struct z3comparator {
   bool operator()(const z3::expr& lhs, const z3::expr& rhs) const;
 };
+
 
 /**
  * A program class as a representation of the llvm module

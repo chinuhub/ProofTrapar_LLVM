@@ -520,6 +520,96 @@ void AFAut::AFASelfLoop(AFAStatePtr state, std::set<AFAStatePtr> &seen){
 
 }
 
+void AFAut::helper(AFAStatePtr state, std::set<AFAStatePtr> &seen, std::map<AFAStatePtr, std::string> &AMapAsLabel){
+
+    seen.insert(state);
+    //work on distinct states of AFA so insert into seen set
+
+    if(state->HelperIsUnsat(*(state->mHMap))){
+
+        if (AFAut::mProgram->mRevAssumeLHRHMap.find(state->mAMap) != AFAut::mProgram->mRevAssumeLHRHMap.end()) {
+
+            AMapAsLabel.insert(std::make_pair(state, AFAut::mProgram->mRevAssumeLHRHMap.find(state->mAMap)->second));
+
+        }
+    }
+
+    //seeing all transitions of current AFA state
+    BOOST_FOREACH(auto trans, state->mTransitions) {
+        BOOST_FOREACH(auto adj, trans.second) {
+
+        if (seen.find(adj) == seen.end())
+            helper(adj, seen, AMapAsLabel);
+
+        }
+    }
+
+}
+
+void AFAut::AddInCurrentState(AFAStatePtr state, std::set<AFAStatePtr> &seen, std::map<AFAStatePtr, std::string> &AMapAsLabel){
+
+    seen.insert(state);
+    //work on distinct states of AFA so insert into seen set
+
+    if(state->HelperIsUnsat(*(state->mHMap))){
+
+        for(auto temp: AMapAsLabel){
+
+            std::string sym = temp.second;
+            AFAStatePtr dest = temp.first;
+
+            std::set<AFAStatePtr,mapstatecomparator> s;
+            s.insert(dest);
+
+            if(state->mTransitions.find(sym)==state->mTransitions.end()){
+
+                state->mTransitions.insert(std::make_pair(sym,s));
+
+            }
+        }
+    }
+
+    //seeing all transitions of current AFA state
+    BOOST_FOREACH(auto trans, state->mTransitions) {
+                    BOOST_FOREACH(auto adj, trans.second) {
+
+                                    if (seen.find(adj) == seen.end())
+                                        AddInCurrentState(adj, seen, AMapAsLabel);
+
+                                }
+                }
+}
+
+void AFAut::AFAmoreTrans(AFAStatePtr state){
+
+    std::set<AFAStatePtr> seen;
+    std::map<AFAStatePtr, std::string> AMapAsLabel;
+
+    helper(state,seen,AMapAsLabel);
+
+    seen.clear();
+
+    AddInCurrentState(state,seen,AMapAsLabel);
+
+//    z3::expr exp1 = AFAut::mProgram->mAssumeLHRHMap.find("L28")->second;
+//
+//    z3::expr exp2 = exp1;
+//    exp2= state->HelperSimplifyExpr(exp2);
+//
+//
+//    //Writing into file
+//
+//    std::ofstream z3_stream;
+//    z3_stream.open("testing.txt");
+//
+//    z3_stream << "Hello";
+//    z3_stream << std::endl;
+//    z3_stream<<exp1;
+//    z3_stream << std::endl;
+//    z3_stream<<exp2;
+
+}
+
 
 
 /*
