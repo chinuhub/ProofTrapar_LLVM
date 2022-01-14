@@ -11,7 +11,7 @@ int main(){
 
     //PA created for on the fly testing
     //std::string pa = "myPA_now";
-    std::string pa = "pa1 ";
+    std::string pa = "pa1";
     faudes::Generator gen = SCTransSystem::MakePAFromDot(pa+".dot");
     //gen.DotWrite(pa+"_out.dot");
     MetaState::generator = gen;

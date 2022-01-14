@@ -10,6 +10,8 @@
 #include <boost/foreach.hpp>
 #include <boost/assert.hpp>
 #include <queue>
+#include <numeric>
+#include "boost/chrono.hpp"
 
 
 extern "C" {
@@ -169,6 +171,8 @@ void SCTransSystem::BuildSCTS(faudes::Generator& lGenerator){
         }
     }
 
+    std::cout<<"States in PA = "<<result.Size()<<std::endl;
+
 //    faudes::StateSet::Iterator sit;
 //    for(sit=result.StatesBegin(); sit!=result.StatesEnd(); ++sit) {
 //        faudes::Idx s1=rCompositionMap.Arg1State(*sit);
@@ -221,43 +225,63 @@ void SCTransSystem::BuildSCTS(faudes::Generator& lGenerator){
 
 
 }
-
 /**
-* This method does a breadth first search of the input automaton to find the shortest accepting word starting from the
+ * This method does a breadth first search of the input automaton to find the shortest accepting word starting from the
  * initial state.
  */
 std::string SCTransSystem::GetWord(faudes::Generator generator){
 // initialize todo queue. It is a queue of pairs of state and the string reached so far.
-    std::queue<std::pair<faudes::Idx,std::string>> todo;
+    std::queue<std::pair<faudes::Idx,std::list<std::string>>> todo;
     std::set<faudes::Idx> seenSet;
     faudes::StateSet::Iterator sit;
+
+
     for(sit = generator.InitStatesBegin(); sit != generator.InitStatesEnd(); ++sit) {
-        std::pair<faudes::Idx,std::string> tmp;
+        std::pair<faudes::Idx,std::list<std::string>> tmp;
         tmp.first=*sit;
-        tmp.second= "";
-        FD_DG("Pushing initial "<<StateName(tmp.first)<<"\n");
+        tmp.second.push_back("");
+        //FD_DG("Pushing initial "<<StateName(tmp.first)<<"\n");
         todo.push(tmp);
+        seenSet.insert(*sit);
+    }
+
+
+    //store marked states for testing later inside while loop.
+    faudes::StateSet::Iterator lit;
+    std::set<faudes::Idx> markedStatesSet;
+
+    for(lit = generator.MarkedStatesBegin(); lit != generator.MarkedStatesEnd(); ++lit) {
+        FD_DG("Checking if "<<StateName(x1)<<" is accepting or not, checking against "<<StateName(*lit)<<"\n");
+        markedStatesSet.insert(*lit);
     }
     // loop variables
+
     faudes::TransSet::Iterator tit;
     faudes::TransSet::Iterator tit_end;
     // loop
     while(!todo.empty()) {
         // pop
-        std::pair<faudes::Idx, std::string> IdxStr = todo.front();
+        std::pair<faudes::Idx, std::list<std::string>> IdxStr = todo.front();
         faudes::Idx x1 = IdxStr.first;
-        //Put x1 in the seen set.
-        seenSet.insert(x1);
-        std::string syms = IdxStr.second;
+
+        std::list<std::string> symlist = IdxStr.second;
         //if we have reached any marked state then we are done. Just return syms string.
         faudes::StateSet::Iterator lit;
-        for(lit = generator.MarkedStatesBegin(); lit != generator.MarkedStatesEnd(); ++lit) {
-            FD_DG("Checking if "<<StateName(x1)<<" is accepting or not, checking against "<<StateName(*lit)<<"\n");
-            if (*lit == x1) {
-                FD_DG(" Found accepting state, returning with "<<syms<<"\n");
-                return syms;
-            }
+
+        //To reproduce bug https://github.com/chinuhub/ProofTrapar_LLVM/issues/5#issue-880060530 we can move the content of the label
+        //LABEL_FIX_5 present in this method here. For more details of this bug read the github issue in detail.
+        if(markedStatesSet.find(x1)!=markedStatesSet.end()){
+            //means x1 is an accepting state, return syms constructed out of symlist. It is constructed by concatenating the content of the list together.
+            //and skipping if it is empty character.
+            std::string res =  std::accumulate(
+                    symlist.begin(),
+                    symlist.end(),
+                    std::string{});
+
+            return res;
         }
+
+
         //If we reached here then this is not the marked state. So continue exploring further.
         todo.pop();
         tit = generator.TransRelBegin(x1);
@@ -274,19 +298,27 @@ std::string SCTransSystem::GetWord(faudes::Generator generator){
             FD_DG(" Checking transition from "<<StateName(x1)<<" to "<<StateName(x2)<<" on "<<EventName(tit->Ev)<<"\n");
             //if the destination state is not present in the seen set then add the pair (destination state, sym.symbol on this transition) to the todo queue
             if (seenSet.find(x2) == seenSet.end()) {
-                std::pair<faudes::Idx,std::string> tmp;
+                std::pair<faudes::Idx,std::list<std::string>> tmp;
                 tmp.first=x2;
-                tmp.second=syms+symtrans;
-                FD_DG(" Pushing next state "<<StateName(x2)<<" with trace as "<<tmp.second<<" at the end of the todo queue\n");
+                tmp.second = symlist;
+                tmp.second.push_back(symtrans);
+                //LABEL_FIX_5_START
+                //Put x1 in the seen set.
+                seenSet.insert(x2);
+                //LABEL_FIX_5_END
+                //FD_DG(" Pushing next state "<<StateName(x2)<<" with trace as "<<tmp.second<<" at the end of the todo queue\n");
                 //Add this pair to the end of the todo queue.
                 todo.push(tmp);
             }
         }
 
+
     }
     //if reached here without return in between then no word is accepted here. So return empty word.
     return "None";
 }
+
+
 /*
  * This method takes a faudes generator and return another generate which accepts the reverse language of the original one.
  */

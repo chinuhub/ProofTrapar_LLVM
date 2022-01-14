@@ -49,7 +49,7 @@ bool test_bench(Module& M) {
   faudes::aStateMin(generator);
   //Storing PA Generator in MetaState for onthefly construction.
   MetaState::generator = generator;
-  generator.DotWrite("myPA.dot");
+  MetaState::generator.DotWrite("my__PA.dot");
 
   //store accepting states of PA in markedStatesSet and use markedStatesSet in on-the-fly algorithm
   faudes::StateSet::Iterator lit;
@@ -102,6 +102,7 @@ bool test_bench(Module& M) {
 			std::cout << "Time spent = "<<elapsed << "seconds "<<'\n';
 			std::exit(-1);
 		}
+        afa->PrintToDot(std::string("l_no.dot"));
         MetaState::afaRoots.push_back(afa->mInit);
 #ifdef SANITYCHKASSN
     std::cout<<"AFA construction over-complement.. dumping to complemented.dot file.Press any int to continue"<<std::endl;

@@ -108,6 +108,12 @@ std::string MetaState::getUncoveredTrace(faudes::Generator &pAutomaton, std::vec
                         //accepting trace is our uncovered trace, return it
 
                     std::string trace = getAcceptingWord(child->Pnode, child->word);
+
+                    for(auto d: seen){
+
+                        delete d;
+                    }
+
                     return trace;
                 }
 
@@ -122,6 +128,10 @@ std::string MetaState::getUncoveredTrace(faudes::Generator &pAutomaton, std::vec
         }
     }
 
+    for(auto d: seen){
+
+        delete d;
+    }
     return "None";              //if all traces in PA are covered by the AFAs
 }
 
