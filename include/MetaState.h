@@ -3,6 +3,7 @@
 
 #include <libfaudes.h>
 #include "AFA/AFAState.h"
+#include "AFA/AFAut.h"
 
 
 class MetaState;
@@ -19,6 +20,10 @@ public:
 
     static std::set<faudes::Idx> markedStatesSet;
     //to store accepting states of PA
+
+    static AFAut* combinedAFA;
+
+    static int proof_no;
 
     std::string word;
     faudes::Idx Pnode;

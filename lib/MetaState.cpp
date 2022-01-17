@@ -10,7 +10,8 @@ void MetaState::testing(){
 faudes::Generator MetaState::generator;
 std::vector<AFAStatePtr> MetaState::afaRoots;
 std::set<faudes::Idx> MetaState::markedStatesSet;
-
+int MetaState::proof_no=0;
+AFAut* MetaState::combinedAFA;
 
 std::string MetaState::getUncoveredTrace(faudes::Generator &pAutomaton, std::vector<AFAStatePtr> &afaRoots){
 

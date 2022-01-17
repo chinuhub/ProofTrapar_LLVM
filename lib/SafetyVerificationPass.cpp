@@ -103,7 +103,17 @@ bool test_bench(Module& M) {
 			std::exit(-1);
 		}
         afa->PrintToDot(std::string("l_no.dot"));
+
         MetaState::afaRoots.push_back(afa->mInit);
+
+        if(MetaState::afaRoots.empty())
+            MetaState::afaRoots.push_back(afa->mInit);
+        else{
+            MetaState::afaRoots.pop_back();
+            MetaState::afaRoots.push_back(afa->mInit);
+        }
+
+
 #ifdef SANITYCHKASSN
     std::cout<<"AFA construction over-complement.. dumping to complemented.dot file.Press any int to continue"<<std::endl;
     bool res= checkAccepting(original,prooffa);

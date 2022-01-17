@@ -7,6 +7,8 @@
  */
 
 #include "AFA/AFAut.h"
+#include "MetaState.h"
+
 
 SetAFAStatesPtr flatten_set(std::set<SetAFAStatesPtr> setOfSets){
     SetAFAStatesPtr setStates;
@@ -204,6 +206,8 @@ void AFAut::ConvertToEpsilonAllSameAMap(AFAStatePtr state) {
     CollectSameAMapInfo(state, redundancyMap);
 
     //all states which satisfies criteria are put in groups
+
+    int xyz=0;
 
     BOOST_FOREACH(auto temp, redundancyMap) {
 
@@ -495,21 +499,51 @@ void AFAut::PassFourNew(AFAStatePtr init, std::set<AFAStatePtr>& tobedeleted, in
     this->PrintToDot(std::string("Pass4Phase1EpsilonClosure.dot"));
     this->PrintToDot(std::string("AFA_1.dot"));
 
+    AFAut*  temp_afa = this->DeepCopyAFA(this);
+
+    if(MetaState::proof_no==0)
+        MetaState::combinedAFA = temp_afa;
+    else{
+
+        MetaState::combinedAFA->PrintToDot(std::string("combination_phase1.dot"));
+
+        for(auto x: temp_afa->mInit->mTransitions){
+
+            auto sym = x.first;
+            auto trans = x.second;
+
+            MetaState::combinedAFA->mInit->mTransitions.insert(std::make_pair(sym,trans));
+        }
+
+    }
+
+    MetaState::combinedAFA->PrintToDot(std::string("my1.dot"));
+    AFAut*  afa = this->DeepCopyAFA(MetaState::combinedAFA);
+    afa->PrintToDot(std::string("my2.dot"));
+
+    this->mInit = afa->mInit;
+
+    this->PrintToDot(std::string("AFA_2.dot"));
+    MetaState::combinedAFA->PrintToDot(std::string("combination.dot"));
+
     //Step 1- Add epsilon edges by connecting states having same AMap.
     this->ConvertToEpsilonAllSameAMap(this->mInit);
     std::cout<<"Phase 4- Adding Epsilon Edges over"<<std::endl;
 
     this->PrintToDot(std::string("Pass4WithEpsilonEdges.dot"));
+    this->PrintToDot(std::string("AFA_3.dot"));
 
     //Step 2- Create epsilon closure by removing epsilon edges from AFA.f
         this->NewEpsilonClosure(this->mInit);
     std::cout<<"Phase 4- Removing Epsilon Edges over"<<std::endl;
 
     this->PrintToDot(std::string("Pass4EpsilonClosed.dot"));
+    this->PrintToDot(std::string("AFA_4.dot"));
+
 
     //Step 3
     this->AFAmoreTrans(this->mInit);
-    this->PrintToDot(std::string("Checker.dot"));
+    this->PrintToDot(std::string("AFA_5.dot"));
 
 
     //Step 4- Introduce self loops in the AFA
@@ -517,7 +551,61 @@ void AFAut::PassFourNew(AFAStatePtr init, std::set<AFAStatePtr>& tobedeleted, in
     this->AFASelfLoop(this->mInit, seen);
 
     this->PrintToDot(std::string("Pass4SelfLooped.dot"));
-    this->PrintToDot(std::string("AFA_2.dot"));
+    this->PrintToDot(std::string("AFA_6.dot"));
+
+    MetaState::proof_no++;
+//    std::cout<<MetaState::proof_no<<std::endl;
+
+
+//         if(MetaState::proof_no==2){
+//
+//        MetaState::afaRoots.push_back(this->mInit);
+//
+//        AFAut* afa = new AFAut();
+////        z3::context c;
+////        z3::expr exp = c.bool_val(true);
+////        AFAStatePtr st = new AFAState(ORLit,exp);
+////        afa->mInit = st;
+////
+//
+//        auto afa1 = MetaState::afaRoots[0];
+//        auto afa2 = MetaState::afaRoots[1];
+//
+//        for(auto x: afa2->mTransitions){
+//
+//            auto sym = x.first;
+//            auto trans = x.second;
+//
+//            afa1->mTransitions.insert(std::make_pair(sym,trans));
+//        }
+//
+//        afa->mInit = afa1;
+//
+//
+//        for(auto afa_temp : MetaState::afaRoots) {
+//
+//            std::set<AFAStatePtr, mapstatecomparator> temp;
+//
+//            temp.insert(afa_temp);
+//
+//            st->mTransitions.insert(std::make_pair("0", temp));
+//        }
+//
+//        std::cout<<"Combined together"<<std::endl;
+//
+//        afa->PrintToDot(std::string("combined1.dot"));
+//
+//        afa->ConvertToEpsilonAllSameAMap(afa->mInit);
+//
+//        afa->PrintToDot(std::string("combined2.dot"));
+//
+//        afa->NewEpsilonClosure(afa->mInit);
+//
+//        afa->PrintToDot(std::string("combined3.dot"));
+//
+//        std::cout<<"Done"<<std::endl;
+//
+//    }
 
 
 #ifdef DBGPRNT

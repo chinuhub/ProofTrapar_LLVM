@@ -611,6 +611,79 @@ void AFAut::AFAmoreTrans(AFAStatePtr state){
 }
 
 
+void copyStates(AFAStatePtr state, std::map<AFAStatePtr, AFAStatePtr> &newStatesMap){
+
+
+    z3::context c;
+    z3::expr exp = c.bool_val(true);
+
+    //new AFA state created
+    AFAStatePtr st = new AFAState(ORLit,exp);
+    st->mAMap = state->mAMap;
+    st->mHMap = state->mHMap;
+    st->mIsAccepted = state->mIsAccepted;
+    st->mType = state->mType;
+    st->mRWord = state->mRWord;
+
+    newStatesMap.insert(std::make_pair(state, st));
+
+
+
+    //seeing all transitions of state
+    BOOST_FOREACH(auto trans, state->mTransitions) {
+                    BOOST_FOREACH(auto adj, trans.second) {
+
+                                    //if no entry for adj in Map then recursive call
+                                    if (newStatesMap.find(adj) == newStatesMap.end())
+                                        copyStates(adj, newStatesMap);
+                    }
+    }
+}
+
+AFAut* AFAut::DeepCopyAFA(AFAut* old_afa){
+
+    AFAut* afa = new AFAut();
+
+    std::map<AFAStatePtr, AFAStatePtr> newStatesMap;
+
+    copyStates(old_afa->mInit, newStatesMap);
+
+    //states of new AFA are created, now add edges between the new states
+
+    BOOST_FOREACH(auto t, newStatesMap) {
+
+        AFAStatePtr oldst = t.first;
+
+        AFAStatePtr newst = t.second;
+
+        BOOST_FOREACH(auto trans, oldst->mTransitions) {
+
+                std::string sym(trans.first);
+
+                std::set<AFAStatePtr,mapstatecomparator> temp;
+
+                BOOST_FOREACH(auto u, trans.second){
+
+                        //get new state corresponding to state u
+                        temp.insert(newStatesMap[u]);
+                }
+
+                newst->mTransitions.insert(std::make_pair(sym, temp));
+                    //added transition entry for new state
+        }
+    }
+
+
+    //initial state of new AFA
+    afa->mInit = newStatesMap[old_afa->mInit];
+
+    return afa;
+
+}
+
+
+
+
 
 /*
  * This method converts this AFA to a DFA. The resultant DFA is represented by generator. The resultant DFA is also presented by new AFAut data structure.

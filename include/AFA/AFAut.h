@@ -99,7 +99,7 @@ public:
 
     void AFAmoreTrans(AFAStatePtr state);
 
-
+    AFAut* DeepCopyAFA(AFAut* olf_afa);
 
     static AFAut* MakeAFAutFromDot(std::string filename);
     void DotWrite(std::string filename);
