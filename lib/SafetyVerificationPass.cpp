@@ -104,7 +104,7 @@ bool test_bench(Module& M) {
 		}
         afa->PrintToDot(std::string("l_no.dot"));
 
-        MetaState::afaRoots.push_back(afa->mInit);
+        //MetaState::afaRoots.push_back(afa->mInit);
 
         if(MetaState::afaRoots.empty())
             MetaState::afaRoots.push_back(afa->mInit);
@@ -113,6 +113,7 @@ bool test_bench(Module& M) {
             MetaState::afaRoots.push_back(afa->mInit);
         }
 
+        std::cout<<"AFAs for on the fly = "<<MetaState::afaRoots.size()<<std::endl;
 
 #ifdef SANITYCHKASSN
     std::cout<<"AFA construction over-complement.. dumping to complemented.dot file.Press any int to continue"<<std::endl;
