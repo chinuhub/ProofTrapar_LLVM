@@ -43,9 +43,8 @@ void thr1() {
         break;
     }
     // begin: critical section
-    //X = 0;
-    //assert(X <= 0);
-    __ASSERT();
+    X = 0;
+    assert(X <= 0);
     // end: critical section
     y = 0;
     b1 = 0;
@@ -84,9 +83,8 @@ void thr2() {
         break;
     }
     // begin: critical section
-    //X = 1;
-    //assert(X >= 1);
-    __ASSERT();
+    X = 1;
+    assert(X >= 1);
     // end: critical section
     y = 0;
     b2 = 0;;

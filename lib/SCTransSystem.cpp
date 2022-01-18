@@ -142,34 +142,34 @@ void SCTransSystem::BuildSCTS(faudes::Generator& lGenerator){
 
   }
     BOOST_ASSERT_MSG(faudesAutomata.size()>0, " No process given as input.. Exiting");
-//    faudes::Generator result = faudesAutomata.at(0);
-//    for(unsigned i=1; i<adjlists.size(); i++) {
-//        faudes::Generator tmpresult;
-//        faudes::Parallel(result,faudesAutomata.at(i),tmpresult);
-//        result = tmpresult;
-//    }
-
-
-/*
- * Below is the code to create product automaton with a new accepting criteria
- */
-
-    faudes::Generator result;
-    std::map< std::pair<faudes::Idx,faudes::Idx>, faudes::Idx>  rCompositionMap;
-
-    faudes::Parallel(faudesAutomata.at(0),faudesAutomata.at(1),rCompositionMap,result );
-
-    result.ClearMarkedStates();
-
-    for (auto lit1 = faudesAutomata.at(0).MarkedStatesBegin();lit1 != faudesAutomata.at(0).MarkedStatesEnd(); ++lit1) {
-        for (auto lit2 = faudesAutomata.at(1).MarkedStatesBegin();lit2 != faudesAutomata.at(1).MarkedStatesEnd(); ++lit2) {
-                auto currentstates = std::make_pair(*lit1, *lit2);
-                auto rcit = rCompositionMap.find(currentstates);
-                if (rcit != rCompositionMap.end()) {
-                    result.SetMarkedState(rcit->second);
-                }
-        }
+    faudes::Generator result = faudesAutomata.at(0);
+    for(unsigned i=1; i<adjlists.size(); i++) {
+        faudes::Generator tmpresult;
+        faudes::Parallel(result,faudesAutomata.at(i),tmpresult);
+        result = tmpresult;
     }
+
+//
+///*
+// * Below is the code to create product automaton with a new accepting criteria
+// */
+//
+//    faudes::Generator result;
+//    std::map< std::pair<faudes::Idx,faudes::Idx>, faudes::Idx>  rCompositionMap;
+//
+//    faudes::Parallel(faudesAutomata.at(0),faudesAutomata.at(1),rCompositionMap,result );
+//
+//    result.ClearMarkedStates();
+//
+//    for (auto lit1 = faudesAutomata.at(0).MarkedStatesBegin();lit1 != faudesAutomata.at(0).MarkedStatesEnd(); ++lit1) {
+//        for (auto lit2 = faudesAutomata.at(1).MarkedStatesBegin();lit2 != faudesAutomata.at(1).MarkedStatesEnd(); ++lit2) {
+//                auto currentstates = std::make_pair(*lit1, *lit2);
+//                auto rcit = rCompositionMap.find(currentstates);
+//                if (rcit != rCompositionMap.end()) {
+//                    result.SetMarkedState(rcit->second);
+//                }
+//        }
+//    }
 
     std::cout<<"States in PA = "<<result.Size()<<std::endl;
 
@@ -196,17 +196,17 @@ void SCTransSystem::BuildSCTS(faudes::Generator& lGenerator){
      * IMP: Clear all marked states. Then set only those states as marked states which are one-step reachable
      * by a transition on a symbol that is prsent in assnMap variable.
      */
-//    result.ClearMarkedStates();
-//    //Iterate over all transitions.
-//    //Iterate over all relations of original and insert them in reverse in rev generator.
-//    faudes::TransSet::Iterator transit;
-//    for(transit = result.TransRelBegin(); transit != result.TransRelEnd(); ++transit) {
-//        std::string sym = result.EventName(transit->Ev);
-//        if(assnMap.find(sym)!=assnMap.end()){
-//            //then set transit->X2 as marked state.
-//            result.SetMarkedState(transit->X2);
-//        }
-//    }
+    result.ClearMarkedStates();
+    //Iterate over all transitions.
+    //Iterate over all relations of original and insert them in reverse in rev generator.
+    faudes::TransSet::Iterator transit;
+    for(transit = result.TransRelBegin(); transit != result.TransRelEnd(); ++transit) {
+        std::string sym = result.EventName(transit->Ev);
+        if(assnMap.find(sym)!=assnMap.end()){
+            //then set transit->X2 as marked state.
+            result.SetMarkedState(transit->X2);
+        }
+    }
 
 
     //To test, print a word accepted by this generator.

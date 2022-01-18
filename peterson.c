@@ -17,9 +17,8 @@ void thr1() {
   turn = 1;
   while (flag2==1 && turn==1) {};
   // begin: critical section
-  __ASSERT();
-  //x = 0;
-  //assert(x<=0);
+  x = 0;
+  assert(x<=0);
   // end: critical section
   flag1 = 0;
   
@@ -31,9 +30,8 @@ void thr2() {
   turn = 0;
   while (flag1==1 && turn==0) {};
   // begin: critical section
-  __ASSERT();
-  //x = 1;
-  //assert(x>=1);
+  x = 1;
+  assert(x>=1);
   // end: critical section
   flag2 = 0;
   

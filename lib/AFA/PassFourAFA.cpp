@@ -519,7 +519,7 @@ void AFAut::PassFourNew(AFAStatePtr init, std::set<AFAStatePtr>& tobedeleted, in
 
     MetaState::combinedAFA->PrintToDot(std::string("my1.dot"));
     AFAut*  afa = this->DeepCopyAFA(MetaState::combinedAFA);
-    afa->PrintToDot(std::string("my2.dot"));
+
 
     this->mInit = afa->mInit;
 
@@ -552,6 +552,7 @@ void AFAut::PassFourNew(AFAStatePtr init, std::set<AFAStatePtr>& tobedeleted, in
 
     this->PrintToDot(std::string("Pass4SelfLooped.dot"));
     this->PrintToDot(std::string("AFA_6.dot"));
+    afa->PrintToDot(std::string("my2.dot"));
 
     MetaState::proof_no++;
 //    std::cout<<MetaState::proof_no<<std::endl;

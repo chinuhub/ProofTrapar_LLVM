@@ -26,9 +26,8 @@ void thr1() {
         f2 = flag2;
     }
     // begin: critical section
-    //x = 0;
-    //assert(x<=0);
-    __ASSERT();
+    x = 0;
+    assert(x<=0);
     // end: critical section
     turn = 1;
     flag1 = 0;
@@ -50,9 +49,8 @@ void thr2() {
         f1 = flag1;
     }
     // begin: critical section
-    //x = 1;
-    //assert(x>=1);
-    __ASSERT();
+    x = 1;
+    assert(x>=1);
     // end: critical section
     turn = 1;
     flag2 = 0;
