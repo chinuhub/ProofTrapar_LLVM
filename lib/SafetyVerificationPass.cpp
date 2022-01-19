@@ -102,7 +102,6 @@ bool test_bench(Module& M) {
 			std::cout << "Time spent = "<<elapsed << "seconds "<<'\n';
 			std::exit(-1);
 		}
-        afa->PrintToDot(std::string("l_no.dot"));
 
         //MetaState::afaRoots.push_back(afa->mInit);
 

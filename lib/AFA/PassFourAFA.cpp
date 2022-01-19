@@ -496,8 +496,8 @@ void AFAut::PassFourNew(AFAStatePtr init, std::set<AFAStatePtr>& tobedeleted, in
     SetAFAStatesPtr tmp = flatten_set(res.second);
     BOOST_ASSERT_MSG(tmp.size()==1,"ERR: There can only be one initial state of AFA.");
     this->mInit = *(tmp.begin());
-    this->PrintToDot(std::string("Pass4Phase1EpsilonClosure.dot"));
-    this->PrintToDot(std::string("AFA_1.dot"));
+    //this->PrintToDot(std::string("Pass4Phase1EpsilonClosure.dot"));
+    //this->PrintToDot(std::string("AFA_1.dot"));
 
     AFAut*  temp_afa = this->DeepCopyAFA(this);
 
@@ -505,7 +505,7 @@ void AFAut::PassFourNew(AFAStatePtr init, std::set<AFAStatePtr>& tobedeleted, in
         MetaState::combinedAFA = temp_afa;
     else{
 
-        MetaState::combinedAFA->PrintToDot(std::string("combination_phase1.dot"));
+        //MetaState::combinedAFA->PrintToDot(std::string("combination_phase1.dot"));
 
         for(auto x: temp_afa->mInit->mTransitions){
 
@@ -517,33 +517,32 @@ void AFAut::PassFourNew(AFAStatePtr init, std::set<AFAStatePtr>& tobedeleted, in
 
     }
 
-    MetaState::combinedAFA->PrintToDot(std::string("my1.dot"));
+    //MetaState::combinedAFA->PrintToDot(std::string("my1.dot"));
     AFAut*  afa = this->DeepCopyAFA(MetaState::combinedAFA);
-
 
     this->mInit = afa->mInit;
 
-    this->PrintToDot(std::string("AFA_2.dot"));
-    MetaState::combinedAFA->PrintToDot(std::string("combination.dot"));
+    //this->PrintToDot(std::string("AFA_2.dot"));
+    //MetaState::combinedAFA->PrintToDot(std::string("combination.dot"));
 
     //Step 1- Add epsilon edges by connecting states having same AMap.
     this->ConvertToEpsilonAllSameAMap(this->mInit);
     std::cout<<"Phase 4- Adding Epsilon Edges over"<<std::endl;
 
-    this->PrintToDot(std::string("Pass4WithEpsilonEdges.dot"));
-    this->PrintToDot(std::string("AFA_3.dot"));
+    //this->PrintToDot(std::string("Pass4WithEpsilonEdges.dot"));
+    //this->PrintToDot(std::string("AFA_3.dot"));
 
     //Step 2- Create epsilon closure by removing epsilon edges from AFA.f
         this->NewEpsilonClosure(this->mInit);
     std::cout<<"Phase 4- Removing Epsilon Edges over"<<std::endl;
 
-    this->PrintToDot(std::string("Pass4EpsilonClosed.dot"));
-    this->PrintToDot(std::string("AFA_4.dot"));
+    //this->PrintToDot(std::string("Pass4EpsilonClosed.dot"));
+    //this->PrintToDot(std::string("AFA_4.dot"));
 
 
     //Step 3
     this->AFAmoreTrans(this->mInit);
-    this->PrintToDot(std::string("AFA_5.dot"));
+    //this->PrintToDot(std::string("AFA_5.dot"));
 
 
     //Step 4- Introduce self loops in the AFA
@@ -551,10 +550,12 @@ void AFAut::PassFourNew(AFAStatePtr init, std::set<AFAStatePtr>& tobedeleted, in
     this->AFASelfLoop(this->mInit, seen);
 
     this->PrintToDot(std::string("Pass4SelfLooped.dot"));
-    this->PrintToDot(std::string("AFA_6.dot"));
-    afa->PrintToDot(std::string("my2.dot"));
+    //this->PrintToDot(std::string("AFA_6.dot"));
+    //afa->PrintToDot(std::string("my2.dot"));
 
     MetaState::proof_no++;
+
+
 //    std::cout<<MetaState::proof_no<<std::endl;
 
 
