@@ -12,7 +12,9 @@
 #include<vector>
 #include "AFA/AFAut.h"
 #include "SCTransSystem.h"
-
+#include "MetaState.h"
+#include "z3++.h"
+#include "llvm/Support/raw_ostream.h"
 
 bool mapstatecomparator::operator() (const AFAStatePtr& one, const AFAStatePtr& two) const
 	{
@@ -263,7 +265,7 @@ void AFAState::PassOne(std::map<AFAStatePtr,AFAStatePtr,mapstatecomparator>& mAl
 #ifdef	DBGPRNT
 				std::cout<<" inside conjfillstate "<<this->mAMap<<std::endl;
 #endif
-				BOOST_ASSERT_MSG(mAMap.decl().decl_kind()==Z3_OP_AND," Expeceting a conjunction , failed.. SOme issue");
+				BOOST_ASSERT_MSG(mAMap.decl().decl_kind()==Z3_OP_AND," Expecting a conjunction , failed.. SOme issue");
 				z3::context& ctx= mAMap.ctx();
 				z3::tactic t = z3::tactic(ctx,"tseitin-cnf");
 				z3::goal g(ctx);
@@ -282,8 +284,6 @@ void AFAState::PassOne(std::map<AFAStatePtr,AFAStatePtr,mapstatecomparator>& mAl
 						z3::expr pass= rexp.arg(p);
                         std::stringstream stream;
                         AFAStatePtr st = HelperAddStateIfAbsent(pass,mRWord,isPresent,mAllStates);//add to SeenSet if not.. else return the pointer..
-                     /*   stream << "mAMap along a branch of "<<st<<" is "<<pass;
-                        std::cout<<"mAMap along one branch is = "<<stream.str()<<std::endl;*/
 
                         nextset.insert(st);
 						if(!isPresent){
@@ -340,14 +340,74 @@ void AFAState::PassOne(std::map<AFAStatePtr,AFAStatePtr,mapstatecomparator>& mAl
 
 	}
 	else if(mType==ORLit){
-		//if mRWrod becomes empty then add it to acceptance state..(even before doing anything else in this loop
+		//if mRWord becomes empty then add it to acceptance state..(even before doing anything else in this loop
 			if(mRWord.length()==0||mIsAccepted){
 				//add this to accepting state and return with empty set..
 				//this state must have been added to set of all states..
+
+
+
+				//-------------------- my work begins ----------------------
+
+//                std::ofstream z3_stream;
+//                z3_stream.open("mychecker.txt");
+//
+//                z3_stream<<"metastate value = "<<MetaState::proof_no<<std::endl;
+//                z3_stream<<mAMap<<std::endl;
+//
+//				std::cout<<"This is my marker"<<MetaState::proof_no<<std::endl;
+
+
+                for(auto sym: AFAut::mProgram->mGlobalSyms) {
+
+                    //get free variables in mAMap;-1
+
+                    std::set<z3::expr,mapexpcomparator> freevars=HelperGetFreeVars(mAMap);
+
+                    z3::context& ctx= mAMap.ctx();
+
+                    if (AFAut::mProgram->mRWLHRHMap.find(sym) != AFAut::mProgram->mRWLHRHMap.end()) {
+                        //means it is a read/write symbol
+
+                        bool isPresent;
+                        //if does not conflict with the set -1 then add to mNonConflict set
+                        z3::expr left(std::get<0>((AFAut::mProgram->mRWLHRHMap.find(sym)->second)));
+
+                        if (freevars.find(left) != freevars.end()) {
+                            //means this symbol conflict with phi and hence must be used for processing..
+
+                            z3::expr right(std::get<1>((AFAut::mProgram->mRWLHRHMap.find(sym)->second)));
+                            //z3::expr right((AFAut::mProgram->mRWLHRHMap.find(sym)->second).second);
+
+                            z3::expr_vector src(ctx), dest(ctx);
+                            src.push_back(left);
+                            dest.push_back(right);
+                            z3::expr l1(mAMap.substitute(src, dest));
+                            l1 = HelperSimplifyExpr(l1);
+                            bool isfalse = false;
+                            bool istrue = false;
+                            if (HelperIsUnsat(l1)) {
+                                l1 = ctx.bool_val(false);
+                                isfalse = true;
+                            }
+                            if (HelperIsValid(l1)) {
+                                l1 = ctx.bool_val(true);
+                                istrue = true;
+                            }
+
+                            mAMap = l1;
+                        }
+                    }
+                }
+
+                            //---------------------my work over-------------------------
+
+
 				mHMap = new z3::expr(mAMap);
 				mIsAccepted=true;
 				return;
 			}
+
 		//get free variables in mAMap;-1
 		SetAFAStatesPtr nextset;
 			std::set<z3::expr,mapexpcomparator> freevars=HelperGetFreeVars(mAMap);
@@ -592,10 +652,51 @@ void AFAState::PassOne(std::map<AFAStatePtr,AFAStatePtr,mapstatecomparator>& mAl
 
 		    if(notasingleall)//if this is the case then make it accepting state as well.
 		    {
-		       	mHMap = new z3::expr(mAMap);
+                for(auto sym: AFAut::mProgram->mGlobalSyms) {
+
+                    //get free variables in mAMap;-1
+
+                    std::set<z3::expr,mapexpcomparator> freevars=HelperGetFreeVars(mAMap);
+
+                    z3::context& ctx= mAMap.ctx();
+
+                    if (AFAut::mProgram->mRWLHRHMap.find(sym) != AFAut::mProgram->mRWLHRHMap.end()) {
+                        //means it is a read/write symbol
+
+                        bool isPresent;
+                        //if does not conflict with the set -1 then add to mNonConflict set
+                        z3::expr left(std::get<0>((AFAut::mProgram->mRWLHRHMap.find(sym)->second)));
+
+                        if (freevars.find(left) != freevars.end()) {
+                            //means this symbol conflict with phi and hence must be used for processing..
+
+                            z3::expr right(std::get<1>((AFAut::mProgram->mRWLHRHMap.find(sym)->second)));
+                            //z3::expr right((AFAut::mProgram->mRWLHRHMap.find(sym)->second).second);
+
+                            z3::expr_vector src(ctx), dest(ctx);
+                            src.push_back(left);
+                            dest.push_back(right);
+                            z3::expr l1(mAMap.substitute(src, dest));
+                            l1 = HelperSimplifyExpr(l1);
+                            bool isfalse = false;
+                            bool istrue = false;
+                            if (HelperIsUnsat(l1)) {
+                                l1 = ctx.bool_val(false);
+                                isfalse = true;
+                            }
+                            if (HelperIsValid(l1)) {
+                                l1 = ctx.bool_val(true);
+                                istrue = true;
+                            }
+
+                            mAMap = l1;
+                        }
+                    }
+                }
+
+                mHMap = new z3::expr(mAMap);
 		       	mIsAccepted=true;
 		    }
-
 	}
 	else
 		BOOST_ASSERT_MSG(false,"State should either be AND, OR or ORLit, some serious problem");

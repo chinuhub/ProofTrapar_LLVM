@@ -185,6 +185,20 @@ Program::Program(Module& M) {
   z3_stream.open("z3debug.txt");
 #endif
   ParseGlobalVariables(M);
+
+  // --------debugging purpose-----
+
+  for(auto sym : mGlobalSyms){
+
+    if (mRWLHRHMap.find(sym) != mRWLHRHMap.end()) {
+
+        std::cout<<"hey"<<std::endl;
+    }
+
+    }
+
+   // ------------debugging ends -----------
+
   for (Function& Func : M) {
     ParseThread(Func);
   }
@@ -268,11 +282,21 @@ void Program::ParseGlobalVariables(Module& M) {
       mAllSyms.push_back(symname);
       ++count;
       mInitString += symname;
-      std::pair<z3::expr, z3::expr> pr =
-      std::make_pair(
-        GetVariableExpr(name),
-        rhs_expr
-      );
+
+
+//      std::pair<z3::expr, z3::expr> pr =
+//      std::make_pair(
+//        GetVariableExpr(name),
+//        rhs_expr
+//      );
+//
+        std::tuple<z3::expr, z3::expr> pr =
+                std::make_pair(
+                        GetVariableExpr(name),
+                        rhs_expr
+                );
+
+
 #ifdef LOCAL_DEBUG
       InstructionType inst =
       std::make_tuple(
@@ -283,6 +307,8 @@ void Program::ParseGlobalVariables(Module& M) {
       debug_writer(count + 51, inst);
 #endif
       mRWLHRHMap.insert(std::make_pair(symname, pr));
+
+      mGlobalSyms.push_back(symname);
     }
   }
 #ifdef LOCAL_DEBUG

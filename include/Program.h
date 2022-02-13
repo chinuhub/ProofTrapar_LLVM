@@ -69,6 +69,7 @@ class Program {
   std::map<std::string, std::tuple<z3::expr, z3::expr, z3::expr,z3::expr> > mCASLHRHMap;
   std::map<std::string, z3::expr> mAssnMap;
   std::vector<std::string> mAllSyms;
+  std::vector<std::string> mGlobalSyms;
 
   std::map<std::string, z3::expr>& GetAssnMapForAllProcesses();
   /**

@@ -53,7 +53,7 @@ std::pair<StateType,std::set<SetAFAStatesPtr>> AFAut::EpsilonClosure(AFAStatePtr
                                 setResultSet.insert(setst);
                             }
                         }else{
-                            BOOST_ASSERT_MSG(tmp.second.size()==1,"ERR: For now we don't allow OR's inside AND.!!");
+                            //BOOST_ASSERT_MSG(tmp.second.size()==1,"ERR: For now we don't allow OR's inside AND.!!");
                             SetAFAStatesPtr  tmps = flatten_set(tmp.second);
                             resset.insert(tmps.begin(),tmps.end());
                         }
