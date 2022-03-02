@@ -200,6 +200,8 @@ void SCTransSystem::BuildSCTS(faudes::Generator& lGenerator){
     //Iterate over all transitions.
     //Iterate over all relations of original and insert them in reverse in rev generator.
     faudes::TransSet::Iterator transit;
+
+
     for(transit = result.TransRelBegin(); transit != result.TransRelEnd(); ++transit) {
         std::string sym = result.EventName(transit->Ev);
         if(assnMap.find(sym)!=assnMap.end()){

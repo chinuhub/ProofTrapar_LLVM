@@ -208,6 +208,8 @@ AFAut* AFAut::MakeAFAutProof(std::string& word, z3::expr& mPhi,Program* p, int c
 
 			//afa->mInit->PassHMap();
 			afa->PrintToDot("Pass1.dot");
+			std::cout<<"Pass 1 Over"<<std::endl;
+
 			if(!afa->mInit->HelperIsUnsat(*(afa->mInit->mHMap)))
 			{
 				bres=false;
@@ -248,6 +250,7 @@ AFAut* AFAut::MakeAFAutProof(std::string& word, z3::expr& mPhi,Program* p, int c
 #endif
 
     afa->PrintToDot("Pass2AfterDeletion.dot");
+    std::cout<<"Pass 2 Over"<<std::endl;
 
     //Pass four- adding more edges respecting implications, this is a function of AFAut only not of AFAstate
 	 	    //std::tuple<SetAFAStatesPtr,SetAFAStatesPtr,AFAStatePtr> retvals =afa->mInit->PassFour(afa->mInit,passtwoallstates);

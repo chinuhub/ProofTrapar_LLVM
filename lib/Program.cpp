@@ -838,6 +838,8 @@ void Program::ParseThread(Function& Func) {
         case Instruction::Add:
         case Instruction::Sub:
         case Instruction::Mul:
+        case Instruction::SDiv:
+        case Instruction::SRem:
         case Instruction::ICmp: {
           std::string lval_operand = ValueToVariable(&Inst, thread_name);
           AddVariable(lval_operand);
@@ -864,6 +866,20 @@ void Program::ParseThread(Function& Func) {
               std::cout << "- ";
 #endif
               break;
+              case Instruction::SDiv:
+                  rhs_expr = op1_expr / op2_expr;
+#ifdef LOCAL_DEBUG
+                  std::cout << "/ ";
+#endif
+                  break;
+
+              case Instruction::SRem:
+                  rhs_expr = op1_expr % op2_expr;
+#ifdef LOCAL_DEBUG
+                  std::cout << "% ";
+#endif
+                  break;
+
             case Instruction::Mul:
               rhs_expr = op1_expr * op2_expr;
 #ifdef LOCAL_DEBUG
