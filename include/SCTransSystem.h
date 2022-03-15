@@ -37,7 +37,7 @@ public:
 	//struct fa* mMerged;
 	SCTransSystem(Program&,z3::solver& s);
 	void BuildSCTS(faudes::Generator&);
-    void CreateFAutomataFaudes(const AdjacencyList<int>& adj, faudes::Generator& generator);
+    void CreateFAutomataFaudes(const AdjacencyList<int>& adj, faudes::Generator& generator, int index);
 	//struct fa* FA_Merge(std::vector<struct fa*>& autset,std::map<std::string,z3::expr>& assnMap,faudes::Generator&);
 	//std::tuple<bool,z3::expr> GetAcceptAssn(std::set<struct autstate*, newsetofstatescomparator>&, std::map<struct autstate*, z3::expr>&);
 	//std::tuple<std::string,z3::expr> GetAcceptedWordWithEndState();

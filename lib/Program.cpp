@@ -45,6 +45,7 @@ struct BasicBlockGraph {
 AdjacencyList<int> CreateAutGraph(std::vector<BasicBlockGraph> BB) {
   // Edges have integer labels for there corresponding instructions (symbols of
   // our automata). In case of epsilon transitions this label is -1.
+
   std::vector<std::vector<std::pair<int, int> > > aut_graph;
   // 0 is the start state, 1 is an intermediate state and 2 is the accepting state
   for (int i = 0; i < 3; i++) {
@@ -186,22 +187,18 @@ Program::Program(Module& M) {
 #endif
   ParseGlobalVariables(M);
 
-  // --------debugging purpose-----
-
-  for(auto sym : mGlobalSyms){
-
-    if (mRWLHRHMap.find(sym) != mRWLHRHMap.end()) {
-
-        std::cout<<"hey"<<std::endl;
-    }
-
-    }
-
-   // ------------debugging ends -----------
-
   for (Function& Func : M) {
+
     ParseThread(Func);
+
+      isThreadAccepting.push_back(false);
+      //initially push false, in ParsThread(), if there will be assertion in the thread
+      //then this false will be changed to true. This is done to keep track of whether
+      //we have to make accepting component(1->2) in the thread automaton or not
+
   }
+  isThreadAccepting.pop_back();
+
   MakeOldInterface();
 }
 
@@ -348,6 +345,10 @@ void Program::ParseThread(Function& Func) {
       switch (Inst.getOpcode()) {
         case Instruction::Call: {
           bb_struct.is_accepting = true;
+
+          //Change the default false to true because now there will be accepting state in the thread automaton
+          isThreadAccepting.pop_back();
+          isThreadAccepting.push_back(true);
 #ifdef LOCAL_DEBUG
           std::cout << "Accepting State Here" << std::endl;
 #endif
@@ -1189,12 +1190,16 @@ void Program::MakeOldInterface() {
 
     sym = Utils::GetLabel(sym_num);
 
-    mAssnMap.insert(
-      std::make_pair(
-        sym,
-        context_.bool_val(false)
-      )
-    );
+    if(isThreadAccepting[j]==true) {
+
+        mAssnMap.insert(
+                std::make_pair(
+                        sym,
+                        context_.bool_val(false)
+                )
+        );
+    }
+
 #ifdef LOCAL_DEBUG
     z3_stream << "AMap: ";
     debug_writer(
@@ -1207,4 +1212,11 @@ void Program::MakeOldInterface() {
     );
 #endif
   }
+
+  //------------- my work -----------------------
+
+    //mAssnMap.erase("L19");
+//
+
+  //----------------my work over ------------------------------
 }

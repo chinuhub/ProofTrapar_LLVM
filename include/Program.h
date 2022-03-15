@@ -113,6 +113,8 @@ class Program {
    */
   void DotWrite(std::ofstream& os, const AdjacencyList<int>& adj_list);
 
+  std::vector<bool> isThreadAccepting;
+
  private:
   // z3::context context_;
 
@@ -128,6 +130,7 @@ class Program {
 
   std::vector<std::string> thread_names_;
   std::vector<AdjacencyList<int> > thread_graphs_;
+
 
   void ParseGlobalVariables(llvm::Module&);
   void ParseThread(llvm::Function&);

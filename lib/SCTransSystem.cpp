@@ -77,7 +77,7 @@ using AdjacencyList = std::vector<std::vector<std::pair<int, T> > >;
 
 
 
-void SCTransSystem::CreateFAutomataFaudes(const AdjacencyList<int>& adj, faudes::Generator& generator) {
+void SCTransSystem::CreateFAutomataFaudes(const AdjacencyList<int>& adj, faudes::Generator& generator, int index) {
     // Some assertions
     assert(adj.size() >= 4 &&
            adj[0].size() == 1 &&
@@ -86,14 +86,27 @@ void SCTransSystem::CreateFAutomataFaudes(const AdjacencyList<int>& adj, faudes:
     for (unsigned source = 0; source < adj.size(); source++) {
         //Find all connected vertices from this vertex and iterate over them.
 
+        // ----------------------- my work--------------
+
+        if(mProgram.isThreadAccepting[index]==false){
+
+            if(source==1 || source ==2)
+                continue;
+        }
+
+        //---------------------- my work ends -----------------
+
         std::string srcstr = std::to_string(source);
         generator.InsState(srcstr);
 
-        if(source==2) //This is an expectation that the third entry will correspond to an accepting state.
-            generator.SetMarkedState(srcstr);
+
+        if (source == 2) //This is an expectation that the third entry will correspond to an accepting state.
+                generator.SetMarkedState(srcstr);
+
         if(source==3) //This is an expectation that the fourth entry will correspond to initial state.
             generator.SetInitState(srcstr);
     }
+
     for (unsigned source = 0; source < adj.size(); source++) {
         for (std::pair<int, int> edge : adj[source]) {
             std::string srcstr,dststr;
@@ -114,6 +127,18 @@ void SCTransSystem::CreateFAutomataFaudes(const AdjacencyList<int>& adj, faudes:
             generator.InsEvent(symstr);
             //States corresponding to source and destination have already been added in the generator by previous loop.
             // so just insert an edge between those states.
+
+
+            // ----------------------- my work ----------------
+
+            if(mProgram.isThreadAccepting[index]==false){
+
+                if (dststr == "2")
+                    continue;
+            }
+
+            // --------------------- my work ends ---------------------
+
             generator.SetTransition(srcstr, symstr, dststr);
         }
     }
@@ -123,11 +148,15 @@ void SCTransSystem::BuildSCTS(faudes::Generator& lGenerator){
   std::map<std::string,z3::expr> assnMap = mProgram.GetAssnMapForAllProcesses();
   std::vector<AdjacencyList<int> > adjlists = mProgram.GetAutomata();
 
+
   std::vector<faudes::Generator> faudesAutomata;
 
     for (unsigned i = 0; i < adjlists.size(); i++) {
+
+    //for (int i = adjlists.size()-1; i >= 0; i--) {
+
         faudes::Generator faudesAut;
-        CreateFAutomataFaudes(adjlists[i], faudesAut);
+        CreateFAutomataFaudes(adjlists[i], faudesAut,i);
         //Assert that the constructed automaton should not be empty.
         //push the returned automaton to the vector. If needed clone the generator as well.
         faudesAutomata.push_back(faudesAut);
@@ -138,28 +167,89 @@ void SCTransSystem::BuildSCTS(faudes::Generator& lGenerator){
         faudesAut.DotWrite("./auto"+std::to_string(i+1)+".dot");
     //BOOST_ASSERT_MSG(aut != NULL, "could not construct automaton");
 
-
-
   }
+
+
+    ///////////////////////////////////// duplicate code below //////////////////////////////
+
+    std::vector<faudes::Generator> faudesAutomata2;
+
+    for (unsigned i = 0; i < adjlists.size(); i++) {
+
+    //for (int i = adjlists.size()-1; i >= 0; i--) {
+
+        faudes::Generator faudesAut2;
+        CreateFAutomataFaudes(adjlists[i], faudesAut2,i);
+        //Assert that the constructed automaton should not be empty.
+        //push the returned automaton to the vector. If needed clone the generator as well.
+        faudesAutomata2.push_back(faudesAut2);
+
+        //To test, print a word accepted by this generator.
+        std::cout << "An example accepted word is " <<std::endl;
+        std::cout << GetWord(faudesAut2)<<std::endl;
+        faudesAut2.DotWrite("./auto(duplicate)"+std::to_string(i+1)+".dot");
+        //BOOST_ASSERT_MSG(aut != NULL, "could not construct automaton");
+
+    }
+
+
+
+    std::cout<<"Automaton 1 comparison = "<<faudes::LanguageEquality(faudesAutomata.at(0),faudesAutomata2.at(1))<<std::endl;
+    std::cout<<"Automaton 2 comparison = "<<faudes::LanguageEquality(faudesAutomata.at(1),faudesAutomata2.at(0))<<std::endl;
+
+    /////////////////////////// duplicate over //////////////////////////
+
+
     BOOST_ASSERT_MSG(faudesAutomata.size()>0, " No process given as input.. Exiting");
+
     faudes::Generator result = faudesAutomata.at(0);
+
     for(unsigned i=1; i<adjlists.size(); i++) {
+
         faudes::Generator tmpresult;
         faudes::Parallel(result,faudesAutomata.at(i),tmpresult);
         result = tmpresult;
     }
 
+
+///////////////////////// duplicate begins ///////////////////
+
+    BOOST_ASSERT_MSG(faudesAutomata2.size()>0, " No process given as input.. Exiting");
+
+    faudes::Generator result2 = faudesAutomata2.at(0);
+
+    for(unsigned i=1; i<adjlists.size(); i++) {
+        faudes::Generator tmpresult2;
+        faudes::Parallel(result2,faudesAutomata2.at(i),tmpresult2);
+        result2 = tmpresult2;
+    }
+
+
+    // compare both PAs
+
+
+    std::cout<<"1st comparison result between PAs = "<<faudes::LanguageEquality(result,result2)<<std::endl;
+
+
+////////////////////////// diuplicate ends //////////////////////////////////////
+
+
+
+
+
+
 //
 ///*
 // * Below is the code to create product automaton with a new accepting criteria
 // */
-//
+
 //    faudes::Generator result;
 //    std::map< std::pair<faudes::Idx,faudes::Idx>, faudes::Idx>  rCompositionMap;
 //
 //    faudes::Parallel(faudesAutomata.at(0),faudesAutomata.at(1),rCompositionMap,result );
 //
 //    result.ClearMarkedStates();
+
 //
 //    for (auto lit1 = faudesAutomata.at(0).MarkedStatesBegin();lit1 != faudesAutomata.at(0).MarkedStatesEnd(); ++lit1) {
 //        for (auto lit2 = faudesAutomata.at(1).MarkedStatesBegin();lit2 != faudesAutomata.at(1).MarkedStatesEnd(); ++lit2) {
@@ -170,6 +260,51 @@ void SCTransSystem::BuildSCTS(faudes::Generator& lGenerator){
 //                }
 //        }
 //    }
+
+//    std::set<faudes::Idx> automatonMarkedStates;
+//
+//    for (auto lit1 = faudesAutomata.at(0).MarkedStatesBegin();lit1 != faudesAutomata.at(0).MarkedStatesEnd(); ++lit1){
+//
+//        automatonMarkedStates.insert(*lit1);
+//    }
+//    for (auto lit2 = faudesAutomata.at(1).MarkedStatesBegin();lit2 != faudesAutomata.at(1).MarkedStatesEnd(); ++lit2){
+//
+//        automatonMarkedStates.insert(*lit2);
+//    }
+//
+//    for(auto x: rCompositionMap){
+//
+//        auto nodePairs = x.first;
+//        auto paNode = x.second;
+//
+//        if(automatonMarkedStates.find(nodePairs.first)!= automatonMarkedStates.end() || automatonMarkedStates.find(nodePairs.second)!= automatonMarkedStates.end())
+//            result.SetMarkedState(paNode);
+//    }
+
+
+
+
+
+
+// ---------- same as above, just for backup -----------------
+
+//    faudes::Generator result;
+//    std::map< std::pair<faudes::Idx,faudes::Idx>, faudes::Idx>  rCompositionMap;
+//
+//    faudes::Parallel(faudesAutomata.at(0),faudesAutomata.at(1),rCompositionMap,result );
+//
+//    result.ClearMarkedStates();
+//
+//    for (auto lit1 = faudesAutomata.at(0).MarkedStatesBegin();lit1 != faudesAutomata.at(0).MarkedStatesEnd(); ++lit1) {
+//        for (auto lit2 = faudesAutomata.at(1).MarkedStatesBegin();lit2 != faudesAutomata.at(1).MarkedStatesEnd(); ++lit2) {
+//            auto currentstates = std::make_pair(*lit1, *lit2);
+//            auto rcit = rCompositionMap.find(currentstates);
+//            if (rcit != rCompositionMap.end()) {
+//                result.SetMarkedState(rcit->second);
+//            }
+//        }
+//    }
+//
 
     std::cout<<"States in PA = "<<result.Size()<<std::endl;
 
@@ -209,6 +344,34 @@ void SCTransSystem::BuildSCTS(faudes::Generator& lGenerator){
             result.SetMarkedState(transit->X2);
         }
     }
+
+    /////////////////////////// duplicate begins ////////////////////////////
+
+    result2.ClearMarkedStates();
+    //Iterate over all transitions.
+    //Iterate over all relations of original and insert them in reverse in rev generator.
+    faudes::TransSet::Iterator transit2;
+
+
+    for(transit2 = result2.TransRelBegin(); transit2 != result2.TransRelEnd(); ++transit2) {
+        std::string sym = result2.EventName(transit2->Ev);
+        if(assnMap.find(sym)!=assnMap.end()){
+            //then set transit->X2 as marked state.
+            result2.SetMarkedState(transit2->X2);
+        }
+    }
+
+
+
+    // compare both product automata
+
+    std::cout<<"2nd comparison result between PAs = "<<faudes::LanguageEquality(result,result2)<<std::endl;
+
+
+    ///////////////////////////////duplicate ends /////////////////////////////
+
+
+
 
 
     //To test, print a word accepted by this generator.

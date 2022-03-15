@@ -13,7 +13,6 @@ int l=0;
 
 int w, r, x, y;
 
-
 void writer() {
 
   acquire_lock();
@@ -22,7 +21,6 @@ void writer() {
      release_lock();
      x = 3;
      w = 0;
- 
   }
   else{
      release_lock();
@@ -46,6 +44,35 @@ void reader() {
   
 }
 
+void writer2() {
 
+  acquire_lock();
+  if(w==0 && r==0){
+     w = 1;
+     release_lock();
+     x = 3;
+     w = 0;
+  }
+  else{
+     release_lock();
+  }
+  
+}
+
+void reader2() {
+  
+  acquire_lock();
+  if(w==0){
+     r = r+1;
+     release_lock();
+     y = x;
+     assert(y==x);
+     r = r-1;
+  }
+  else{
+     release_lock();
+  }
+  
+}
 
 

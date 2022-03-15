@@ -68,8 +68,16 @@ bool test_bench(Module& M) {
 	//std::string revword(word,length);
   int i;
   int cases=0;
-  std::string rev = MetaState::getUncoveredTrace(MetaState::generator, MetaState::afaRoots);
-  std::string trace;
+
+
+    faudes::StateSet::Iterator sit;
+    sit = MetaState::generator.InitStatesBegin();
+
+    std::string rev = MetaState::getAcceptingWord(*sit, "");
+    std::string trace;
+
+//  std::string rev = MetaState::getUncoveredTrace(MetaState::generator, MetaState::afaRoots);
+//  std::string trace;
 
   while( rev.compare("None")!=0) //Keep on iterating until no uncovered trace is found.
   {
@@ -85,6 +93,7 @@ bool test_bench(Module& M) {
 
     z3::expr wordphi= T->GetEndStateAssertionFromWord(trace);
     std::string exword = trace;
+
 
     std::cout<<"Checking word "<<exword<<" with postcondition phi = "<<wordphi<<std::endl;
 
