@@ -1,0 +1,27 @@
+digraph G {
+  nodesep = 2.0;
+  edge [color="#ff5555"];
+  Q0 -> Q0 [style=bold,label="eps"];
+  Q1 -> Q2 [style=bold,label="L17"];
+  Q3 -> Q4 [style=bold,label="L8"];
+  Q4 -> Q1 [style=bold,label="L9"];
+  Q5 -> Q6 [style=bold,label="L10"];
+  Q6 -> Q7 [style=bold,label="L11"];
+  Q7 -> Q8 [style=bold,label="L12"];
+  Q8 -> Q9 [style=bold,label="L13"];
+  Q9 -> Q10 [style=bold,label="L14"];
+  Q10 -> Q11 [style=bold,label="L15"];
+  Q11 -> Q1 [style=bold,label="L9"];
+  Q0 [shape=circle];
+  Q1 [shape=circle];
+  Q2 [shape=circle,peripheries=2];
+  Q3 [shape=circle];
+  Q4 [shape=circle];
+  Q5 [shape=circle];
+  Q6 [shape=circle];
+  Q7 [shape=circle];
+  Q8 [shape=circle];
+  Q9 [shape=circle];
+  Q10 [shape=circle];
+  Q11 [shape=circle];
+}

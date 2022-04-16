@@ -25,6 +25,11 @@ public:
 
     static int proof_no;
 
+    static int final_afa_states;
+
+    static int count_metastates;
+
+
     std::string word;
     faudes::Idx Pnode;
     std::set<std::set<AFAStatePtr>> cnfList;

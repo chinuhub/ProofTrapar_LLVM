@@ -73,7 +73,17 @@ bool test_bench(Module& M) {
     faudes::StateSet::Iterator sit;
     sit = MetaState::generator.InitStatesBegin();
 
+    auto mystart1 =  boost::chrono::system_clock::now();
+
     std::string rev = MetaState::getAcceptingWord(*sit, "");
+
+    auto myend1 = boost::chrono::system_clock::now();
+    auto myelapsed1 = boost::chrono::duration_cast<boost::chrono::duration<double> >(myend1- mystart1).count();
+    std::cout<<"************************ Iteration no = "<<MetaState::proof_no + 1<<" ********************"<<std::endl;
+    std::cout << "Time spent in On-The-fly = "<<myelapsed1 << "seconds "<<'\n';
+    std::cout<<"Metastates created = "<<MetaState::count_metastates<<std::endl;
+
+
     std::string trace;
 
 //  std::string rev = MetaState::getUncoveredTrace(MetaState::generator, MetaState::afaRoots);
@@ -132,7 +142,19 @@ bool test_bench(Module& M) {
     std::cout<<"Original: States="<<generator.States().Size()<<" Transitions = "<<generator.TransRel().Size()<<std::endl;
 #endif
 
+
+      auto mystart2 =  boost::chrono::system_clock::now();
+
       rev = MetaState::getUncoveredTrace(MetaState::generator, MetaState::afaRoots);
+
+      auto myend2 = boost::chrono::system_clock::now();
+      auto myelapsed2 = boost::chrono::duration_cast<boost::chrono::duration<double> >(myend2- mystart2).count();
+      std::cout<<"****************************  Iteration no = "<<MetaState::proof_no + 1<<" *********************"<<std::endl;
+      std::cout << "Time spent in On-The-fly = "<<myelapsed2 << "seconds "<<'\n';
+      std::cout<<"Metastates created = "<<MetaState::count_metastates<<std::endl;
+
+
+
       std::cout<<"Trace ==== "<<rev<<std::endl;
       cases++;
       std::cout<<cases<<std::endl;

@@ -549,11 +549,18 @@ void AFAut::PassFourNew(AFAStatePtr init, std::set<AFAStatePtr>& tobedeleted, in
     std::set<AFAStatePtr> seen;
     this->AFASelfLoop(this->mInit, seen);
 
+    MetaState::final_afa_states = 0;
+
     this->PrintToDot(std::string("Pass4SelfLooped.dot"));
     //this->PrintToDot(std::string("AFA_6.dot"));
     //afa->PrintToDot(std::string("my2.dot"));
 
     MetaState::proof_no++;
+
+    std::cout<<"******************************  Iteration No = "<<MetaState::proof_no<<" ******************"<<std::endl;
+    std::cout<<"States in final AFA = "<<MetaState::final_afa_states<<std::endl;
+
+
 
 
 //    std::cout<<MetaState::proof_no<<std::endl;
@@ -624,7 +631,7 @@ void AFAut::PassFourNew(AFAStatePtr init, std::set<AFAStatePtr>& tobedeleted, in
 //this->createDFA(lGenerator);
 
 
-std::cout<<"Marked states size = "<<lGenerator.MarkedStatesSize()<<","<<lGenerator.MarkedStatesToString()<<std::endl;
+//std::cout<<"Marked states size = "<<lGenerator.MarkedStatesSize()<<","<<lGenerator.MarkedStatesToString()<<std::endl;
 #ifdef DBGPRNT
 	std::cout<<"Complement done "<<std::endl;
 	tm->PrintToDot(std::string("Pass4PhaseComplement.dot"));

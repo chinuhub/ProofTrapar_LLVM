@@ -2,6 +2,7 @@
 #include <queue>
 #include <numeric>
 
+
 void MetaState::testing(){
 
     std::cout<<"Hi I am from MetaState"<<std::endl;
@@ -11,9 +12,14 @@ faudes::Generator MetaState::generator;
 std::vector<AFAStatePtr> MetaState::afaRoots;
 std::set<faudes::Idx> MetaState::markedStatesSet;
 int MetaState::proof_no=0;
+int MetaState::count_metastates=0;
+int MetaState::final_afa_states=0;
 AFAut* MetaState::combinedAFA;
 
 std::string MetaState::getUncoveredTrace(faudes::Generator &pAutomaton, std::vector<AFAStatePtr> &afaRoots){
+
+
+    count_metastates = 0;
 
     generator = pAutomaton;
         //input product automaton
@@ -44,6 +50,9 @@ std::string MetaState::getUncoveredTrace(faudes::Generator &pAutomaton, std::vec
     //initial meta state inserted in queue
     todo.push(m);
     seen.insert(m);
+
+    count_metastates++;
+    //std::cout<<count_metastates<<std::endl;
 
     while(!todo.empty()){
 
@@ -80,11 +89,25 @@ std::string MetaState::getUncoveredTrace(faudes::Generator &pAutomaton, std::vec
 
                 //if in between, the cnf_result is false then return the trace stored
                 //in current meta state as uncovered trace
-                if(cnf_result == false)
-                    return curr_meta->word;
+                if(cnf_result == false) {
+
+                    //before returning the trace, free the memory consumed by meta states
+
+                    std::string resultantTrace = curr_meta->word;
+
+                    for(auto d: seen){
+
+                        delete d;
+                    }
+
+
+                    std::cout<<"@@@@@@@@@@@@@@@@@@@@@@@@@@@@@   Returned from Block-1   @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"<<std::endl;
+                    return resultantTrace;
+                }
             }
 
         }
+
         //otherwise continue the algorithm
 
 
@@ -110,10 +133,16 @@ std::string MetaState::getUncoveredTrace(faudes::Generator &pAutomaton, std::vec
 
                     std::string trace = getAcceptingWord(child->Pnode, child->word);
 
+
+                    //before returning the trace, free the memory consumed by meta states
+
                     for(auto d: seen){
 
                         delete d;
                     }
+
+
+                    std::cout<<"@@@@@@@@@@@@@@@@@@@@@@@@@@@@@   Returned from Block-2   @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"<<std::endl;
 
                     return trace;
                 }
@@ -124,15 +153,28 @@ std::string MetaState::getUncoveredTrace(faudes::Generator &pAutomaton, std::vec
 
                     todo.push(child);
                     seen.insert(child);
+
+                    count_metastates++;
+                    //std::cout<<count_metastates<<std::endl;
                 }
+
             }
         }
     }
+
+
+    //before returning the trace, free the memory consumed by meta states
 
     for(auto d: seen){
 
         delete d;
     }
+
+
+
+    std::cout<<"@@@@@@@@@@@@@@@@@@@@@@@@@@@@@   Returned from Block-3   @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"<<std::endl;
+
+
     return "None";              //if all traces in PA are covered by the AFAs
 }
 

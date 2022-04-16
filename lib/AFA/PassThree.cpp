@@ -6,6 +6,7 @@
  */
 #include "AFA/AFAState.h"
 #include<boost/assert.hpp>
+#include "MetaState.h"
 
 
 void AFAState::PassThree(Graph& g, std::map<AFAStatePtr, vertex_t,mapstatecomparator>& indmap){//imp not to have mapstatecomparator here just compare raw pointers
@@ -15,6 +16,8 @@ void AFAState::PassThree(Graph& g, std::map<AFAStatePtr, vertex_t,mapstatecompar
 	indmap.insert(std::make_pair(this,vthis));
 
 	if(mType==AND){
+
+        MetaState::final_afa_states++;
 		SetAFAStatesPtr nextset;
 		//create a new vertes for this state..
 
@@ -65,6 +68,10 @@ void AFAState::PassThree(Graph& g, std::map<AFAStatePtr, vertex_t,mapstatecompar
 
 
 	}else if (mType==OR){
+
+
+        MetaState::final_afa_states++;
+
 		SetAFAStatesPtr nextset;
 		//create a new vertes for this state..
 
@@ -110,6 +117,9 @@ void AFAState::PassThree(Graph& g, std::map<AFAStatePtr, vertex_t,mapstatecompar
 			}
 
 	}else if(mType==ORLit){
+
+        MetaState::final_afa_states++;
+
 		SetAFAStatesPtr nextset;
 		//create a new vertes for this state..
 
