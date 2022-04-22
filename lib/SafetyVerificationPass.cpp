@@ -73,21 +73,9 @@ bool test_bench(Module& M) {
     faudes::StateSet::Iterator sit;
     sit = MetaState::generator.InitStatesBegin();
 
-    auto mystart1 =  boost::chrono::system_clock::now();
-
     std::string rev = MetaState::getAcceptingWord(*sit, "");
 
-    auto myend1 = boost::chrono::system_clock::now();
-    auto myelapsed1 = boost::chrono::duration_cast<boost::chrono::duration<double> >(myend1- mystart1).count();
-    std::cout<<"************************ Iteration no = "<<MetaState::proof_no + 1<<" ********************"<<std::endl;
-    std::cout << "Time spent in On-The-fly = "<<myelapsed1 << "seconds "<<'\n';
-    std::cout<<"Metastates created = "<<MetaState::count_metastates<<std::endl;
-
-
     std::string trace;
-
-//  std::string rev = MetaState::getUncoveredTrace(MetaState::generator, MetaState::afaRoots);
-//  std::string trace;
 
   while( rev.compare("None")!=0) //Keep on iterating until no uncovered trace is found.
   {
@@ -131,7 +119,6 @@ bool test_bench(Module& M) {
             MetaState::afaRoots.push_back(afa->mInit);
         }
 
-        std::cout<<"AFAs for on the fly = "<<MetaState::afaRoots.size()<<std::endl;
 
 #ifdef SANITYCHKASSN
     std::cout<<"AFA construction over-complement.. dumping to complemented.dot file.Press any int to continue"<<std::endl;
@@ -143,17 +130,8 @@ bool test_bench(Module& M) {
 #endif
 
 
-      auto mystart2 =  boost::chrono::system_clock::now();
 
       rev = MetaState::getUncoveredTrace(MetaState::generator, MetaState::afaRoots);
-
-      auto myend2 = boost::chrono::system_clock::now();
-      auto myelapsed2 = boost::chrono::duration_cast<boost::chrono::duration<double> >(myend2- mystart2).count();
-      std::cout<<"****************************  Iteration no = "<<MetaState::proof_no + 1<<" *********************"<<std::endl;
-      std::cout << "Time spent in On-The-fly = "<<myelapsed2 << "seconds "<<'\n';
-      std::cout<<"Metastates created = "<<MetaState::count_metastates<<std::endl;
-
-
 
       std::cout<<"Trace ==== "<<rev<<std::endl;
       cases++;

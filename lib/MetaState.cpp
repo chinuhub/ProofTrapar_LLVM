@@ -100,8 +100,6 @@ std::string MetaState::getUncoveredTrace(faudes::Generator &pAutomaton, std::vec
                         delete d;
                     }
 
-
-                    std::cout<<"@@@@@@@@@@@@@@@@@@@@@@@@@@@@@   Returned from Block-1   @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"<<std::endl;
                     return resultantTrace;
                 }
             }
@@ -141,9 +139,6 @@ std::string MetaState::getUncoveredTrace(faudes::Generator &pAutomaton, std::vec
                         delete d;
                     }
 
-
-                    std::cout<<"@@@@@@@@@@@@@@@@@@@@@@@@@@@@@   Returned from Block-2   @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"<<std::endl;
-
                     return trace;
                 }
 
@@ -169,10 +164,6 @@ std::string MetaState::getUncoveredTrace(faudes::Generator &pAutomaton, std::vec
 
         delete d;
     }
-
-
-
-    std::cout<<"@@@@@@@@@@@@@@@@@@@@@@@@@@@@@   Returned from Block-3   @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"<<std::endl;
 
 
     return "None";              //if all traces in PA are covered by the AFAs

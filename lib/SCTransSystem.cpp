@@ -170,36 +170,6 @@ void SCTransSystem::BuildSCTS(faudes::Generator& lGenerator){
   }
 
 
-    ///////////////////////////////////// duplicate code below //////////////////////////////
-
-    std::vector<faudes::Generator> faudesAutomata2;
-
-    for (unsigned i = 0; i < adjlists.size(); i++) {
-
-    //for (int i = adjlists.size()-1; i >= 0; i--) {
-
-        faudes::Generator faudesAut2;
-        CreateFAutomataFaudes(adjlists[i], faudesAut2,i);
-        //Assert that the constructed automaton should not be empty.
-        //push the returned automaton to the vector. If needed clone the generator as well.
-        faudesAutomata2.push_back(faudesAut2);
-
-        //To test, print a word accepted by this generator.
-        std::cout << "An example accepted word is " <<std::endl;
-        std::cout << GetWord(faudesAut2)<<std::endl;
-        faudesAut2.DotWrite("./auto(duplicate)"+std::to_string(i+1)+".dot");
-        //BOOST_ASSERT_MSG(aut != NULL, "could not construct automaton");
-
-    }
-
-
-
-    std::cout<<"Automaton 1 comparison = "<<faudes::LanguageEquality(faudesAutomata.at(0),faudesAutomata2.at(1))<<std::endl;
-    std::cout<<"Automaton 2 comparison = "<<faudes::LanguageEquality(faudesAutomata.at(1),faudesAutomata2.at(0))<<std::endl;
-
-    /////////////////////////// duplicate over //////////////////////////
-
-
     BOOST_ASSERT_MSG(faudesAutomata.size()>0, " No process given as input.. Exiting");
 
     faudes::Generator result = faudesAutomata.at(0);
@@ -210,31 +180,6 @@ void SCTransSystem::BuildSCTS(faudes::Generator& lGenerator){
         faudes::Parallel(result,faudesAutomata.at(i),tmpresult);
         result = tmpresult;
     }
-
-
-///////////////////////// duplicate begins ///////////////////
-
-    BOOST_ASSERT_MSG(faudesAutomata2.size()>0, " No process given as input.. Exiting");
-
-    faudes::Generator result2 = faudesAutomata2.at(0);
-
-    for(unsigned i=1; i<adjlists.size(); i++) {
-        faudes::Generator tmpresult2;
-        faudes::Parallel(result2,faudesAutomata2.at(i),tmpresult2);
-        result2 = tmpresult2;
-    }
-
-
-    // compare both PAs
-
-
-    std::cout<<"1st comparison result between PAs = "<<faudes::LanguageEquality(result,result2)<<std::endl;
-
-
-////////////////////////// diuplicate ends //////////////////////////////////////
-
-
-
 
 
 
@@ -344,34 +289,6 @@ void SCTransSystem::BuildSCTS(faudes::Generator& lGenerator){
             result.SetMarkedState(transit->X2);
         }
     }
-
-    /////////////////////////// duplicate begins ////////////////////////////
-
-    result2.ClearMarkedStates();
-    //Iterate over all transitions.
-    //Iterate over all relations of original and insert them in reverse in rev generator.
-    faudes::TransSet::Iterator transit2;
-
-
-    for(transit2 = result2.TransRelBegin(); transit2 != result2.TransRelEnd(); ++transit2) {
-        std::string sym = result2.EventName(transit2->Ev);
-        if(assnMap.find(sym)!=assnMap.end()){
-            //then set transit->X2 as marked state.
-            result2.SetMarkedState(transit2->X2);
-        }
-    }
-
-
-
-    // compare both product automata
-
-    std::cout<<"2nd comparison result between PAs = "<<faudes::LanguageEquality(result,result2)<<std::endl;
-
-
-    ///////////////////////////////duplicate ends /////////////////////////////
-
-
-
 
 
     //To test, print a word accepted by this generator.
